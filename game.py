@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from itertools import combinations, permutations
+from itertools import combinations
 import random
+import math
 
 
 EXAMINE_DIRS8 = (
@@ -21,10 +22,28 @@ EXAMINE_DIRS4 = ((1, 0), (0, 1), (-1, 0), (0, -1))
 
 
 def manhattan_dist(p1, p2):
+    if isinstance(p1, Pixel):
+        return abs(p1.index[0] - p2.index[0]) + abs(p1.index[1] - p2.index[1])
     return abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])
 
 
-def aStar(grid, start, end):
+def chebyshev_dist(p1, p2):
+    if isinstance(p1, Pixel):
+        return max(
+            abs(p1.index[0] - p2.index[0]), abs(p1.index[1] - p2.index[1])
+        )
+    return max(abs(p1[0] - p2[0]), abs(p1[1] - p2[1]))
+
+
+def euclidian_dist(p1, p2):
+    if isinstance(p1, Pixel):
+        return np.sqrt(
+            (p1.index[0] - p2.index[0]) ** 2 + (p1.index[1] - p2.index[1]) ** 2
+        )
+    return np.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
+
+
+def aStar(start, end):
     open_set = {start}
     came_from = {}
     g_score = {start: 0}
@@ -37,17 +56,11 @@ def aStar(grid, start, end):
             while current in came_from:
                 path.append(current)
                 current = came_from[current]
-            # print(f_score[end])
             return path, f_score[end]
 
         open_set.remove(current)
-        for i, j in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
-            neighbor = current[0] + i, current[1] + j
-            if (
-                0 <= neighbor[0] < grid.shape[0]
-                and 0 <= neighbor[1] < grid.shape[1]
-                and grid[neighbor] == 1
-            ):
+        for neighbor in current.neighbors4:
+            if neighbor.type == 1:
                 tentative_g_score = g_score[current] + 1
                 if tentative_g_score < g_score.get(neighbor, float("inf")):
                     came_from[neighbor] = current
@@ -60,11 +73,15 @@ def aStar(grid, start, end):
     return None, float("inf")
 
 
-def gen_fp(xlim: int = 32, ylim: int = 32):
-    # fp = np.random.choice([0, 1], (xlim, ylim), p=[0.3, 0.7])
-    fp = np.ones((xlim, ylim), dtype=np.int8)
-    fp[15, :] = 0
-    return fp
+def gen_layout(xlim: int = 32, ylim: int = 32):
+    # layout = np.random.choice([0, 1], (xlim, ylim), p=[0.3, 0.7])
+    layout = np.ones((xlim, ylim), dtype=np.int8)
+    # layout[15, :] = 0
+    for i in range(xlim):
+        for j in range(ylim):
+            if abs(euclidian_dist([i, j], [8, 8]) - 17) < 0.5:
+                layout[i, j] = 0
+    return layout
 
 
 def separate_pixels(p_grid):
@@ -93,24 +110,20 @@ def extract_from_2d_array(arr, idx):
     return ret
 
 
-def get_candidate_dirs(current, xlim, ylim):
+def get_candidate_dirs(current, xlim, ylim, dirs):
     candidate_dirs = []
-    for idir in current + np.array(EXAMINE_DIRS8):
+    for idir in current + np.array(dirs):
         if 0 <= idir[0] < xlim and 0 <= idir[1] < ylim:
             candidate_dirs.append(idir)
     return candidate_dirs
-
-
-def walk_on_wall(fp, current):
-    for dir in EXAMINE_DIRS8:
-        continue
 
 
 class Pixel:
     pGrid = []
 
     def __init__(self, index=None, p_type=1):
-        self.neighbors = []
+        self.neighbors8 = []
+        self.neighbors4 = []
         self.type = p_type  # 0: wall, 1: walkable, for now
         self.visited = False
         self.index = index
@@ -118,7 +131,8 @@ class Pixel:
     def swap_status(self, other):
         self.type, other.type = other.type, self.type
         self.visited, other.visited = other.visited, self.visited
-        self.neighbors, other.neighbors = other.neighbors, self.neighbors
+        self.neighbors8, other.neighbors8 = other.neighbors8, self.neighbors8
+        self.neighbors4, other.neighbors4 = other.neighbors4, self.neighbors4
 
     @staticmethod
     def from_grid(grid):
@@ -132,9 +146,17 @@ class Pixel:
 
         for i in range(n):
             for j in range(m):
-                idirs = get_candidate_dirs(np.array([i, j]), n, m)
+                idirs = get_candidate_dirs(
+                    np.array([i, j]), n, m, EXAMINE_DIRS4
+                )
                 nbs = extract_from_2d_array(Pixel.pGrid, idirs)
-                Pixel.pGrid[i][j].neighbors = nbs
+                Pixel.pGrid[i][j].neighbors4 = nbs
+
+                idirs = get_candidate_dirs(
+                    np.array([i, j]), n, m, EXAMINE_DIRS8
+                )
+                nbs = extract_from_2d_array(Pixel.pGrid, idirs)
+                Pixel.pGrid[i][j].neighbors8 = nbs
 
     @staticmethod
     def to_grid():
@@ -156,11 +178,7 @@ class Agent:
         return agent
 
     def step(self):
-        next = self.pick_from_candidates(self.agent.neighbors)
-        # self.agent.swap_status(next)
-        # self.agent.type = 0  # reset
-        # self.agent = next
-        # self.agent.type = 1
+        next = self.pick_from_candidates(self.agent.neighbors8)
         self.set_to(next)
 
     def set_to(self, new_agent):
@@ -194,17 +212,17 @@ class Visualize:
         path = path[::-1]
         for i in range(len(path) - 1):
             plt.plot(
-                [path[i][1], path[i + 1][1]],
-                [path[i][0], path[i + 1][0]],
+                [path[i].index[1], path[i + 1].index[1]],
+                [path[i].index[0], path[i + 1].index[0]],
                 "r-",
                 lw=10,
-                alpha=0.03,
+                alpha=0.1,
             )
 
     @staticmethod
     def draw_only_start_end(start, end):
-        plt.scatter(start[1], start[0], color="g", marker="o")
-        plt.scatter(end[1], end[0], color="b", marker="s")
+        plt.scatter(start.index[1], start.index[0], color="g", marker="o")
+        plt.scatter(end.index[1], end.index[0], color="b", marker="s")
 
     @staticmethod
     def show():
@@ -217,47 +235,66 @@ def optimize_single_step():
 
 def main():
     # settings
-    # np.random.seed(0)
+    np.random.seed(0)
     xlim, ylim = 32, 32
+    n_samples = 64
 
-    fp = gen_fp(xlim, ylim)
-    Pixel.from_grid(fp)
+    layout = gen_layout(xlim, ylim)
+    Pixel.from_grid(layout)
+
+    Visualize.draw_grid(Pixel.to_grid())
+    Visualize.show()
+
     p_grid = Pixel.pGrid
-
     blocked, walkable = separate_pixels(p_grid)
 
-    sp = gen_sample_points(walkable, 10)
+    sp = gen_sample_points(walkable, n_samples)
 
-    # optimize
+    # --------------------------------------------
     door = Agent(blocked[0])
-    print(door.agent.type)
-    best_score = 1000
-    best_pos = door.agent
-    for _ in range(100):
-        score_avg = 0
-        for pairs in combinations(sp, 2):
-            grid = Pixel.to_grid()
-            s = pairs[0].index
-            e = pairs[1].index
-            _, score = aStar(grid, s, e)
-            score_avg += score
-        score_avg /= len(sp) * (len(sp) - 1) / 2
-        if best_score > score_avg:
-            best_score = score_avg
-            best_pos = door.agent
-        door.step()
 
-    door.set_to(best_pos)
+    # brutal force get accurate ans
+    scores = []
+    for b in blocked:
+        b.type = 1
+        score_avg = 0
+        for i in range(0, n_samples, 2):
+            s, e = sp[i], sp[i + 1]
+            _, score = aStar(s, e)
+            score_avg += score
+        score_avg /= n_samples / 2
+        scores.append(score_avg)
+        b.type = 0
+    best_ans = blocked[np.argmin(scores)]
+
+    # optimize method
+    # best_score = 1000000
+    # best_ans = door.agent
+    # for _ in range(100):
+    #     score_avg = 0
+    #     # for pairs in combinations(sp, 2):
+    #     for i in range(0, n_samples, 2):
+    #         s, e = sp[i], sp[i + 1]
+    #         _, score = aStar(s, e)
+    #         score_avg += score
+    #     score_avg /= n_samples / 2
+    #     if best_score > score_avg:
+    #         best_score = score_avg
+    #         best_ans = door.agent
+    #     door.step()
+
+    door.set_to(best_ans)
 
     # visualize
     grid = Pixel.to_grid()
     Visualize.draw_grid(grid)
-    for pairs in combinations(sp, 2):
-        s = pairs[0].index
-        e = pairs[1].index
-        path, _ = aStar(grid, s, e)
+    for i in range(0, n_samples, 2):
+        s, e = sp[i], sp[i + 1]
+        path, _ = aStar(s, e)
         if path:
             Visualize.draw_path(path, s, e)
+        else:
+            Visualize.draw_only_start_end(s, e)
 
     Visualize.show()
 
