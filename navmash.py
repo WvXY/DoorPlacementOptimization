@@ -1,47 +1,58 @@
 import numpy as np
-import torch
+# import torch
 import pygmsh
 
 import matplotlib.pyplot as plt
 from matplotlib import patches
+from mpmath.libmp import normalize
+
+from obj_process import reformat_obj, read_obj
 
 
 class Cases:
-    boundary_vtx = {
-        0: np.array(
-            [
-                [0, 0],
-                [1, 0],
-                [1, 0.8],
-                [0.6, 0.6],
-                [0.6, 1.2],
-                [0, 1],
-            ],
-            dtype=np.float32,
-        ),
-        1: np.array(
-            [
-                [0, 0],
-                [1, 0],
-                [1, 1],
-                [0, 1],
-            ],
-            dtype=np.float32,
-        ),
-        2: np.array(
-            [
-                [0, 0],
-                [1, 0],
-                [1, 1],
-                [0, 1],
-                [0.5, 0.5],
-            ],
-            dtype=np.float32,
-        ),
-        # 3: load_obj("../data/test_room3.obj"),
-        # 4: load_obj("../data/test_room4.obj"),
-        # 5: load_obj("../data/test_room5.obj"),
-    }
+    @staticmethod
+    def polygon(idx):
+        return {
+            0: np.array(
+                [
+                    [0, 0],
+                    [1, 0],
+                    [1, 0.8],
+                    [0.6, 0.6],
+                    [0.6, 1.2],
+                    [0, 1],
+                ],
+                dtype=np.float32,
+            ),
+            1: np.array(
+                [
+                    [0, 0],
+                    [1, 0],
+                    [1, 1],
+                    [0, 1],
+                ],
+                dtype=np.float32,
+            ),
+            2: np.array(
+                [
+                    [0, 0],
+                    [1, 0],
+                    [1, 1],
+                    [0, 1],
+                    [0.5, 0.5],
+                ],
+                dtype=np.float32,
+            ),
+            3: Cases.load_obj("assets/test_room3.obj"),
+            4: Cases.load_obj("assets/test_room4.obj"),
+            5: Cases.load_obj("assets/test_room5.obj"),
+        }[idx]
+
+    @staticmethod
+    def load_obj(file_path):
+        normalize = lambda x: (x - np.min(x)) / (np.max(x) - np.min(x))
+        return normalize(np.delete(read_obj(file_path)[0], 1, 1))
+
 
 class Node:
     __vid = 0
@@ -52,7 +63,7 @@ class Node:
         self.next = []
         self.prev = []
 
-        self.edges = None
+        self.edges = []
         self.faces = []
         self.border = False
         self.vid = Node.__vid
@@ -88,18 +99,32 @@ class Node:
                 self.xy = xy_old
                 return
 
+    def remove_duplicate(self):
+        self.next = set(self.next)
+        self.prev = set(self.prev)
+        self.edges = set(self.edges)
+        self.faces = set(self.faces)
+
+    @xy.setter
+    def xy(self, value):
+        self._xy = value
 
 
 Point = Node
+Vertex = Node
+
 
 class Edge:
     def __init__(self, origin, to):
+        # half edge with direction origin -> to
         self.origin = origin
         self.to = to
         self.face = None
         self.twin = None
         self.next = None
         self.prev = None
+
+        self.is_wall = False
 
     @property
     def outside(self):
@@ -117,6 +142,16 @@ class Edge:
 
     def length(self):
         return np.linalg.norm(self.to.xy - self.origin.xy)
+
+    def intersect(self, other):
+        pass
+
+    @staticmethod
+    def get_all_blocked(edges: list):
+        return [e for e in edges if e.is_wall]
+
+
+Line = Edge
 
 
 class Face:
@@ -148,6 +183,10 @@ class Face:
                 adj_faces.append(e.twin.face)
         return adj_faces
 
+    def remove_duplicate(self):
+        self.nodes = set(self.nodes)
+        self.half_edges = set(self.half_edges)
+
 
 class Mesh:
     def __init__(self):
@@ -155,6 +194,7 @@ class Mesh:
         self.edges = []
         self.nodes = []
 
+        self.blocked_edges = None
 
     @property  # alias
     def vertices(self):
@@ -169,6 +209,7 @@ class Mesh:
             mesh = geom.generate_mesh()
             # return mesh.points, mesh.cells_dict["triangle"]
         self.from_mesh(mesh.points, mesh.cells_dict["triangle"])
+        self.blocked_edges = Edge.get_all_blocked(self.edges)
 
     def from_mesh(self, nodes, faces):
         self.clear()
@@ -204,6 +245,7 @@ class Mesh:
             ejk = Edge(self.nodes[fj], self.nodes[fk])
             eki = Edge(self.nodes[fk], self.nodes[fi])
 
+            # face.half_edges
             eij.next, ejk.next, eki.next = ejk, eki, eij
             eij.prev, ejk.prev, eki.prev = eki, eij, ejk
             eij.face, ejk.face, eki.face = (
@@ -215,9 +257,14 @@ class Mesh:
             self.edges += [eij, ejk, eki]
             self.faces[i].half_edges = [eij, ejk, eki]
 
+            # node.edges
+            self.nodes[fi].edges += [eij, eki]
+            self.nodes[fj].edges += [eij, ejk]
+            self.nodes[fk].edges += [ejk, eki]
+
         # finalize
         self.get_twin()
-        self.get_nodes_info()
+        self.set_nodes_info()
 
     def get_twin(self):
         n = len(self.edges)
@@ -234,16 +281,23 @@ class Mesh:
                 if ei.origin == ej.to and ei.to == ej.origin:
                     ei.twin, ej.twin = ej, ei
 
-    def get_nodes_info(self):
+    def set_nodes_info(self):
         for e in self.edges:
             if e.twin is None:
                 self.nodes[e.origin.idx].border = True
                 self.nodes[e.to.idx].border = True
+                e.is_wall = True
 
     def clear(self):
         self.faces.clear()
         self.edges.clear()
         self.nodes.clear()
+
+    def get_node_by_vid(self, vid):
+        for n in self.nodes:
+            if n.vid == vid:
+                return n
+        return None
 
     def draw(self, title=None, show=True):
         fig, ax = plt.subplots()
@@ -262,10 +316,10 @@ class Mesh:
             if e is None:
                 continue
             ori, to = e.origin, e.to
-            if not e.twin:
+            if e.is_wall:
                 ax.plot([ori.x, to.x], [ori.y, to.y], "k", lw=2)
-            elif int(e.twin.gid) != int(e.gid):
-                ax.plot([ori.x, to.x], [ori.y, to.y], "b", lw=2)
+            # elif int(e.twin.gid) != int(e.gid):
+            #     ax.plot([ori.x, to.x], [ori.y, to.y], "b", lw=2)
 
         if title:
             ax.set_title(title)
@@ -284,14 +338,14 @@ class NavMesh(Mesh):
     def dist(self, a, b):
         return np.linalg.norm(a.xy - b.xy)
 
-    def find_path(self, start:Point, end:Point):
+    def find_path(self, start: Point, end: Point):
         fs = self.get_point_inside_face(start)
         fe = self.get_point_inside_face(end)
         start.next = fs.nodes
         end.next = fe.nodes
         for n in fe.nodes:
             n.next.append(end)
-        return [end, *self.find_path_graph(start, end)[0], start]
+        return [*self.find_path_graph(start, end)[0], start][::-1]
 
     def find_path_graph(self, start: Point, end: Point):
         open_set = {start}
@@ -333,7 +387,8 @@ class NavMesh(Mesh):
                 return f
         return None
 
-    def point_in_face(self, point, face):
+    @staticmethod
+    def point_in_face(point, face):
         for i in range(3):
             j = (i + 1) % 3
             if np.cross(face.nodes[j].xy - face.nodes[i].xy, point.xy - face.nodes[i].xy) < 0:
@@ -345,44 +400,79 @@ class NavMesh(Mesh):
         plt.scatter(path[0].x, path[0].y, c=c, s=s)
         plt.scatter(path[-1].x, path[-1].y, c=c, s=s)
 
-# def optimize(mesh: NavMesh):
-#     for f in mesh.faces:
-#         if f is None:
-#             continue
-#         f.gid = np.median([i.gid for i in f.adj_faces], axis=0)
+    def simplify_path(self, path):
+        i = 1
+        while i < len(path) - 1:
+            prev = path[i - 1]
+            this = path[i]
+            next = path[i + 1]
+            can_remove = True
+            e0 = Edge(prev, next)
+            # for e1 in this.edges:
+            for e1 in self.blocked_edges:
+                if intersection(e0, e1):
+                    can_remove = False
+                    break
+            if can_remove:
+                print(f"remove {this.vid}")
+                path.remove(this)
+            else:
+                i += 1
+
+
+class PathUtils:
+    def __init__(self):
+        pass
+
+
+def intersection(l1: Line, l2: Line):
+    x1, y1 = l1.origin.xy
+    x2, y2 = l1.to.xy
+    x3, y3 = l2.origin.xy
+    x4, y4 = l2.to.xy
+    den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+
+    if den == 0:
+        return None
+
+    t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
+    u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den
+
+    if 0 < t < 1 and 0 < u < 1:
+        x = x1 + t * (x2 - x1)
+        y = y1 + t * (y2 - y1)
+        return (x, y)
+    else:
+        return None
+
 
 def main():
     np.random.seed(0)
-    i_case = 0
+    i_case = 5
 
     nm = NavMesh()
-    nm.create(Cases.boundary_vtx[i_case], 0.2)
+    nm.create(Cases.polygon(i_case), 0.4)
     nm.draw(show=False)
 
-    # start, end = nm.nodes[1], nm.nodes[16]
-    # path, cost = nm.find_path(start, end)
-    # path.append(start)
-    # nm.draw_path(path, "r")
-
-    p1 = Point(np.array([0.0, 0.0]))
+    p1 = Point(np.array([0.9, 0.5]))
     f1 = nm.get_point_inside_face(p1)
     plt.scatter(p1.x, p1.y, c="b", s=100)
     if f1:
         plt.fill([n.x for n in f1.nodes], [n.y for n in f1.nodes], "b", alpha=0.2)
 
-    p2 = Point(np.array([0.9, 0.7]))
+    p2 = Point(np.array([0.2, 0.2]))
     f2 = nm.get_point_inside_face(p2)
     plt.scatter(p2.x, p2.y, c="b", s=100)
     if f2:
         plt.fill([n.x for n in f2.nodes], [n.y for n in f2.nodes], "b", alpha=0.2)
 
     path = nm.find_path(p1, p2)
+    nm.simplify_path(path)
+
     nm.draw_path(path, "r")
 
     plt.show()
 
-    # optimize(nm)
-    # nm.draw("Final Result")
 
 if __name__ == "__main__":
     main()

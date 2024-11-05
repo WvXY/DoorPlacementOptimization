@@ -254,34 +254,34 @@ def main():
     door = Agent(blocked[0])
 
     # brutal force get accurate ans
-    scores = []
-    for b in blocked:
-        b.type = 1
-        score_avg = 0
-        for i in range(0, n_samples, 2):
-            s, e = sp[i], sp[i + 1]
-            _, score = aStar(s, e)
-            score_avg += score
-        score_avg /= n_samples / 2
-        scores.append(score_avg)
-        b.type = 0
-    best_ans = blocked[np.argmin(scores)]
-
-    # optimize method
-    # best_score = 1000000
-    # best_ans = door.agent
-    # for _ in range(100):
+    # scores = []
+    # for b in blocked:
+    #     b.type = 1
     #     score_avg = 0
-    #     # for pairs in combinations(sp, 2):
     #     for i in range(0, n_samples, 2):
     #         s, e = sp[i], sp[i + 1]
     #         _, score = aStar(s, e)
     #         score_avg += score
     #     score_avg /= n_samples / 2
-    #     if best_score > score_avg:
-    #         best_score = score_avg
-    #         best_ans = door.agent
-    #     door.step()
+    #     scores.append(score_avg)
+    #     b.type = 0
+    # best_ans = blocked[np.argmin(scores)]
+
+    # optimize method
+    best_score = 1000000
+    best_ans = door.agent
+    for _ in range(100):
+        score_avg = 0
+        # for pairs in combinations(sp, 2):
+        for i in range(0, n_samples, 2):
+            s, e = sp[i], sp[i + 1]
+            _, score = aStar(s, e)
+            score_avg += score
+        score_avg /= n_samples / 2
+        if best_score > score_avg:
+            best_score = score_avg
+            best_ans = door.agent
+        door.step()
 
     door.set_to(best_ans)
 
