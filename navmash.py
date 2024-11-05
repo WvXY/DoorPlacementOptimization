@@ -1,4 +1,5 @@
 import numpy as np
+
 # import torch
 import pygmsh
 
@@ -89,15 +90,15 @@ class Node:
     def neighbors(self):
         return set(self.next + self.prev)
 
-    def move(self, dx, dy) -> None:
-        if self.border:
-            return
-        xy_old = self.xy.copy()
-        self.xy += [dx, dy]
-        for f in self.faces:
-            if f.flipped:
-                self.xy = xy_old
-                return
+    # def move(self, dx, dy) -> None:
+    #     if self.border:
+    #         return
+    #     xy_old = self.xy.copy()
+    #     self.xy += [dx, dy]
+    #     for f in self.faces:
+    #         if f.flipped:
+    #             self.xy = xy_old
+    #             return
 
     def remove_duplicate(self):
         self.next = set(self.next)
@@ -108,10 +109,6 @@ class Node:
     @xy.setter
     def xy(self, value):
         self._xy = value
-
-
-Point = Node
-Vertex = Node
 
 
 class Edge:
@@ -151,6 +148,9 @@ class Edge:
         return [e for e in edges if e.is_wall]
 
 
+# alias
+Point = Node
+Vertex = Node
 Line = Edge
 
 
@@ -166,8 +166,7 @@ class Face:
         for i in range(3):
             j = (i + 1) % 3
             area += (
-                    self.nodes[i].x * self.nodes[j].y
-                    - self.nodes[j].x * self.nodes[i].y
+                self.nodes[i].x * self.nodes[j].y - self.nodes[j].x * self.nodes[i].y
             )
         return area / 2
 
@@ -209,7 +208,6 @@ class Mesh:
             mesh = geom.generate_mesh()
             # return mesh.points, mesh.cells_dict["triangle"]
         self.from_mesh(mesh.points, mesh.cells_dict["triangle"])
-        self.blocked_edges = Edge.get_all_blocked(self.edges)
 
     def from_mesh(self, nodes, faces):
         self.clear()
@@ -263,10 +261,11 @@ class Mesh:
             self.nodes[fk].edges += [ejk, eki]
 
         # finalize
-        self.get_twin()
+        self.set_twin()
         self.set_nodes_info()
+        self.blocked_edges = Edge.get_all_blocked(self.edges)
 
-    def get_twin(self):
+    def set_twin(self):
         n = len(self.edges)
         for i in range(n):
             ei = self.edges[i]
@@ -341,6 +340,10 @@ class NavMesh(Mesh):
     def find_path(self, start: Point, end: Point):
         fs = self.get_point_inside_face(start)
         fe = self.get_point_inside_face(end)
+
+        if fs is None or fe is None:
+            return None
+
         start.next = fs.nodes
         end.next = fe.nodes
         for n in fe.nodes:
@@ -370,9 +373,7 @@ class NavMesh(Mesh):
                     if t_g_score < g_score.get(neighbor, float("inf")):
                         came_from[neighbor] = current
                         g_score[neighbor] = t_g_score
-                        f_score[neighbor] = t_g_score + self.dist(
-                            neighbor, end
-                        )
+                        f_score[neighbor] = t_g_score + self.dist(neighbor, end)
                         if neighbor not in open_set:
                             open_set.add(neighbor)
         return None, float("inf")
@@ -391,12 +392,17 @@ class NavMesh(Mesh):
     def point_in_face(point, face):
         for i in range(3):
             j = (i + 1) % 3
-            if np.cross(face.nodes[j].xy - face.nodes[i].xy, point.xy - face.nodes[i].xy) < 0:
+            if (
+                np.cross(
+                    face.nodes[j].xy - face.nodes[i].xy, point.xy - face.nodes[i].xy
+                )
+                < 0
+            ):
                 return False
         return True
 
     def draw_path(self, path, c, s=60):
-        plt.plot([n.x for n in path], [n.y for n in path], c, lw=2)
+        plt.plot([n.x for n in path], [n.y for n in path], c=c, lw=2)
         plt.scatter(path[0].x, path[0].y, c=c, s=s)
         plt.scatter(path[-1].x, path[-1].y, c=c, s=s)
 
@@ -447,6 +453,8 @@ def intersection(l1: Line, l2: Line):
 
 
 def main():
+    # from time import time
+
     np.random.seed(0)
     i_case = 5
 
@@ -454,22 +462,32 @@ def main():
     nm.create(Cases.polygon(i_case), 0.4)
     nm.draw(show=False)
 
-    p1 = Point(np.array([0.9, 0.5]))
-    f1 = nm.get_point_inside_face(p1)
-    plt.scatter(p1.x, p1.y, c="b", s=100)
-    if f1:
-        plt.fill([n.x for n in f1.nodes], [n.y for n in f1.nodes], "b", alpha=0.2)
+    # p1 = Point(np.array([0.9, 0.5]))
+    # f1 = nm.get_point_inside_face(p1)
+    # plt.scatter(p1.x, p1.y, c="b", s=100)
+    # if f1:
+    #     plt.fill([n.x for n in f1.nodes], [n.y for n in f1.nodes], "b", alpha=0.2)
 
-    p2 = Point(np.array([0.2, 0.2]))
-    f2 = nm.get_point_inside_face(p2)
-    plt.scatter(p2.x, p2.y, c="b", s=100)
-    if f2:
-        plt.fill([n.x for n in f2.nodes], [n.y for n in f2.nodes], "b", alpha=0.2)
+    # p2 = Point(np.array([0.2, 0.2]))
+    # f2 = nm.get_point_inside_face(p2)
+    # plt.scatter(p2.x, p2.y, c="b", s=100)
+    # if f2:
+    #     plt.fill([n.x for n in f2.nodes], [n.y for n in f2.nodes], "b", alpha=0.2)
+    # t
 
-    path = nm.find_path(p1, p2)
-    nm.simplify_path(path)
+    for i in range(300):
+        p1 = Point(np.random.rand(2))
+        p2 = Point(np.random.rand(2))
 
-    nm.draw_path(path, "r")
+        path = nm.find_path(p1, p2)
+        if path:
+            nm.simplify_path(path)
+            nm.draw_path(path, np.random.rand(3))
+
+    # path = nm.find_path(p1, p2)
+    # nm.simplify_path(path)
+
+    # nm.draw_path(path, "r")
 
     plt.show()
 
