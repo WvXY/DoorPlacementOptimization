@@ -1,0 +1,388 @@
+import numpy as np
+import torch
+import pygmsh
+
+import matplotlib.pyplot as plt
+from matplotlib import patches
+
+
+class Cases:
+    boundary_vtx = {
+        0: np.array(
+            [
+                [0, 0],
+                [1, 0],
+                [1, 0.8],
+                [0.6, 0.6],
+                [0.6, 1.2],
+                [0, 1],
+            ],
+            dtype=np.float32,
+        ),
+        1: np.array(
+            [
+                [0, 0],
+                [1, 0],
+                [1, 1],
+                [0, 1],
+            ],
+            dtype=np.float32,
+        ),
+        2: np.array(
+            [
+                [0, 0],
+                [1, 0],
+                [1, 1],
+                [0, 1],
+                [0.5, 0.5],
+            ],
+            dtype=np.float32,
+        ),
+        # 3: load_obj("../data/test_room3.obj"),
+        # 4: load_obj("../data/test_room4.obj"),
+        # 5: load_obj("../data/test_room5.obj"),
+    }
+
+class Node:
+    __vid = 0
+
+    def __init__(self, pos, idx=None):
+        self.idx = idx
+        self.pos = pos
+        self.next = []
+        self.prev = []
+
+        self.edges = None
+        self.faces = []
+        self.border = False
+        self.vid = Node.__vid
+        Node.__vid += 1
+
+    @property
+    def x(self):
+        return self.pos[0]
+
+    @property
+    def y(self):
+        return self.pos[1]
+
+    @property
+    def z(self):
+        return self.pos[2]
+
+    @property
+    def xy(self):
+        return self.pos[:2]
+
+    @property
+    def neighbors(self):
+        return set(self.next + self.prev)
+
+    def move(self, dx, dy) -> None:
+        if self.border:
+            return
+        xy_old = self.xy.copy()
+        self.xy += [dx, dy]
+        for f in self.faces:
+            if f.flipped:
+                self.xy = xy_old
+                return
+
+
+
+Point = Node
+
+class Edge:
+    def __init__(self, origin, to):
+        self.origin = origin
+        self.to = to
+        self.face = None
+        self.twin = None
+        self.next = None
+        self.prev = None
+
+    @property
+    def outside(self):
+        return not self.twin
+
+    @property
+    def gid(self):
+        return self.face.gid
+
+    def dir(self):
+        return (self.to.xy - self.origin.xy) / self.length()
+
+    def orth(self):
+        return np.array([dir[1], -dir[0]])
+
+    def length(self):
+        return np.linalg.norm(self.to.xy - self.origin.xy)
+
+
+class Face:
+    def __init__(self):
+        self.nodes = []
+        self.gid = 0
+        self.half_edges = []
+
+    @property
+    def area(self):
+        area = 0
+        for i in range(3):
+            j = (i + 1) % 3
+            area += (
+                    self.nodes[i].x * self.nodes[j].y
+                    - self.nodes[j].x * self.nodes[i].y
+            )
+        return area / 2
+
+    @property
+    def flipped(self):
+        return self.area < 0
+
+    @property
+    def adj_faces(self):
+        adj_faces = []
+        for e in self.half_edges:
+            if e.twin:
+                adj_faces.append(e.twin.face)
+        return adj_faces
+
+
+class Mesh:
+    def __init__(self):
+        self.faces = []
+        self.edges = []
+        self.nodes = []
+
+
+    @property  # alias
+    def vertices(self):
+        return self.nodes
+
+    def create(self, polygon, mesh_size=0.1):
+        with pygmsh.geo.Geometry() as geom:
+            geom.add_polygon(
+                polygon,
+                mesh_size=mesh_size,
+            )
+            mesh = geom.generate_mesh()
+            # return mesh.points, mesh.cells_dict["triangle"]
+        self.from_mesh(mesh.points, mesh.cells_dict["triangle"])
+
+    def from_mesh(self, nodes, faces):
+        self.clear()
+
+        # nodes
+        for i, xy in enumerate(nodes):
+            self.nodes.append(Node(xy[:2], i))
+
+        # faces
+        for i, f in enumerate(faces):
+            face = Face()
+            face.nodes = [
+                self.nodes[f[0]],
+                self.nodes[f[1]],
+                self.nodes[f[2]],
+            ]
+            self.faces.append(face)
+
+            for j in f:
+                self.nodes[j].faces.append(face)
+
+        for i, (fi, fj, fk) in enumerate(faces):
+            # prev i - k - j - i
+            self.nodes[fi].prev.append(self.nodes[fk])
+            self.nodes[fj].prev.append(self.nodes[fi])
+            self.nodes[fk].prev.append(self.nodes[fj])
+            # next i - j - k - i
+            self.nodes[fi].next.append(self.nodes[fj])
+            self.nodes[fj].next.append(self.nodes[fk])
+            self.nodes[fk].next.append(self.nodes[fi])
+
+            eij = Edge(self.nodes[fi], self.nodes[fj])
+            ejk = Edge(self.nodes[fj], self.nodes[fk])
+            eki = Edge(self.nodes[fk], self.nodes[fi])
+
+            eij.next, ejk.next, eki.next = ejk, eki, eij
+            eij.prev, ejk.prev, eki.prev = eki, eij, ejk
+            eij.face, ejk.face, eki.face = (
+                self.faces[i],
+                self.faces[i],
+                self.faces[i],
+            )
+
+            self.edges += [eij, ejk, eki]
+            self.faces[i].half_edges = [eij, ejk, eki]
+
+        # finalize
+        self.get_twin()
+        self.get_nodes_info()
+
+    def get_twin(self):
+        n = len(self.edges)
+        for i in range(n):
+            ei = self.edges[i]
+            if ei.twin:
+                continue
+
+            for j in range(i + 1, n):
+                ej = self.edges[j]
+                if ej.twin:
+                    continue
+
+                if ei.origin == ej.to and ei.to == ej.origin:
+                    ei.twin, ej.twin = ej, ei
+
+    def get_nodes_info(self):
+        for e in self.edges:
+            if e.twin is None:
+                self.nodes[e.origin.idx].border = True
+                self.nodes[e.to.idx].border = True
+
+    def clear(self):
+        self.faces.clear()
+        self.edges.clear()
+        self.nodes.clear()
+
+    def draw(self, title=None, show=True):
+        fig, ax = plt.subplots()
+
+        for f in self.faces:
+            if f is None:
+                continue
+
+            tri = [n.xy for n in f.nodes]
+            # c = np.ones(3) * f.gid
+            c = np.zeros(3)
+            # c[int(f.gid)] = 1
+            ax.add_patch(patches.Polygon(tri, color=c, alpha=0.1))
+
+        for e in self.edges:
+            if e is None:
+                continue
+            ori, to = e.origin, e.to
+            if not e.twin:
+                ax.plot([ori.x, to.x], [ori.y, to.y], "k", lw=2)
+            elif int(e.twin.gid) != int(e.gid):
+                ax.plot([ori.x, to.x], [ori.y, to.y], "b", lw=2)
+
+        if title:
+            ax.set_title(title)
+        plt.axis("equal")
+
+        if show:
+            plt.show()
+
+
+class NavMesh(Mesh):
+    def __init__(self):
+        super().__init__()
+
+        self.visited = [False] * len(self.nodes)
+
+    def dist(self, a, b):
+        return np.linalg.norm(a.xy - b.xy)
+
+    def find_path(self, start:Point, end:Point):
+        fs = self.get_point_inside_face(start)
+        fe = self.get_point_inside_face(end)
+        start.next = fs.nodes
+        end.next = fe.nodes
+        for n in fe.nodes:
+            n.next.append(end)
+        return [end, *self.find_path_graph(start, end)[0], start]
+
+    def find_path_graph(self, start: Point, end: Point):
+        open_set = {start}
+        came_from = {}
+        g_score = {start: 0}
+        f_score = {start: self.dist(start, end)}
+
+        while open_set:
+            current = min(open_set, key=lambda x: f_score[x])
+            if current == end:
+                path = []
+                while current in came_from:
+                    path.append(current)
+                    current = came_from[current]
+                return path, f_score[end]
+
+            open_set.remove(current)
+            for neighbor in current.neighbors:
+                # if neighbor.type == 1:
+                if True:
+                    t_g_score = g_score[current] + 1
+                    if t_g_score < g_score.get(neighbor, float("inf")):
+                        came_from[neighbor] = current
+                        g_score[neighbor] = t_g_score
+                        f_score[neighbor] = t_g_score + self.dist(
+                            neighbor, end
+                        )
+                        if neighbor not in open_set:
+                            open_set.add(neighbor)
+        return None, float("inf")
+
+    def get_point_inside_face(self, point):
+        for f in self.faces:
+            if f is None:
+                continue
+            if f.flipped:
+                continue
+            if self.point_in_face(point, f):
+                return f
+        return None
+
+    def point_in_face(self, point, face):
+        for i in range(3):
+            j = (i + 1) % 3
+            if np.cross(face.nodes[j].xy - face.nodes[i].xy, point.xy - face.nodes[i].xy) < 0:
+                return False
+        return True
+
+    def draw_path(self, path, c, s=60):
+        plt.plot([n.x for n in path], [n.y for n in path], c, lw=2)
+        plt.scatter(path[0].x, path[0].y, c=c, s=s)
+        plt.scatter(path[-1].x, path[-1].y, c=c, s=s)
+
+# def optimize(mesh: NavMesh):
+#     for f in mesh.faces:
+#         if f is None:
+#             continue
+#         f.gid = np.median([i.gid for i in f.adj_faces], axis=0)
+
+def main():
+    np.random.seed(0)
+    i_case = 0
+
+    nm = NavMesh()
+    nm.create(Cases.boundary_vtx[i_case], 0.2)
+    nm.draw(show=False)
+
+    # start, end = nm.nodes[1], nm.nodes[16]
+    # path, cost = nm.find_path(start, end)
+    # path.append(start)
+    # nm.draw_path(path, "r")
+
+    p1 = Point(np.array([0.0, 0.0]))
+    f1 = nm.get_point_inside_face(p1)
+    plt.scatter(p1.x, p1.y, c="b", s=100)
+    if f1:
+        plt.fill([n.x for n in f1.nodes], [n.y for n in f1.nodes], "b", alpha=0.2)
+
+    p2 = Point(np.array([0.9, 0.7]))
+    f2 = nm.get_point_inside_face(p2)
+    plt.scatter(p2.x, p2.y, c="b", s=100)
+    if f2:
+        plt.fill([n.x for n in f2.nodes], [n.y for n in f2.nodes], "b", alpha=0.2)
+
+    path = nm.find_path(p1, p2)
+    nm.draw_path(path, "r")
+
+    plt.show()
+
+    # optimize(nm)
+    # nm.draw("Final Result")
+
+if __name__ == "__main__":
+    main()
