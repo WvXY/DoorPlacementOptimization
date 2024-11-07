@@ -5,7 +5,6 @@ import pygmsh
 
 import matplotlib.pyplot as plt
 from matplotlib import patches
-from mpmath.libmp import normalize
 
 from obj_process import reformat_obj, read_obj
 
@@ -408,22 +407,23 @@ class NavMesh(Mesh):
 
     def simplify_path(self, path):
         i = 1
-        while i < len(path) - 1:
-            prev = path[i - 1]
-            this = path[i]
-            next = path[i + 1]
-            can_remove = True
-            e0 = Edge(prev, next)
-            # for e1 in this.edges:
-            for e1 in self.blocked_edges:
-                if intersection(e0, e1):
-                    can_remove = False
-                    break
-            if can_remove:
-                print(f"remove {this.vid}")
-                path.remove(this)
-            else:
-                i += 1
+        can_remove = False
+        while not can_remove:
+            while i < len(path) - 1:
+                prev = path[i - 1]
+                this = path[i]
+                next = path[i + 1]
+                can_remove = True
+                e0 = Edge(prev, next)
+                # for e1 in this.edges:
+                for e1 in self.blocked_edges:
+                    if intersection(e0, e1):
+                        can_remove = False
+                        break
+                if can_remove:
+                    path.remove(this)
+                else:
+                    i += 1
 
 
 class PathUtils:
@@ -475,19 +475,20 @@ def main():
     #     plt.fill([n.x for n in f2.nodes], [n.y for n in f2.nodes], "b", alpha=0.2)
     # t
 
-    for i in range(300):
-        p1 = Point(np.random.rand(2))
-        p2 = Point(np.random.rand(2))
+    # for i in range(300):
+    #     p1 = Point(np.random.rand(2))
+    #     p2 = Point(np.random.rand(2))
 
-        path = nm.find_path(p1, p2)
-        if path:
-            nm.simplify_path(path)
-            nm.draw_path(path, np.random.rand(3))
+    #     path = nm.find_path(p1, p2)
+    #     if path:
+    #         nm.simplify_path(path)
+    #         nm.draw_path(path, np.random.rand(3))
 
-    # path = nm.find_path(p1, p2)
-    # nm.simplify_path(path)
-
-    # nm.draw_path(path, "r")
+    p1 = Point(np.array([0.87, 0.47]))
+    p2 = Point(np.array([0.2, 0.2]))
+    path = nm.find_path(p1, p2)
+    nm.simplify_path(path)
+    nm.draw_path(path, "r")
 
     plt.show()
 
