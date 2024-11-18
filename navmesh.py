@@ -158,6 +158,8 @@ class Face:
         self.nodes = []
         self.gid = 0
         self.half_edges = []
+        self.adj_faces = []
+        self.center = None
 
     @property
     def area(self):
@@ -165,7 +167,7 @@ class Face:
         for i in range(3):
             j = (i + 1) % 3
             area += (
-                self.nodes[i].x * self.nodes[j].y - self.nodes[j].x * self.nodes[i].y
+                    self.nodes[i].x * self.nodes[j].y - self.nodes[j].x * self.nodes[i].y
             )
         return area / 2
 
@@ -174,16 +176,44 @@ class Face:
         return self.area < 0
 
     @property
-    def adj_faces(self):
-        adj_faces = []
+    def neighbors(self):
+        return self.adj_faces
+
+    @property
+    def xy(self):
+        return self.center
+
+    @property
+    def x(self):
+        return self.center[0]
+
+    @property
+    def y(self):
+        return self.center[1]
+
+    def set_adj_faces(self):
+        self.adj_faces = []
         for e in self.half_edges:
             if e.twin:
-                adj_faces.append(e.twin.face)
-        return adj_faces
+                self.adj_faces.append(e.twin.face)
+        return self.adj_faces
 
     def remove_duplicate(self):
         self.nodes = set(self.nodes)
         self.half_edges = set(self.half_edges)
+
+    def set_center(self):
+        if not self.nodes:
+            return
+        else:
+            xys = [n.xy for n in self.nodes]
+            self.center = np.average(xys, axis=0)
+
+    def get_portal(self, other):
+        for e in self.half_edges:
+            if e.twin and e.twin.face == other:
+                return e.origin, e.to
+        return None
 
 
 class Mesh:
@@ -262,6 +292,7 @@ class Mesh:
         # finalize
         self.set_twin()
         self.set_nodes_info()
+        self.set_faces_info()
         self.blocked_edges = Edge.get_all_blocked(self.edges)
 
     def set_twin(self):
@@ -286,6 +317,11 @@ class Mesh:
                 self.nodes[e.to.idx].border = True
                 e.is_wall = True
 
+    def set_faces_info(self):
+        for f in self.faces:
+            f.set_adj_faces()
+            f.set_center()
+
     def clear(self):
         self.faces.clear()
         self.edges.clear()
@@ -297,35 +333,6 @@ class Mesh:
                 return n
         return None
 
-    def draw(self, title=None, show=True):
-        fig, ax = plt.subplots()
-
-        for f in self.faces:
-            if f is None:
-                continue
-
-            tri = [n.xy for n in f.nodes]
-            # c = np.ones(3) * f.gid
-            c = np.zeros(3)
-            # c[int(f.gid)] = 1
-            ax.add_patch(patches.Polygon(tri, color=c, alpha=0.1))
-
-        for e in self.edges:
-            if e is None:
-                continue
-            ori, to = e.origin, e.to
-            if e.is_wall:
-                ax.plot([ori.x, to.x], [ori.y, to.y], "k", lw=2)
-            # elif int(e.twin.gid) != int(e.gid):
-            #     ax.plot([ori.x, to.x], [ori.y, to.y], "b", lw=2)
-
-        if title:
-            ax.set_title(title)
-        plt.axis("equal")
-
-        if show:
-            plt.show()
-
 
 class NavMesh(Mesh):
     def __init__(self):
@@ -334,7 +341,10 @@ class NavMesh(Mesh):
         self.visited = [False] * len(self.nodes)
 
     def dist(self, a, b):
-        return np.linalg.norm(a.xy - b.xy)
+        if isinstance(a, Face) and isinstance(b, Face):
+            return np.linalg.norm(a.center - b.center)
+        else:
+            return np.linalg.norm(a.xy - b.xy)
 
     def find_path(self, start: Point, end: Point):
         fs = self.get_point_inside_face(start)
@@ -343,13 +353,10 @@ class NavMesh(Mesh):
         if fs is None or fe is None:
             return None
 
-        start.next = fs.nodes
-        end.next = fe.nodes
-        for n in fe.nodes:
-            n.next.append(end)
-        return [*self.find_path_graph(start, end)[0], start][::-1]
+        tripath = self.find_rough_path(fs, fe)[0]
+        return self.funnel_algorithm(tripath, start, end)
 
-    def find_path_graph(self, start: Point, end: Point):
+    def find_rough_path(self, start: Face, end: Face):
         open_set = {start}
         came_from = {}
         g_score = {start: 0}
@@ -366,9 +373,8 @@ class NavMesh(Mesh):
 
             open_set.remove(current)
             for neighbor in current.neighbors:
-                # if neighbor.type == 1:
                 if True:
-                    t_g_score = g_score[current] + 1
+                    t_g_score = g_score[current] + self.dist(current, neighbor)
                     if t_g_score < g_score.get(neighbor, float("inf")):
                         came_from[neighbor] = current
                         g_score[neighbor] = t_g_score
@@ -392,38 +398,88 @@ class NavMesh(Mesh):
         for i in range(3):
             j = (i + 1) % 3
             if (
-                np.cross(
-                    face.nodes[j].xy - face.nodes[i].xy, point.xy - face.nodes[i].xy
-                )
-                < 0
+                    np.cross(
+                        face.nodes[j].xy - face.nodes[i].xy, point.xy - face.nodes[i].xy
+                    )
+                    < 0
             ):
                 return False
         return True
 
-    def draw_path(self, path, c, s=60):
-        plt.plot([n.x for n in path], [n.y for n in path], c=c, lw=2)
-        plt.scatter(path[0].x, path[0].y, c=c, s=s)
-        plt.scatter(path[-1].x, path[-1].y, c=c, s=s)
+    def funnel_algorithm(self, tripath, start_point: Node, end_point:Node):
+        # portals = get_portals(rough_path, nav_mesh)  # Each portal is a shared edge
+        path = [start_point]
+        apex = start_point
 
-    def simplify_path(self, path):
-        i = 1
-        can_remove = False
-        while not can_remove:
-            while i < len(path) - 1:
-                prev = path[i - 1]
-                this = path[i]
-                next = path[i + 1]
-                can_remove = True
-                e0 = Edge(prev, next)
-                # for e1 in this.edges:
-                for e1 in self.blocked_edges:
-                    if intersection(e0, e1):
-                        can_remove = False
-                        break
-                if can_remove:
-                    path.remove(this)
-                else:
-                    i += 1
+        left_edge, right_edge = tripath[0].get_portal(tripath[1])
+
+        # for portal in portals[1:]:
+        for i in range(2, len(tripath)):
+            new_left, new_right = tripath[i].get_portal(tripath[i - 1])
+
+            # Narrow the funnel as needed to stay within the polygons
+            if self.is_outside(apex, left_edge, new_left):
+                path.append(left_edge)
+                apex = left_edge
+                left_edge = new_left
+            if self.is_outside(apex, right_edge, new_right):
+                path.append(right_edge)
+                apex = right_edge
+                right_edge = new_right
+
+        path.append(end_point)
+        return path
+
+    def is_outside(self, apex: Node, left: Node, right: Node):
+        return np.cross(left.xy - apex.xy, right.xy - apex.xy) < 0
+
+
+
+class Draw:
+    def __init__(self):
+        self.ax, self.fig = plt.subplots()
+
+    def draw_point(self, point, c="r", s=60):
+        plt.scatter(point.x, point.y, c=c, s=s)
+
+    def draw_linepath(self, path, c, s=60):
+        plt.plot([n.x for n in path], [n.y for n in path], c=c, lw=2)
+
+    def draw_tripath(self, tripath):
+        for f in tripath:
+            if f is None:
+                continue
+            plt.fill([n.x for n in f.nodes], [n.y for n in f.nodes], "b", alpha=0.2)
+
+    def draw_mesh(self, mesh: Mesh, title=None, show=True):
+        for f in mesh.faces:
+            if f is None:
+                continue
+
+            tri = [n.xy for n in f.nodes]
+            # c = np.ones(3) * f.gid
+            c = np.zeros(3)
+            # c[int(f.gid)] = 1
+            self.fig.add_patch(patches.Polygon(tri, color=c, alpha=0.1))
+
+        for e in mesh.edges:
+            if e is None:
+                continue
+            ori, to = e.origin, e.to
+            if e.is_wall:
+                self.fig.plot([ori.x, to.x], [ori.y, to.y], "k", lw=2)
+            # elif int(e.twin.gid) != int(e.gid):
+            #     ax.plot([ori.x, to.x], [ori.y, to.y], "b", lw=2)
+
+        if title:
+            self.fig.set_title(title)
+        plt.axis("equal")
+
+        if show:
+            plt.show()
+
+    def show(self):
+        plt.show()
 
 
 class PathUtils:
@@ -456,11 +512,13 @@ def main():
     # from time import time
 
     np.random.seed(0)
-    i_case = 5
+    i_case = 0
 
     nm = NavMesh()
-    nm.create(Cases.polygon(i_case), 0.4)
-    nm.draw(show=False)
+    nm.create(Cases.polygon(i_case), 0.2)
+
+    draw = Draw()
+    draw.draw_mesh(nm, show=False)
 
     # p1 = Point(np.array([0.9, 0.5]))
     # f1 = nm.get_point_inside_face(p1)
@@ -473,24 +531,25 @@ def main():
     # plt.scatter(p2.x, p2.y, c="b", s=100)
     # if f2:
     #     plt.fill([n.x for n in f2.nodes], [n.y for n in f2.nodes], "b", alpha=0.2)
-    # t
 
-    # for i in range(300):
+    # for i in range(30):
     #     p1 = Point(np.random.rand(2))
     #     p2 = Point(np.random.rand(2))
-
+    #
     #     path = nm.find_path(p1, p2)
     #     if path:
     #         nm.simplify_path(path)
     #         nm.draw_path(path, np.random.rand(3))
 
-    p1 = Point(np.array([0.87, 0.47]))
-    p2 = Point(np.array([0.2, 0.2]))
+    p1 = Point(np.array([0.9, 0.5]))
+    p2 = Point(np.array([0.1, 0.8]))
     path = nm.find_path(p1, p2)
-    nm.simplify_path(path)
-    nm.draw_path(path, "r")
+    # draw.draw_tripath(path)
+    draw.draw_point(p1, c="g", s=100)
+    draw.draw_point(p2, c="r", s=100)
+    draw.draw_linepath(path, "k", 2)
 
-    plt.show()
+    draw.show()
 
 
 if __name__ == "__main__":
