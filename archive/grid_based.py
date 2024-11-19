@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 from itertools import combinations
 import random
 import math
+from setuptools.command.alias import alias
+
+# np.random.seed(0)
 
 
 EXAMINE_DIRS8 = (
@@ -19,6 +22,8 @@ EXAMINE_DIRS8 = (
 )
 
 EXAMINE_DIRS4 = ((1, 0), (0, 1), (-1, 0), (0, -1))
+
+N_SAMPLES = 64
 
 
 def manhattan_dist(p1, p2):
@@ -76,11 +81,12 @@ def aStar(start, end):
 def gen_layout(xlim: int = 32, ylim: int = 32):
     # layout = np.random.choice([0, 1], (xlim, ylim), p=[0.3, 0.7])
     layout = np.ones((xlim, ylim), dtype=np.int8)
-    # layout[15, :] = 0
-    for i in range(xlim):
-        for j in range(ylim):
-            if abs(euclidian_dist([i, j], [8, 8]) - 17) < 0.5:
-                layout[i, j] = 0
+    layout[15, :] = 0
+
+    # for i in range(xlim):
+    #     for j in range(ylim):
+    #         if abs(euclidian_dist([i, j], [8, 8]) - 17) < 0.5:
+    #             layout[i, j] = 0
     return layout
 
 
@@ -167,11 +173,14 @@ class Pixel:
                 grid[row, col] = pixel.type
         return grid
 
+    @property
+    def pos(self):
+        return self.index
 
 class Agent:
     def __init__(self, agent: Pixel = None):
         self.agent = self.init_agent(agent) if agent else None
-        self.score = 1000
+        # self.score = 1000
 
     def init_agent(self, agent):
         agent.type = 1
@@ -181,18 +190,58 @@ class Agent:
         next = self.pick_from_candidates(self.agent.neighbors8)
         self.set_to(next)
 
-    def set_to(self, new_agent):
+    def set_to(self, new_agent: Pixel):
         self.agent.type = 0  # reset
         self.agent = new_agent
         self.agent.type = 1
 
-    def pick_from_candidates(self, candidates):
+    @staticmethod
+    def pick_from_candidates(candidates):
         random.shuffle(candidates)
         for c in candidates:
             if c.type != 0:
                 continue
             return c
         return None
+
+
+class Metropolis:
+    def __init__(self):
+        self.agent: Agent
+
+        self.agent = None
+        self.map = None
+
+    def metropolis_step(self, f=None, g=None):
+        if not g:
+            g = self.g
+        if not f:
+            f = self.f
+        x_proposed = g()
+        a = min(1.0, f(x_proposed) / f(self.agent.agent))
+        x_new = np.random.choice([x_proposed, self.agent.agent], p=[a, 1 - a])
+        # return x_new
+        self.agent.set_to(x_new)
+
+    def metropolis_iterate(self, num_steps, f=None, g=None):
+        for n in range(num_steps):
+            self.metropolis_step()
+
+    def g(self):
+        return Agent.pick_from_candidates(self.agent.agent.neighbors8)
+
+    def f(self, x: Pixel):
+        self.agent.set_to(x)
+        score_avg = 0
+        # for pairs in combinations(sp, 2):
+        for i in range(0, N_SAMPLES, 2):
+            s, e = self.map[i],  self.map[i + 1]
+            _, score = aStar(s, e)
+            score_avg += score
+        score_avg /= N_SAMPLES / 2
+        # return np.exp(-score_avg)
+        return score_avg
+
 
 
 # visualization
@@ -233,11 +282,12 @@ def optimize_single_step():
     pass
 
 
+
+
 def main():
     # settings
-    np.random.seed(0)
     xlim, ylim = 32, 32
-    n_samples = 64
+    # n_samples = 64
 
     layout = gen_layout(xlim, ylim)
     Pixel.from_grid(layout)
@@ -248,47 +298,54 @@ def main():
     p_grid = Pixel.pGrid
     blocked, walkable = separate_pixels(p_grid)
 
-    sp = gen_sample_points(walkable, n_samples)
+    sp = gen_sample_points(walkable, N_SAMPLES)
 
     # --------------------------------------------
     door = Agent(blocked[0])
 
-    # brutal force get accurate ans
-    # scores = []
-    # for b in blocked:
-    #     b.type = 1
+    optimizer = Metropolis()
+    optimizer.agent = door
+    optimizer.map = sp
+
+    optimizer.metropolis_iterate(100)
+    # --------------------------------------------
+
+    # # brutal force get accurate ans
+    # # scores = []
+    # # for b in blocked:
+    # #     b.type = 1
+    # #     score_avg = 0
+    # #     for i in range(0, n_samples, 2):
+    # #         s, e = sp[i], sp[i + 1]
+    # #         _, score = aStar(s, e)
+    # #         score_avg += score
+    # #     score_avg /= n_samples / 2
+    # #     scores.append(score_avg)
+    # #     b.type = 0
+    # # best_ans = blocked[np.argmin(scores)]
+    #
+    # # optimize method
+    # best_score = 1000000
+    # best_ans = door.agent
+    # for _ in range(25):
     #     score_avg = 0
-    #     for i in range(0, n_samples, 2):
+    #     # for pairs in combinations(sp, 2):
+    #     for i in range(0, N_SAMPLES, 2):
     #         s, e = sp[i], sp[i + 1]
     #         _, score = aStar(s, e)
     #         score_avg += score
-    #     score_avg /= n_samples / 2
-    #     scores.append(score_avg)
-    #     b.type = 0
-    # best_ans = blocked[np.argmin(scores)]
-
-    # optimize method
-    best_score = 1000000
-    best_ans = door.agent
-    for _ in range(100):
-        score_avg = 0
-        # for pairs in combinations(sp, 2):
-        for i in range(0, n_samples, 2):
-            s, e = sp[i], sp[i + 1]
-            _, score = aStar(s, e)
-            score_avg += score
-        score_avg /= n_samples / 2
-        if best_score > score_avg:
-            best_score = score_avg
-            best_ans = door.agent
-        door.step()
-
-    door.set_to(best_ans)
+    #     score_avg /= N_SAMPLES / 2
+    #     if best_score > score_avg:
+    #         best_score = score_avg
+    #         best_ans = door.agent
+    #     door.step()
+    #
+    # door.set_to(best_ans)
 
     # visualize
     grid = Pixel.to_grid()
     Visualize.draw_grid(grid)
-    for i in range(0, n_samples, 2):
+    for i in range(0, N_SAMPLES, 2):
         s, e = sp[i], sp[i + 1]
         path, _ = aStar(s, e)
         if path:
