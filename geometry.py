@@ -1,11 +1,20 @@
 import numpy as np
 import pygmsh
 
+class _GeoBase:
+    __guid = 0
 
-class Node:
+    def __init__(self):
+        self.guid = _GeoBase.__guid
+        _GeoBase.__guid += 1
+
+
+class Node(_GeoBase):
     __vid = 0
 
     def __init__(self, pos, idx=None):
+        super().__init__()
+
         self.idx = idx
         self.pos = pos
         self.next = []
@@ -37,6 +46,12 @@ class Node:
     def neighbors(self):
         return set(self.next + self.prev)
 
+    def __eq__(self, other: "Node"):
+        return self.vid == other.vid
+
+    def __sub__(self, other):
+        return self.xy - other.xy
+
     # def move(self, dx, dy) -> None:
     #     if self.border:
     #         return
@@ -58,8 +73,10 @@ class Node:
         self._xy = value
 
 
-class Edge:
+class Edge(_GeoBase):
     def __init__(self, origin, to):
+        super().__init__()
+
         # half edge with direction origin -> to
         self.origin = origin
         self.to = to
@@ -95,8 +112,10 @@ class Edge:
         return [e for e in edges if e.is_wall]
 
 
-class Face:
+class Face(_GeoBase):
     def __init__(self):
+        super().__init__()
+
         self.nodes = []
         self.gid = 0
         self.half_edges = []
@@ -151,7 +170,7 @@ class Face:
             xys = [n.xy for n in self.nodes]
             self.center = np.average(xys, axis=0)
 
-    def get_portal(self, other: "Face"):
+    def get_portal(self, other: "Face"):    # TODO: make sure nodes are clockwise
         for e in self.half_edges:
             if e.twin and e.twin.face == other:
                 return e.origin, e.to

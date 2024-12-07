@@ -1,13 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import heapq
 
 from geometry import Node, Point, Edge, Face, Mesh
+from pynavmesh_test import start
 
 
 class NavMesh(Mesh):
     def __init__(self):
         super().__init__()
-
         self.visited = [False] * len(self.nodes)
 
     def dist(self, a, b):
@@ -23,17 +24,17 @@ class NavMesh(Mesh):
     def find_rough_path(self, start: Point, end: Point):
         start = self.get_point_inside_face(start)
         end = self.get_point_inside_face(end)
-
         if start is None or end is None:
             return None
 
-        open_set = {start}
+        open_set = []
+        heapq.heappush(open_set, (0, start))  # Priority queue with (f_score, node)
         came_from = {}
         g_score = {start: 0}
         f_score = {start: self.dist(start, end)}
 
         while open_set:
-            current = min(open_set, key=lambda x: f_score[x])
+            current = heapq.heappop(open_set)[1]
             if current == end:
                 path = []
                 while current in came_from:
@@ -42,23 +43,19 @@ class NavMesh(Mesh):
                 path.append(start)
                 return path[::-1], f_score[end]
 
-            open_set.remove(current)
             for neighbor in current.neighbors:
-                if True:
-                    t_g_score = g_score[current] + self.dist(current, neighbor)
-                    if t_g_score < g_score.get(neighbor, float("inf")):
-                        came_from[neighbor] = current
-                        g_score[neighbor] = t_g_score
-                        f_score[neighbor] = t_g_score + self.dist(neighbor, end)
-                        if neighbor not in open_set:
-                            open_set.add(neighbor)
+                t_g_score = g_score[current] + self.dist(current, neighbor)
+                if t_g_score < g_score.get(neighbor, float("inf")):
+                    came_from[neighbor] = current
+                    g_score[neighbor] = t_g_score
+                    f_score[neighbor] = t_g_score + self.dist(neighbor, end)
+                    if neighbor not in [i[1] for i in open_set]:  # Avoid duplicate nodes
+                        heapq.heappush(open_set, (f_score[neighbor], neighbor))
         return None, float("inf")
 
     def get_point_inside_face(self, point):
         for f in self.faces:
-            if f is None:
-                continue
-            if f.flipped:
+            if f is None or f.flipped:
                 continue
             if self.point_in_face(point, f):
                 return f
@@ -68,46 +65,48 @@ class NavMesh(Mesh):
     def point_in_face(point, face):
         for i in range(3):
             j = (i + 1) % 3
-            if (
-                    np.cross(
-                        face.nodes[j].xy - face.nodes[i].xy, point.xy - face.nodes[i].xy
-                    )
-                    < 0
-            ):
+            if np.cross(face.nodes[j].xy - face.nodes[i].xy, point.xy - face.nodes[i].xy) < 0:
                 return False
         return True
 
-    def funnel_algorithm(self, tripath, start_point: Node, end_point: Node):
-        path = [start_point]
-        apex = start_point
+    def funnel_algorithm(self, tripath, start: Node, end: Node):
+        tail = []
+        left = []
+        right = []
+        tail.append(start)
+        new_left, new_right = tripath[0].get_portal(tripath[1])
+        left.append(new_left)
+        right.append(new_right)
 
-        left_edge, right_edge = tripath[0].get_portal(tripath[1])
+        for i in range(1, len(tripath)-1):
+            new_left, new_right = tripath[i].get_portal(tripath[i+1])
+            if new_left != left[-1]:
+                if MathUtils.triarea2(tail[-1], left[-1], new_left) >= 0:
+                    left[-1] = new_left     # on the right of left_node
+                else:
+                    left.append(new_left)   # on the left side
 
-        for i in range(2, len(tripath)):
-            new_left, new_right = tripath[i - 1].get_portal(tripath[i])
-            # plt.plot([new_left.x, new_right.x], [new_left.y, new_right.y], "r", lw=2)
-            plt.scatter(new_left.x, new_left.y, c="r", s=60)
-            plt.scatter(new_right.x, new_right.y, c="y", s=60)
-            if self.is_outside(apex, left_edge, new_left):
-                path.append(left_edge)
-                apex = left_edge
-                left_edge = new_left
-            if self.is_outside(apex, right_edge, new_right):
-                path.append(right_edge)
-                apex = right_edge
-                right_edge = new_right
+            if new_right != right[-1]:
+                if MathUtils.triarea2(tail[-1], right[-1], new_right) <= 0:
+                    right[-1] = new_right   # on the left of right_node
+                else:
+                    right.append(new_right) # on the right
 
-        path.append(end_point)
-        return path
+            # left.append(new_left)
+            # right.append(new_right)
+        return right
 
-    def is_outside(self, apex: Node, left: Node, right: Node):
-        return np.cross(left.xy - apex.xy, right.xy - apex.xy) <= 0
+class Detour:
+    pass
+
+class Recast:
+    pass
 
 
-
-# class PathUtils:
-#     def __init__(self):
-#         pass
+class MathUtils:
+    @staticmethod
+    def triarea2(o:Node, a:Node, b:Node):
+        return np.cross(a.xy - o.xy, b.xy - o.xy)
 #
 #
 # def intersection(l1: Line, l2: Line):
