@@ -23,6 +23,7 @@ class Node(_GeoBase):
         self.edges = []
         self.faces = []
         self.border = False
+
         self.vid = Node.__vid
         Node.__vid += 1
 
@@ -46,11 +47,18 @@ class Node(_GeoBase):
     def neighbors(self):
         return set(self.next + self.prev)
 
+    # @property
+    # def vid(self):
+    #     return self.__vid
+
     def __eq__(self, other: "Node"):
         return self.vid == other.vid
 
     def __sub__(self, other):
         return self.xy - other.xy
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     # def move(self, dx, dy) -> None:
     #     if self.border:

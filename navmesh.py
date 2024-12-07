@@ -2,8 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import heapq
 
+from torch.onnx.symbolic_opset9 import true_divide
+
 from geometry import Node, Point, Edge, Face, Mesh
-from pynavmesh_test import start
 
 
 class NavMesh(Mesh):
@@ -70,31 +71,42 @@ class NavMesh(Mesh):
         return True
 
     def funnel_algorithm(self, tripath, start: Node, end: Node):
-        tail = []
-        left = []
-        right = []
-        tail.append(start)
-        new_left, new_right = tripath[0].get_portal(tripath[1])
-        left.append(new_left)
-        right.append(new_right)
+        path = [start]
+        apex = start
+        left = start
+        right = start
 
-        for i in range(1, len(tripath)-1):
+        for i in range(len(tripath) - 1):
             new_left, new_right = tripath[i].get_portal(tripath[i+1])
-            if new_left != left[-1]:
-                if MathUtils.triarea2(tail[-1], left[-1], new_left) >= 0:
-                    left[-1] = new_left     # on the right of left_node
+            if MathUtils.is_counter_clockwise(apex, right, new_right, True):
+                if apex == right or MathUtils.is_clockwise(apex, left, new_right):
+                    right = new_right
                 else:
-                    left.append(new_left)   # on the left side
+                    path.append(left)
+                    apex = right = left
+                    continue
 
-            if new_right != right[-1]:
-                if MathUtils.triarea2(tail[-1], right[-1], new_right) <= 0:
-                    right[-1] = new_right   # on the left of right_node
+            if MathUtils.is_clockwise(apex, left, new_left, True):
+                if apex == left or MathUtils.is_counter_clockwise(apex, right, new_left):
+                    left = new_left
                 else:
-                    right.append(new_right) # on the right
+                    path.append(right)
+                    apex = left = right
+                    continue
 
-            # left.append(new_left)
-            # right.append(new_right)
-        return right
+        path.append(end)
+        return path
+
+
+    def update_funnel(self, apex, funnel_side, opposite_side, new_point, side):
+        if MathUtils.triarea2(apex, funnel_side, new_point) <= 0:
+            if (apex == funnel_side
+                    or MathUtils.triarea2(apex, opposite_side, new_point) > 0):
+                funnel_side = new_point
+
+            else:
+                return True
+        return False
 
 class Detour:
     pass
@@ -105,8 +117,21 @@ class Recast:
 
 class MathUtils:
     @staticmethod
-    def triarea2(o:Node, a:Node, b:Node):
-        return np.cross(a.xy - o.xy, b.xy - o.xy)
+    def triarea2(a, b, c):
+        # return (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)
+        return np.cross(b.xy - a.xy, c.xy - a.xy)
+
+    @staticmethod
+    def is_clockwise(a, b, c, can_be_collinear=False):
+        if can_be_collinear:
+            return MathUtils.triarea2(a, b, c) >= 0
+        return MathUtils.triarea2(a, b, c) > 0
+
+    @staticmethod
+    def is_counter_clockwise(a, b, c, can_be_collinear=False):
+        if can_be_collinear:
+            return MathUtils.triarea2(a, b, c) <= 0
+        return MathUtils.triarea2(a, b, c) > 0
 #
 #
 # def intersection(l1: Line, l2: Line):
