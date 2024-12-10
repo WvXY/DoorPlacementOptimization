@@ -1,72 +1,43 @@
-import numpy as np
-import matplotlib.pyplot as plt
 import heapq
 
-from torch.onnx.symbolic_opset9 import true_divide
+import numpy as np
 
-from geometry import Node, Point, Edge, Face, Mesh
+from geometry import Node, Point, Face, Mesh
+from path_finding import a_star
 
 
 class NavMesh(Mesh):
     def __init__(self):
         super().__init__()
-        self.visited = [False] * len(self.nodes)
+        # self.visited = [False] * len(self.nodes)
 
-    def dist(self, a, b):
-        if isinstance(a, Face) and isinstance(b, Face):
-            return np.linalg.norm(a.center - b.center)
-        else:
-            return np.linalg.norm(a.xy - b.xy)
-
-    def find_path(self, start: Point, end: Point):
-        tripath = self.find_rough_path(start, end)[0]
-        return self.funnel_algorithm(tripath, start, end)
-
-    def find_rough_path(self, start: Point, end: Point):
+    def find_tripath(self, start: Point, end: Point, dist_func=None):
         start = self.get_point_inside_face(start)
         end = self.get_point_inside_face(end)
-        if start is None or end is None:
-            return None
+        return a_star(start, end, dist_func)[0]
 
-        open_set = []
-        heapq.heappush(open_set, (0, start))  # Priority queue with (f_score, node)
-        came_from = {}
-        g_score = {start: 0}
-        f_score = {start: self.dist(start, end)}
-
-        while open_set:
-            current = heapq.heappop(open_set)[1]
-            if current == end:
-                path = []
-                while current in came_from:
-                    path.append(current)
-                    current = came_from[current]
-                path.append(start)
-                return path[::-1], f_score[end]
-
-            for neighbor in current.neighbors:
-                t_g_score = g_score[current] + self.dist(current, neighbor)
-                if t_g_score < g_score.get(neighbor, float("inf")):
-                    came_from[neighbor] = current
-                    g_score[neighbor] = t_g_score
-                    f_score[neighbor] = t_g_score + self.dist(neighbor, end)
-                    if neighbor not in [i[1] for i in open_set]:  # Avoid duplicate nodes
-                        heapq.heappush(open_set, (f_score[neighbor], neighbor))
-        return None, float("inf")
+    def simplify(self, tripath, start:Point, end:Point):
+        return self.funnel_algorithm(tripath, start, end)
 
     def get_point_inside_face(self, point):
         for f in self.faces:
             if f is None or f.flipped:
                 continue
-            if self.point_in_face(point, f):
+            if self.is_inside_face(point, f):
                 return f
         return None
 
     @staticmethod
-    def point_in_face(point, face):
+    def is_inside_face(point:Point, face:Face):
         for i in range(3):
             j = (i + 1) % 3
-            if np.cross(face.nodes[j].xy - face.nodes[i].xy, point.xy - face.nodes[i].xy) < 0:
+            if (
+                np.cross(
+                    face.nodes[j].xy - face.nodes[i].xy,
+                    point.xy - face.nodes[i].xy,
+                )
+                < 0
+            ):
                 return False
         return True
 
@@ -80,9 +51,12 @@ class NavMesh(Mesh):
         i = 0
         # for i in range(len(tripath) - 1):
         while i < len(tripath) - 1:
-            new_left, new_right = tripath[i+1].get_portal(tripath[i])
+            new_left, new_right = tripath[i + 1].get_portal(tripath[i])
+            i += 1
             if MathUtils.is_counter_clockwise(apex, right, new_right, True):
-                if apex == right or MathUtils.is_clockwise(apex, left, new_right):
+                if apex == right or MathUtils.is_clockwise(
+                    apex, left, new_right
+                ):
                     right = new_right
                 else:
                     path.append(left)
@@ -90,7 +64,9 @@ class NavMesh(Mesh):
                     continue
 
             if MathUtils.is_clockwise(apex, left, new_left, True):
-                if apex == left or MathUtils.is_counter_clockwise(apex, right, new_left):
+                if apex == left or MathUtils.is_counter_clockwise(
+                    apex, right, new_left
+                ):
                     left = new_left
                 else:
                     path.append(right)
@@ -99,6 +75,7 @@ class NavMesh(Mesh):
 
         path.append(end)
         return path
+
 
 class MathUtils:
     @staticmethod
@@ -117,6 +94,8 @@ class MathUtils:
         if can_be_collinear:
             return MathUtils.triarea2(a, b, c) <= 0
         return MathUtils.triarea2(a, b, c) > 0
+
+
 #
 #
 # def intersection(l1: Line, l2: Line):
