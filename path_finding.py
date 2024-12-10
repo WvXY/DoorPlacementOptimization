@@ -8,6 +8,7 @@ from geometry import Point
 def euclidean_distance(a, b):
     return np.linalg.norm(a.xy - b.xy)
 
+
 def a_star(
     start: Point,
     end: Point,

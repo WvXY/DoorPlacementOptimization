@@ -16,7 +16,7 @@ class NavMesh(Mesh):
         end = self.get_point_inside_face(end)
         return a_star(start, end, dist_func)[0]
 
-    def simplify(self, tripath, start:Point, end:Point):
+    def simplify(self, tripath, start: Point, end: Point):
         return self.funnel_algorithm(tripath, start, end)
 
     def get_point_inside_face(self, point):
@@ -28,7 +28,7 @@ class NavMesh(Mesh):
         return None
 
     @staticmethod
-    def is_inside_face(point:Point, face:Face):
+    def is_inside_face(point: Point, face: Face):
         for i in range(3):
             j = (i + 1) % 3
             if (
