@@ -1,4 +1,4 @@
-import heapq
+from copy import deepcopy
 
 import numpy as np
 
@@ -41,38 +41,91 @@ class NavMesh(Mesh):
                 return False
         return True
 
+    def get_portals(self, tripath):
+        portals = []
+        for i in range(len(tripath) - 1):
+            left, right = tripath[i + 1].get_shared_edge(tripath[i])
+            if left is None or right is None:
+                print("Error: portal is None")
+            portals.append(left)
+            portals.append(right)
+        return portals
+
     def funnel_algorithm(self, tripath, start: Node, end: Node):
-        path = [start]
-        apex = start
-        left = start
-        right = start
-        iapex = 0
+        portal_apex = start
+        portal_left = start
+        portal_right = start
+        path = [portal_apex]
+        portal_apex_index = 0
+        portal_left_index = 0
+        portal_right_index = 0
+        npoints = 1
+
+        portals = self.get_portals(tripath)
+
+        max_points = len(portals)
 
         i = 0
-        # for i in range(len(tripath) - 1):
-        while i < len(tripath) - 1:
-            new_left, new_right = tripath[i + 1].get_portal(tripath[i])
+        while i < max_points // 2 and npoints < max_points:
+            left = portals[i * 2]
+            right = portals[i * 2 + 1]
+            # print(
+            #     f"portal_left: {portal_left_index}, "
+            #     f"portal_right: {portal_right_index}, "
+            #     f"portal_apex: {portal_apex_index}"
+            # )
+            print(
+                "triarea l", MathUtils.triarea2(portal_apex, portal_left, left)
+            )
+            print(
+                "triarea r",
+                MathUtils.triarea2(portal_apex, portal_right, right),
+            )
+            print(portal_apex.x, portal_apex.y)
+
+            if MathUtils.triarea2(portal_apex, portal_right, right) <= 0:
+                if (
+                    portal_apex == portal_right
+                    or MathUtils.triarea2(portal_apex, portal_left, right) > 0
+                ):
+                    portal_right = right
+                    portal_right_index = i
+                else:
+                    path.append(portal_left)
+                    npoints += 1
+
+                    portal_apex = portal_left
+                    portal_apex_index = portal_left_index
+
+                    portal_left = portal_apex
+                    portal_right = portal_apex
+                    portal_left_index = portal_apex_index
+                    portal_right_index = portal_apex_index
+                    i = portal_apex_index + 1
+                    continue
+
+            if MathUtils.triarea2(portal_apex, portal_left, left) >= 0:
+                if (
+                    portal_apex == portal_left
+                    or MathUtils.triarea2(portal_apex, portal_right, left) < 0
+                ):
+                    portal_left = left
+                    portal_left_index = i
+                    print(f"portal_left_index: {portal_left_index}")
+                else:
+                    path.append(portal_right)
+                    npoints += 1
+
+                    portal_apex = portal_right
+                    portal_apex_index = portal_right_index
+                    portal_left = portal_right = portal_apex
+                    portal_left_index = portal_right_index = portal_apex_index
+                    i = portal_apex_index + 1
+                    continue
+
             i += 1
-            if MathUtils.is_counter_clockwise(apex, right, new_right, True):
-                if apex == right or MathUtils.is_clockwise(
-                    apex, left, new_right
-                ):
-                    right = new_right
-                else:
-                    path.append(left)
-                    apex = right = left
-                    continue
 
-            if MathUtils.is_clockwise(apex, left, new_left, True):
-                if apex == left or MathUtils.is_counter_clockwise(
-                    apex, right, new_left
-                ):
-                    left = new_left
-                else:
-                    path.append(right)
-                    apex = left = right
-                    continue
-
+        # Append the end point
         path.append(end)
         return path
 
@@ -80,8 +133,8 @@ class NavMesh(Mesh):
 class MathUtils:
     @staticmethod
     def triarea2(a, b, c):
-        return (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)
-        # return np.cross(b.xy - a.xy, c.xy - a.xy)
+        # return (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)
+        return np.cross((b.xy - a.xy) * 100.0, (c.xy - a.xy) * 100.0)
 
     @staticmethod
     def is_clockwise(a, b, c, can_be_collinear=False):
@@ -93,7 +146,7 @@ class MathUtils:
     def is_counter_clockwise(a, b, c, can_be_collinear=False):
         if can_be_collinear:
             return MathUtils.triarea2(a, b, c) <= 0
-        return MathUtils.triarea2(a, b, c) > 0
+        return MathUtils.triarea2(a, b, c) < 0
 
 
 #

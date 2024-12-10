@@ -8,7 +8,7 @@ from loader import Loader
 
 from geometry import _GeoBase
 
-should_draw = False
+should_draw = True
 
 
 class NavmeshTest(unittest.TestCase):
@@ -40,6 +40,7 @@ class NavmeshTest(unittest.TestCase):
 
         expected_res = [286, 26, 6, 287]
         observed_res = [p.guid for p in path]
+        print(len(tripath))
         self.assertEqual(expected_res, observed_res)
 
     def test_simple_path(self):

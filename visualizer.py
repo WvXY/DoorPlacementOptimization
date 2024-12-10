@@ -21,7 +21,9 @@ class Visualizer:
             if f is None:
                 continue
 
-            plt.fill([n.x for n in f.nodes], [n.y for n in f.nodes], "y", alpha=0.3)
+            plt.fill(
+                [n.x for n in f.nodes], [n.y for n in f.nodes], "y", alpha=0.3
+            )
 
     def draw_mesh(self, mesh: "Mesh", title=None, show=True):
         for f in mesh.faces:
@@ -47,8 +49,14 @@ class Visualizer:
             if v is None:
                 continue
             plt.scatter(v.x, v.y, c="k", s=10)
-            plt.text(v.x, v.y, str(v.guid), fontsize=12, horizontalalignment='right',
-                     verticalalignment='top')
+            plt.text(
+                v.x,
+                v.y,
+                str(v.guid),
+                fontsize=12,
+                horizontalalignment="right",
+                verticalalignment="top",
+            )
 
         if title:
             self.fig.set_title(title)

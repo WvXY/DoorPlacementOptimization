@@ -2,6 +2,9 @@ import numpy as np
 
 
 class Loader:
+    def __init__(self, root_dir=None):
+        self.__root_dir = root_dir
+
     def get_case(self, idx):
         return {
             0: np.array(
@@ -34,10 +37,13 @@ class Loader:
                 ],
                 dtype=np.float32,
             ),
-            3: self.load_obj("assets/test_room3.obj"),
-            4: self.load_obj("assets/test_room4.obj"),
-            5: self.load_obj("assets/test_room5.obj"),
+            3: self.load_obj("/assets/test_room3.obj"),
+            4: self.load_obj("/assets/test_room4.obj"),
+            5: self.load_obj("/assets/test_room5.obj"),
         }[idx]
+
+    def set_root_dir(self, root_dir):
+        self.__root_dir = root_dir
 
     def load_obj(self, file_path):
         normalize = lambda x: (x - np.min(x)) / (np.max(x) - np.min(x))
@@ -56,7 +62,7 @@ class Loader:
                     f.write(" ".join(new_line) + "\n")
 
     def read_obj(self, obj_file):
-        with open(obj_file, "r") as f:
+        with open(self.__root_dir + obj_file, "r") as f:
             lines = f.readlines()
         vertices = []
         faces = []

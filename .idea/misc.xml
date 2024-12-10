@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Black">
-    <option name="sdkName" value="C:\Users\xy-wu\miniconda3" />
+    <option name="cmdArguments" value="--line-length=80 --preview" />
+    <option name="enabledOnReformat" value="true" />
+    <option name="enabledOnSave" value="true" />
+    <option name="sdkName" value="mpenv" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="FPR" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="mpenv" project-jdk-type="Python SDK" />
 </project>

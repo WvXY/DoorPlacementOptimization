@@ -1,12 +1,17 @@
 import numpy as np
 import pygmsh
 
+
 class _GeoBase:
     __guid = 0
 
     def __init__(self):
         self.guid = _GeoBase.__guid
         _GeoBase.__guid += 1
+
+    @staticmethod
+    def reset_guid():
+        _GeoBase.__guid = 0
 
 
 class Node(_GeoBase):
@@ -52,7 +57,8 @@ class Node(_GeoBase):
     #     return self.__vid
 
     def __eq__(self, other: "Node"):
-        return self.vid == other.vid
+        # return self.vid == other.vid
+        return np.allclose(self.xy, other.xy)
 
     def __sub__(self, other):
         return self.xy - other.xy
@@ -69,6 +75,9 @@ class Node(_GeoBase):
     #         if f.flipped:
     #             self.xy = xy_old
     #             return
+
+    def is_same_id(self, other):
+        return self.vid == other.vid
 
     def remove_duplicate(self):
         self.next = set(self.next)
@@ -136,7 +145,8 @@ class Face(_GeoBase):
         for i in range(3):
             j = (i + 1) % 3
             area += (
-                    self.nodes[i].x * self.nodes[j].y - self.nodes[j].x * self.nodes[i].y
+                self.nodes[i].x * self.nodes[j].y
+                - self.nodes[j].x * self.nodes[i].y
             )
         return area / 2
 
@@ -178,7 +188,9 @@ class Face(_GeoBase):
             xys = [n.xy for n in self.nodes]
             self.center = np.average(xys, axis=0)
 
-    def get_portal(self, other: "Face"):    # TODO: make sure nodes are clockwise
+    def get_shared_edge(
+        self, other: "Face"
+    ):  # TODO: make sure nodes are clockwise
         for e in self.half_edges:
             if e.twin and e.twin.face == other:
                 return e.origin, e.to

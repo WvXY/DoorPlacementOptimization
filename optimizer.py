@@ -1,9 +1,17 @@
 import numpy as np
 
 
+class OptiAgent:
+    def __init__(self):
+        self.obj = None
+
+    def step(self):
+        pass
+
+
 class Optimizer:
     def __init__(self):
-        self.agent: "Agent"
+        self.agent: OptiAgent
 
         self.agent = None
         self.map = None
@@ -31,18 +39,3 @@ class Optimizer:
     def metropolis_iterate(self, num_steps, f=None, g=None):
         for n in range(num_steps):
             self.metropolis_step()
-
-    # def g(self):
-    #     return Agent.pick_from_candidates(self.agent.agent.neighbors8)
-
-    # def f(self, x: Pixel):
-    #     self.agent.set_to(x)
-    #     score_avg = 0
-    #     # for pairs in combinations(sp, 2):
-    #     for i in range(0, N_SAMPLES, 2):
-    #         s, e = self.map[i],  self.map[i + 1]
-    #         _, score = aStar(s, e)
-    #         score_avg += score
-    #     score_avg /= N_SAMPLES / 2
-    #     # return np.exp(-score_avg)
-    #     return score_avg
