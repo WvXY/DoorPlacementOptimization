@@ -8,11 +8,11 @@ from loader import Loader
 # from optimizer import Optimizer
 
 np.random.seed(0)
-i_case = 0
+i_case = 5
 
 nm = NavMesh()
 ld = Loader()
-nm.create(ld.get_case(i_case), 0.3)
+nm.create(ld.get_case(i_case), 0.8)
 
 vis = Visualizer()
 vis.draw_mesh(nm, show=False)
@@ -39,7 +39,7 @@ vis.draw_mesh(nm, show=False)
 #         nm.simplify_path(path)
 #         nm.draw_path(path, np.random.rand(3))
 
-start = Point(np.array([0.4, 1.0]))
+start = Point(np.array([0.2, 0.2]))
 end = Point(np.array([0.9, 0.6]))
 tripath = nm.find_rough_path(start, end)[0]
 vis.draw_tripath(tripath)
