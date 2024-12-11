@@ -7,14 +7,14 @@ class Visualizer:
     def __init__(self):
         self.ax, self.fig = plt.subplots()
 
-    def draw_point(self, point, c="r", s=60):
-        plt.scatter(point.x, point.y, c=c, s=s)
+    def draw_point(self, point, c="r", s=60, m="o"):
+        plt.scatter(point.x, point.y, c=c, s=s, marker=m)
 
     def draw_linepath(self, path, c, s=60):
-        # if isinstance(path[0], list or tuple or np.ndarray):
-        plt.plot([n.x for n in path], [n.y for n in path], c=c, lw=2)
-        # else:
-        #     plt.plot([n[0] for n in path], [n[1] for n in path], c=c, lw=2)
+        if isinstance(path[0], np.ndarray):
+            plt.plot([n[0] for n in path], [n[1] for n in path], c=c, lw=2)
+        else:
+            plt.plot([n.x for n in path], [n.y for n in path], c=c, lw=2)
 
     def draw_tripath(self, tripath):
         for f in tripath:

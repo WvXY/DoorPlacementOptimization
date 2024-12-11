@@ -52,16 +52,20 @@ class Node(_GeoBase):
     def neighbors(self):
         return set(self.next + self.prev)
 
+    @property
+    def dim(self):
+        return len(self.pos)
+
     # @property
     # def vid(self):
     #     return self.__vid
 
     def __eq__(self, other: "Node"):
-        # return self.vid == other.vid
-        return np.allclose(self.xy, other.xy)
+        return self.vid == other.vid
+        # return np.allclose(self.xy, other.xy)
 
     def __sub__(self, other):
-        return self.xy - other.xy
+        return self.pos - other.pos
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -170,6 +174,12 @@ class Face(_GeoBase):
     def y(self):
         return self.center[1]
 
+    def __gt__(self, other):
+        return self.gid > other.gid
+
+    def __lt__(self, other):
+        return self.gid < other.gid
+
     def set_adj_faces(self):
         self.adj_faces = []
         for e in self.half_edges:
@@ -188,9 +198,7 @@ class Face(_GeoBase):
             xys = [n.xy for n in self.nodes]
             self.center = np.average(xys, axis=0)
 
-    def get_shared_edge(
-        self, other: "Face"
-    ):  # TODO: make sure nodes are clockwise
+    def get_shared_edge(self, other: "Face"):
         for e in self.half_edges:
             if e.twin and e.twin.face == other:
                 return e.origin, e.to

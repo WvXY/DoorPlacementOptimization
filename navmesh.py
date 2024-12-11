@@ -13,7 +13,8 @@ class NavMesh(Mesh):
     def find_tripath(self, start: Point, end: Point, dist_func=None):
         start = self.get_point_inside_face(start)
         end = self.get_point_inside_face(end)
-        return a_star(start, end, dist_func)[0]
+        path = a_star(start, end, dist_func)[0]
+        return path
 
     def simplify(self, tripath, start: Point, end: Point):
         return self.funnel_algorithm(tripath, start, end)
@@ -52,7 +53,7 @@ class NavMesh(Mesh):
 
     def funnel_algorithm(self, tripath, start: Node, end: Node):
         raw_portals = self.get_portals(tripath)
-        portals = [(start, start)] + raw_portals + [(end, end)]
+        portals = raw_portals + [(end, end)]
 
         path = [start]
         apex = left = right = start

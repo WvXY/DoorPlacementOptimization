@@ -15,7 +15,7 @@ def a_star(
     dist_func=None,
 ):
     if start is None or end is None:
-        return None
+        return None, float("inf")
 
     if dist_func is None:
         dist_func = euclidean_distance
