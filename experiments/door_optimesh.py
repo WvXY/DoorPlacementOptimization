@@ -5,10 +5,13 @@ from geometry import Point
 from visualizer import Visualizer
 from navmesh import NavMesh
 from loader import Loader
+from debug_log import DbgLogger
 
 from geometry import _GeoBase
 
 should_draw = True
+
+logger = DbgLogger()
 
 
 class NavmeshTest(unittest.TestCase):
@@ -20,6 +23,7 @@ class NavmeshTest(unittest.TestCase):
 
     def test_complicated_path(self):
         self.reset()
+        logger.info("------------test_complicated_path--------------")
 
         i_case = 5
         nm = NavMesh()
@@ -40,11 +44,13 @@ class NavmeshTest(unittest.TestCase):
 
         expected_res = [286, 26, 6, 287]
         observed_res = [p.guid for p in path]
-        print(len(tripath))
+        logger.debug(f"observed_res: {observed_res}")
+        logger.debug(f"expected_res: {expected_res}")
         self.assertEqual(expected_res, observed_res)
 
     def test_simple_path(self):
         self.reset()
+        logger.info("------------test_simple_path------------")
 
         i_case = 0
         nm = NavMesh()
@@ -65,6 +71,8 @@ class NavmeshTest(unittest.TestCase):
 
         expected_res = [59, 3, 60]
         observed_res = [p.guid for p in path]
+        logger.debug(f"observed_res: {observed_res}")
+        logger.debug(f"expected_res: {expected_res}")
         self.assertEqual(expected_res, observed_res)
 
 
