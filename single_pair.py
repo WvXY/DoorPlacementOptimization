@@ -17,7 +17,7 @@ ld = Loader(".")
 ld.load_w_walls_case(case_id)
 
 nm = NavMesh()
-nm.create(ld.vertices, ld.indices, 0)
+nm.create(ld.vertices, ld.edges, 0)
 vis = Visualizer()
 vis.draw_mesh(nm, show=False)
 
@@ -37,6 +37,6 @@ path = nm.simplify(tripath, start, end)
 vis.draw_tripath(tripath)
 vis.draw_point(start, c="g", s=40, m="s")
 vis.draw_point(end, c="r", s=40)
-vis.draw_linepath(path, c="k", lw=10, a=0.1)
+vis.draw_linepath(path, c="k", lw=10, a=0.3)
 
 vis.show(f"Result")

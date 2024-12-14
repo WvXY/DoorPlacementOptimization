@@ -27,7 +27,7 @@ ld = Loader(".")
 ld.load_w_walls_case(case_id)
 
 nm = NavMesh()
-nm.create(ld.vertices, ld.indices, 0)
+nm.create(ld.vertices, ld.edges, 0)
 vis = Visualizer()
 vis.draw_mesh(nm, show=False)
 
