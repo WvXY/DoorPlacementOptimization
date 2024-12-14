@@ -1,6 +1,5 @@
 import numpy as np
 
-from debug_log import DbgLogger
 from geometry import Node, Point, Face, Mesh
 from path_finding import a_star
 

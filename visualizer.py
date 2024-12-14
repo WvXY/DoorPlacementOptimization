@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib import patches
 import numpy as np
+from scipy.stats import alpha
 
 
 class Visualizer:
@@ -8,16 +9,20 @@ class Visualizer:
         self.ax, self.fig = plt.subplots()
 
     def draw_point(self, point, c="r", s=60, m="o"):
-        plt.scatter(point.x, point.y, c=c, s=s, marker=m)
+        self.fig.scatter(point.x, point.y, c=c, s=s, marker=m)
 
-    def draw_linepath(self, path, c, s=60):
+    def draw_linepath(self, path, c, s=60, a=1, lw=2):
         if path is None:
             return
 
         if isinstance(path[0], np.ndarray):
-            plt.plot([n[0] for n in path], [n[1] for n in path], c=c, lw=2)
+            self.fig.plot(
+                [n[0] for n in path], [n[1] for n in path], c=c, lw=lw, alpha=a
+            )
         else:
-            plt.plot([n.x for n in path], [n.y for n in path], c=c, lw=2)
+            self.fig.plot(
+                [n.x for n in path], [n.y for n in path], c=c, lw=lw, alpha=a
+            )
 
     def draw_tripath(self, tripath):
         if tripath is None:
@@ -25,7 +30,7 @@ class Visualizer:
 
         for f in tripath:
             if f:
-                plt.fill(
+                self.fig.fill(
                     [n.x for n in f.nodes],
                     [n.y for n in f.nodes],
                     "y",
