@@ -6,6 +6,8 @@ import numpy as np
 import PythonCDT as cdt
 import matplotlib.pyplot as plt
 
+from loader import Loader
+
 # t = cdt.Triangulation(
 #     cdt.VertexInsertionOrder.AS_PROVIDED,
 #     cdt.IntersectingConstraintEdges.NOT_ALLOWED,
@@ -17,7 +19,6 @@ import matplotlib.pyplot as plt
 # t.insert_edges(ee)
 # t.erase_super_triangle()
 
-
 #  Test resolving fixed edge intersections
 t = cdt.Triangulation(
     cdt.VertexInsertionOrder.AS_PROVIDED,
@@ -25,31 +26,37 @@ t = cdt.Triangulation(
     0.0,
 )
 
-vv = [cdt.V2d(-1, 0), cdt.V2d(0, 0.5), cdt.V2d(1, 0), cdt.V2d(0, -0.5)]
-vv2 = [cdt.V2d(0, 0), cdt.V2d(0.1, 0), cdt.V2d(0.1, 0.1)]
+# ==============================================================================
+# load vertices using Loader
+ld = Loader(".")
+# ld.load_wo_wall_case(4)
+ld.load_w_walls_case(0)
 
-ee = [
-    # cdt.Edge(0, 2),
-    # cdt.Edge(1, 3),
-    cdt.Edge(0, 1),
-    cdt.Edge(1, 2),
-    cdt.Edge(2, 3),
-    cdt.Edge(3, 0),
-]
-ee2 = [cdt.Edge(5, 4), cdt.Edge(6, 5)]
+print(ld.vertices)
+
+vv = [cdt.V2d(*v) for v in ld.vertices]
+if ld.indices is not None:
+    ee = [cdt.Edge(e[0], e[1]) for e in ld.indices]
+else:
+    ee = [cdt.Edge(i, i + 1) for i in range(len(vv) - 1)]
+    ee.append(cdt.Edge(len(vv) - 1, 0))
+
+print(ee)
+print(vv)
+
+# ==============================================================================
 
 t.insert_vertices(vv)
-t.insert_vertices(vv2)
 t.insert_edges(ee)
-t.insert_edges(ee2)
-t.erase_super_triangle()
-# t.erase_outer_triangles_and_holes()
 
-print(t.triangles)
-print(t.vertices)
-print(t.fixed_edges)
+# t.erase_super_triangle()
+t.erase_outer_triangles_and_holes()
 
-# visualize
+# print(t.triangles)
+# print(t.vertices)
+# print(t.fixed_edges)
+
+# ===============visualize================
 plt.figure()
 
 # plot vv
@@ -62,7 +69,18 @@ for tri in t.triangles:
     v2 = t.vertices[tri.vertices[2]]
     plt.plot([v0.x, v1.x, v2.x, v0.x], [v0.y, v1.y, v2.y, v0.y], "k-")
 
-for v in t.vertices:
-    plt.plot(v.x, v.y, "ro")
+# for v in t.vertices:
+#     plt.plot(v.x, v.y, "ro")
 
+# for e in t.fixed_edges:
+#     v1 = t.vertices[e.v1]
+#     v2 = t.vertices[e.v2]
+#     plt.plot([v1.x, v2.x], [v1.y, v2.y], lw=6, c="k")
+
+for e in ld.indices:
+    v1 = ld.vertices[e[0]]
+    v2 = ld.vertices[e[1]]
+    plt.plot([v1[0], v2[0]], [v1[1], v2[1]], lw=4, c="k")
+
+plt.axis("equal")
 plt.show()
