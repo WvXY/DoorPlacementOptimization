@@ -94,10 +94,6 @@ class DbgLogger:  # or DbgLogger(metaclass=SingletonMeta)
             cls.instance = super().__new__(cls)
         return cls.instance
 
-    def __del__(self):
-        print(f"Log file saved at {self.logger.handlers[0].baseFilename}")
-        del self.logger.handlers[0]
-
 
 if __name__ == "__main__":
     logger = DbgLogger()

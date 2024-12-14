@@ -8,7 +8,6 @@ from path_finding import a_star
 class NavMesh(Mesh):
     def __init__(self):
         super().__init__()
-        # self.visited = [False] * len(self.nodes)
 
     def find_tripath(self, start: Point, end: Point, dist_func=None):
         start = self.get_point_inside_face(start)
@@ -17,6 +16,8 @@ class NavMesh(Mesh):
         return path
 
     def simplify(self, tripath, start: Point, end: Point):
+        if tripath is None:
+            return None
         return self.funnel_algorithm(tripath, start, end)
 
     def get_point_inside_face(self, point):
@@ -44,7 +45,8 @@ class NavMesh(Mesh):
     def get_portals(self, tripath):
         portals = []
         for i in range(len(tripath) - 1):
-            left, right = tripath[i].get_shared_edge(tripath[i + 1])
+            e = tripath[i].get_shared_edge(tripath[i + 1])
+            left, right = e.origin, e.to
             if left is None or right is None:
                 print("Error: portal is None")
                 continue

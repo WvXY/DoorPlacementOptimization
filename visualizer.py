@@ -11,19 +11,26 @@ class Visualizer:
         plt.scatter(point.x, point.y, c=c, s=s, marker=m)
 
     def draw_linepath(self, path, c, s=60):
+        if path is None:
+            return
+
         if isinstance(path[0], np.ndarray):
             plt.plot([n[0] for n in path], [n[1] for n in path], c=c, lw=2)
         else:
             plt.plot([n.x for n in path], [n.y for n in path], c=c, lw=2)
 
     def draw_tripath(self, tripath):
-        for f in tripath:
-            if f is None:
-                continue
+        if tripath is None:
+            return
 
-            plt.fill(
-                [n.x for n in f.nodes], [n.y for n in f.nodes], "y", alpha=0.3
-            )
+        for f in tripath:
+            if f:
+                plt.fill(
+                    [n.x for n in f.nodes],
+                    [n.y for n in f.nodes],
+                    "y",
+                    alpha=0.3,
+                )
 
     def draw_mesh(self, mesh: "Mesh", title=None, show=True):
         for f in mesh.faces:
@@ -31,19 +38,11 @@ class Visualizer:
                 continue
 
             tri = [n.xy for n in f.nodes]
-            # c = np.ones(3) * f.gid
-            # c = np.zeros(3)
-            # c[int(f.gid)] = 1
             self.fig.add_patch(patches.Polygon(tri, color="k", alpha=0.1))
 
-        for e in mesh.edges:
-            if e is None:
-                continue
-            ori, to = e.origin, e.to
-            if e.is_wall:
-                self.fig.plot([ori.x, to.x], [ori.y, to.y], "k", lw=2)
-            # elif int(e.twin.gid) != int(e.gid):
-            #     ax.plot([ori.x, to.x], [ori.y, to.y], "b", lw=2)
+        for fe in mesh.fixed_edges:
+            ori, to = fe.origin, fe.to
+            self.fig.plot([ori.x, to.x], [ori.y, to.y], "k", lw=2)
 
         for v in mesh.vertices:
             if v is None:

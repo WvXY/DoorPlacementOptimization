@@ -1,5 +1,6 @@
 import numpy as np
-import pygmsh
+
+from cdt import CDT
 
 
 class _GeoBase:
@@ -106,15 +107,7 @@ class Edge(_GeoBase):
         self.next = None
         self.prev = None
 
-        self.is_wall = False
-
-    @property
-    def outside(self):
-        return not self.twin
-
-    @property
-    def gid(self):
-        return self.face.gid
+        self.is_blocked = False
 
     def dir(self):
         return (self.to.xy - self.origin.xy) / self.length()
@@ -130,7 +123,24 @@ class Edge(_GeoBase):
 
     @staticmethod
     def get_all_blocked(edges: list):
-        return [e for e in edges if e.is_wall]
+        """deprecating, use blocked_edges instead"""
+        return [e for e in edges if e.is_blocked]
+
+    @property
+    def outside(self):
+        return not self.twin
+
+    @property
+    def gid(self):
+        return self.face.gid
+
+    @property
+    def is_wall(self):
+        return self.is_blocked
+
+    @property
+    def can_pass(self):
+        return not self.is_blocked
 
 
 class Face(_GeoBase):
@@ -201,40 +211,58 @@ class Face(_GeoBase):
     def get_shared_edge(self, other: "Face"):
         for e in self.half_edges:
             if e.twin and e.twin.face == other:
-                return e.origin, e.to
+                return e
         return None
 
 
 class Mesh:
     def __init__(self):
+        self.cdt = None
+
         self.faces = []
         self.edges = []
         self.nodes = []
 
-        self.blocked_edges = None
+        self.fixed_edges = []
 
     @property  # alias
     def vertices(self):
         return self.nodes
 
-    def create(self, polygon, mesh_size=0.1):
-        with pygmsh.geo.Geometry() as geom:
-            geom.add_polygon(
-                polygon,
-                mesh_size=mesh_size,
-            )
-            mesh = geom.generate_mesh()
-            # return mesh.points, mesh.cells_dict["triangle"]
-        self.from_mesh(mesh.points, mesh.cells_dict["triangle"])
+    def clear(self):
+        self.faces.clear()
+        self.edges.clear()
+        self.nodes.clear()
+
+    def get_node_by_vid(self, vid):
+        for n in self.nodes:
+            if n.vid == vid:
+                return n
+        return None
+
+    def create(self, vertices, indices, min_dist_to_constraint_edge=0.0):
+        self.cdt = CDT(min_dist_to_constraint_edge)
+        self.cdt.insert_vertices(vertices)
+        self.cdt.insert_edges(indices)
+        self.cdt.erase_outer_triangles_and_holes()
+        triangles = self.cdt.get_triangles(to_numpy=True)
+        vertices = self.cdt.get_vertices(to_numpy=True)
+        self.from_mesh(vertices, triangles)
 
     def from_mesh(self, nodes, faces):
         self.clear()
 
-        # nodes
+        self.__init_nodes(nodes)
+        self.__init_faces(faces)
+        self.__init_half_edges(faces)
+
+        self.__post_processing()
+
+    def __init_nodes(self, nodes):
         for i, xy in enumerate(nodes):
             self.nodes.append(Node(xy[:2], i))
 
-        # faces
+    def __init_faces(self, faces):
         for i, f in enumerate(faces):
             face = Face()
             face.nodes = [
@@ -247,6 +275,7 @@ class Mesh:
             for j in f:
                 self.nodes[j].faces.append(face)
 
+    def __init_half_edges(self, faces):
         for i, (fi, fj, fk) in enumerate(faces):
             # prev i - k - j - i
             self.nodes[fi].prev.append(self.nodes[fk])
@@ -278,13 +307,13 @@ class Mesh:
             self.nodes[fj].edges += [eij, ejk]
             self.nodes[fk].edges += [ejk, eki]
 
-        # finalize
-        self.set_twin()
-        self.set_nodes_info()
-        self.set_faces_info()
-        self.blocked_edges = Edge.get_all_blocked(self.edges)
+    def __post_processing(self):
+        self.__set_twins()
+        self.__set_nodes_info()
+        self.__set_faces_info()
+        self.__set_fixed_edges()
 
-    def set_twin(self):
+    def __set_twins(self):
         n = len(self.edges)
         for i in range(n):
             ei = self.edges[i]
@@ -299,28 +328,29 @@ class Mesh:
                 if ei.origin == ej.to and ei.to == ej.origin:
                     ei.twin, ej.twin = ej, ei
 
-    def set_nodes_info(self):
+    def __set_nodes_info(self):
         for e in self.edges:
             if e.twin is None:
                 self.nodes[e.origin.idx].border = True
                 self.nodes[e.to.idx].border = True
-                e.is_wall = True
+                e.is_blocked = True
 
-    def set_faces_info(self):
+    def __set_faces_info(self):
         for f in self.faces:
             f.set_adj_faces()
             f.set_center()
 
-    def clear(self):
-        self.faces.clear()
-        self.edges.clear()
-        self.nodes.clear()
-
-    def get_node_by_vid(self, vid):
-        for n in self.nodes:
-            if n.vid == vid:
-                return n
-        return None
+    def __set_fixed_edges(self):
+        for fe in self.cdt.get_fixed_edges(to_numpy=True):
+            v0, v1 = self.nodes[fe[0]], self.nodes[fe[1]]
+            for e in v0.edges:
+                if e.to == v1 or e.origin == v1:
+                    e.is_blocked = True
+                    self.fixed_edges.append(e)
+                    if e.twin:
+                        e.twin.is_blocked = True
+                        self.fixed_edges.append(e.twin)
+                    break
 
 
 # alias
