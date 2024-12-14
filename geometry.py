@@ -224,9 +224,9 @@ class Mesh:
         self.nodes = []
 
         self.fixed_edges = []
-        
+
     # alias
-    @property  
+    @property
     def vertices(self):
         return self.nodes
 

@@ -1,7 +1,7 @@
-import os
-import logging
-from logging.handlers import TimedRotatingFileHandler
 import datetime
+import logging
+import os
+from logging.handlers import TimedRotatingFileHandler
 
 from scipy.ndimage import label
 

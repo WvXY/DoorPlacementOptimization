@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
-from matplotlib import patches
 import numpy as np
-from scipy.stats import alpha
+from matplotlib import patches
 
 
 class Visualizer:

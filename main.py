@@ -1,11 +1,11 @@
 import numpy as np
 
-# from time import time
-
 from geometry import Point
-from visualizer import Visualizer
-from navmesh import NavMesh
 from loader import Loader
+from navmesh import NavMesh
+from visualizer import Visualizer
+
+# from time import time
 
 # from optimizer import Optimizer
 

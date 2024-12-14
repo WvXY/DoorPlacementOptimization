@@ -68,14 +68,22 @@ class Loader:
 
         # Update edge list using the vertex_map
         if self.edges is not None:
-            self.edges = [(vertex_map[self.vertices[start].tobytes()],
-                              vertex_map[self.vertices[end].tobytes()])
-                             for start, end in self.edges]
+            self.edges = [
+                (
+                    vertex_map[self.vertices[start].tobytes()],
+                    vertex_map[self.vertices[end].tobytes()],
+                )
+                for start, end in self.edges
+            ]
         if self.faces is not None:
-            self.faces = [(vertex_map[self.vertices[face[0]].tobytes()],
-                              vertex_map[self.vertices[face[1]].tobytes()],
-                              vertex_map[self.vertices[face[2]].tobytes()])
-                             for face in self.faces]
+            self.faces = [
+                (
+                    vertex_map[self.vertices[face[0]].tobytes()],
+                    vertex_map[self.vertices[face[1]].tobytes()],
+                    vertex_map[self.vertices[face[2]].tobytes()],
+                )
+                for face in self.faces
+            ]
         self.vertices = np.array(unique_vertices)
 
 
