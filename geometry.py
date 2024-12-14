@@ -1,5 +1,6 @@
 import numpy as np
-import pygmsh
+
+from cdt import CDT
 
 
 class _GeoBase:
@@ -217,15 +218,14 @@ class Mesh:
     def vertices(self):
         return self.nodes
 
-    def create(self, polygon, mesh_size=0.1):
-        with pygmsh.geo.Geometry() as geom:
-            geom.add_polygon(
-                polygon,
-                mesh_size=mesh_size,
-            )
-            mesh = geom.generate_mesh()
-            # return mesh.points, mesh.cells_dict["triangle"]
-        self.from_mesh(mesh.points, mesh.cells_dict["triangle"])
+    def create(self, vertices, indices, min_dist_to_constraint_edge=0.0):
+        cdt = CDT(min_dist_to_constraint_edge)
+        cdt.insert_vertices(vertices)
+        cdt.insert_edges(indices)
+        cdt.erase_outer_triangles_and_holes()
+        triangles = cdt.get_triangles(to_numpy=True)
+        vertices = cdt.get_vertices(to_numpy=True)
+        self.from_mesh(vertices, triangles)
 
     def from_mesh(self, nodes, faces):
         self.clear()
