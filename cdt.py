@@ -67,11 +67,15 @@ if __name__ == "__main__":
     from loader import Loader
 
     ld = Loader(".")
-    ld.load_w_walls_case(0)
+    ld.load_w_walls_case(3)
+    ld.remove_duplicates()
+    vertices = np.delete(ld.vertices, 1, 1)
+    edges = ld.edges
+    print(vertices)
 
     t = CDT()
-    t.insert_vertices(ld.vertices)
-    t.insert_edges(ld.indices)
+    t.insert_vertices(vertices)
+    t.insert_edges(edges)
     t.erase_outer_triangles_and_holes()
 
     plt.figure()
@@ -87,9 +91,9 @@ if __name__ == "__main__":
         v2 = vv[tri.vertices[2]]
         plt.plot([v0.x, v1.x, v2.x, v0.x], [v0.y, v1.y, v2.y, v0.y], "k-")
 
-    for e in ld.indices:
-        v1 = ld.vertices[e[0]]
-        v2 = ld.vertices[e[1]]
+    for e in edges:
+        v1 = vertices[e[0]]
+        v2 = vertices[e[1]]
         plt.plot([v1[0], v2[0]], [v1[1], v2[1]], lw=4, c="k")
 
     plt.axis("equal")

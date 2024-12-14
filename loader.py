@@ -1,11 +1,12 @@
 import numpy as np
+from networkx.classes import edges
 
 
 class Loader:
     def __init__(self, root_dir="."):
         self.__root_dir = root_dir
         self.faces = None
-        self.indices = None
+        self.edges = None
         self.vertices = None
         self.success = False
 
@@ -18,36 +19,36 @@ class Loader:
     def _load(self, obj_file):
         self.clear()
         self._load_obj(self.__root_dir + obj_file)
-        self._optimize_data()
         return True
 
     def clear(self):
         self.faces = None
-        self.indices = None
+        self.edges = None
         self.vertices = None
 
-    def _optimize_data(self):
+    def optimize_data(self):
         normalize = lambda x: (x - np.min(x)) / (np.max(x) - np.min(x))
         # delete y-axis because its zero in our 2D case and normalize
         self.vertices = normalize(np.delete(self.vertices, 1, 1))
+        return True
 
     def _load_obj(self, obj_file):
         with open(obj_file, "r") as f:
             ls = f.readlines()
 
-        vertices, indices, faces = [], [], []
+        vertices, edges, faces = [], [], []
         for l in ls:
             if l.startswith("v "):
                 _process_vertices(vertices, l)
             elif l.startswith("l "):
-                _process_indices(indices, l)
+                _process_edges(edges, l)
             elif l.startswith("f "):
                 _process_faces(faces, l)
 
         if vertices:
             self.vertices = np.array(vertices)
-        if indices:
-            self.indices = np.array(indices)
+        if edges:
+            self.edges = np.array(edges)
         if faces:
             self.faces = np.array(faces)
 
@@ -55,20 +56,39 @@ class Loader:
         self.__root_dir = root_dir
 
     def remove_duplicates(self):
-        # TODO: remove duplicate vertices and update indices and face
-        pass
+        vertex_map = {}
+        unique_vertices = []
+        new_index = 0
+
+        for i, vertex in enumerate(self.vertices):
+            if vertex.tobytes() not in vertex_map:
+                vertex_map[vertex.tobytes()] = new_index
+                unique_vertices.append(vertex)
+                new_index += 1
+
+        # Update edge list using the vertex_map
+        if self.edges is not None:
+            self.edges = [(vertex_map[self.vertices[start].tobytes()],
+                              vertex_map[self.vertices[end].tobytes()])
+                             for start, end in self.edges]
+        if self.faces is not None:
+            self.faces = [(vertex_map[self.vertices[face[0]].tobytes()],
+                              vertex_map[self.vertices[face[1]].tobytes()],
+                              vertex_map[self.vertices[face[2]].tobytes()])
+                             for face in self.faces]
+        self.vertices = np.array(unique_vertices)
 
 
 # ----------------- Utility functions -----------------
-def _process_indices(indices_list, raw_data):
+def _process_edges(edges_list, raw_data):
     # "l 1 2 3 4" -> [0, 1, 2, 3]
-    indices_raw = [int(i) - 1 for i in raw_data.split(" ")[1:]]
+    edges_raw = [int(i) - 1 for i in raw_data.split(" ")[1:]]
 
-    if len(indices_raw) == 2:
-        indices_list.append(indices_raw)
-    elif len(indices_raw) >= 3:
-        for i in range(len(indices_raw) - 1):
-            indices_list.append([indices_raw[i], indices_raw[i + 1]])
+    if len(edges_raw) == 2:
+        edges_list.append(edges_raw)
+    elif len(edges_raw) >= 3:
+        for i in range(len(edges_raw) - 1):
+            edges_list.append([edges_raw[i], edges_raw[i + 1]])
     return True
 
 
@@ -102,6 +122,6 @@ if __name__ == "__main__":
     ld = Loader()
     ld.set_root_dir(".")
     ld.load_wo_wall_case(0)
-    ld.load_w_walls_case(0)
+    ld.load_w_walls_case(3)
     print(ld.vertices)
-    print(ld.indices)
+    print(ld.edges)
