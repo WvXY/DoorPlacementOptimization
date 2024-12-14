@@ -2,85 +2,95 @@
 # use CDT python binding
 # https://github.com/artem-ogre/PythonCDT
 
-import numpy as np
 import PythonCDT as cdt
-import matplotlib.pyplot as plt
 
-from loader import Loader
+import numpy as np
 
-# t = cdt.Triangulation(
-#     cdt.VertexInsertionOrder.AS_PROVIDED,
-#     cdt.IntersectingConstraintEdges.NOT_ALLOWED,
-#     0.5,
-# )
 
-# t.insert_vertices(vv)
-# ee = [cdt.Edge(0, 2)]
-# t.insert_edges(ee)
-# t.erase_super_triangle()
+class CDT:
+    def __init__(self, min_dist_to_constraint_edge=0.0):
+        self.t = cdt.Triangulation(
+            cdt.VertexInsertionOrder.AS_PROVIDED,
+            cdt.IntersectingConstraintEdges.TRY_RESOLVE,
+            min_dist_to_constraint_edge,
+        )
 
-#  Test resolving fixed edge intersections
-t = cdt.Triangulation(
-    cdt.VertexInsertionOrder.AS_PROVIDED,
-    cdt.IntersectingConstraintEdges.TRY_RESOLVE,
-    0.0,
-)
+    # input data
+    def insert_vertices(self, vertices: list | np.ndarray):
+        self.t.insert_vertices([cdt.V2d(*v) for v in vertices])
 
-# ==============================================================================
-# load vertices using Loader
-ld = Loader(".")
-# ld.load_wo_wall_case(4)
-ld.load_w_walls_case(0)
+    def insert_edges(self, indices: list | np.ndarray = None):
+        if indices is not None:
+            ee = [cdt.Edge(e[0], e[1]) for e in indices]
+        else:
+            n = len(self.t.vertices)
+            ee = [cdt.Edge(i, i + 1) for i in range(n - 1)]
+            ee.append(cdt.Edge(n - 1, 0))
+        self.t.insert_edges(ee)
 
-print(ld.vertices)
+    # settings
+    def erase_super_triangle(self):
+        self.t.erase_super_triangle()
 
-vv = [cdt.V2d(*v) for v in ld.vertices]
-if ld.indices is not None:
-    ee = [cdt.Edge(e[0], e[1]) for e in ld.indices]
-else:
-    ee = [cdt.Edge(i, i + 1) for i in range(len(vv) - 1)]
-    ee.append(cdt.Edge(len(vv) - 1, 0))
+    def erase_outer_triangles_and_holes(self):
+        self.t.erase_outer_triangles_and_holes()
 
-print(ee)
-print(vv)
+    # get data
+    def get_triangles(self, to_numpy=False):
+        if to_numpy:
+            return np.array(
+                [
+                    [tri.vertices[0], tri.vertices[1], tri.vertices[2]]
+                    for tri in self.t.triangles
+                ]
+            )
+        return self.t.triangles
 
-# ==============================================================================
+    def get_vertices(self, to_numpy=False):
+        if to_numpy:
+            return np.array([[v.x, v.y] for v in self.t.vertices])
+        return self.t.vertices
 
-t.insert_vertices(vv)
-t.insert_edges(ee)
+    def get_fixed_edges(self, to_numpy=False):
+        if to_numpy:
+            return np.array([[e.v0, e.v1] for e in self.t.fixed_edges])
+        return self.t.fixed_edges
 
-# t.erase_super_triangle()
-t.erase_outer_triangles_and_holes()
+    def get_edges(self, to_numpy=False):
+        if to_numpy:
+            return np.array([[e.v0, e.v1] for e in self.t.edges])
+        return self.t.edges
 
-# print(t.triangles)
-# print(t.vertices)
-# print(t.fixed_edges)
 
-# ===============visualize================
-plt.figure()
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    from loader import Loader
 
-# plot vv
-for v in vv:
-    plt.plot(v.x, v.y, "ro", lw=2)
+    ld = Loader(".")
+    ld.load_w_walls_case(0)
 
-for tri in t.triangles:
-    v0 = t.vertices[tri.vertices[0]]
-    v1 = t.vertices[tri.vertices[1]]
-    v2 = t.vertices[tri.vertices[2]]
-    plt.plot([v0.x, v1.x, v2.x, v0.x], [v0.y, v1.y, v2.y, v0.y], "k-")
+    t = CDT()
+    t.insert_vertices(ld.vertices)
+    t.insert_edges(ld.indices)
+    t.erase_outer_triangles_and_holes()
 
-# for v in t.vertices:
-#     plt.plot(v.x, v.y, "ro")
+    plt.figure()
 
-# for e in t.fixed_edges:
-#     v1 = t.vertices[e.v1]
-#     v2 = t.vertices[e.v2]
-#     plt.plot([v1.x, v2.x], [v1.y, v2.y], lw=6, c="k")
+    # plot vv
+    vv = t.get_vertices()
+    for v in vv:
+        plt.plot(v.x, v.y, "ro", lw=2)
 
-for e in ld.indices:
-    v1 = ld.vertices[e[0]]
-    v2 = ld.vertices[e[1]]
-    plt.plot([v1[0], v2[0]], [v1[1], v2[1]], lw=4, c="k")
+    for tri in t.get_triangles():
+        v0 = vv[tri.vertices[0]]
+        v1 = vv[tri.vertices[1]]
+        v2 = vv[tri.vertices[2]]
+        plt.plot([v0.x, v1.x, v2.x, v0.x], [v0.y, v1.y, v2.y, v0.y], "k-")
 
-plt.axis("equal")
-plt.show()
+    for e in ld.indices:
+        v1 = ld.vertices[e[0]]
+        v2 = ld.vertices[e[1]]
+        plt.plot([v1[0], v2[0]], [v1[1], v2[1]], lw=4, c="k")
+
+    plt.axis("equal")
+    plt.show()
