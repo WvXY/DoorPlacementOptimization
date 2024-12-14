@@ -11,9 +11,10 @@ from loader import Loader
 
 np.random.seed(0)
 ld = Loader(".")
-i_case = 5
+ld.load_wo_wall_case(4)
+# ld.load_w_walls_case(1)   # do not working
 nm = NavMesh()
-nm.create(ld.get_case(i_case), 9)
+nm.create(ld.vertices, 9)
 vis = Visualizer()
 vis.draw_mesh(nm, show=False)
 
@@ -33,11 +34,17 @@ vis.draw_mesh(nm, show=False)
 #     vis.draw_point(end, c="r", s=40)
 #     vis.draw_linepath(path, c=c, s=1.2)
 
-start = Point(np.array([0.85, 0.62]))
-end = Point(np.array([0.39, 0.58]))
+start = Point(np.array([0.9, 0.45]))
+end = Point(np.array([0.4, 0.8]))
 c = np.random.rand(3)
 
 tripath = nm.find_tripath(start, end)
+
+if tripath is None:
+    print("No path found")
+    vis.show("Mesh")
+    exit()
+
 path = nm.simplify(tripath, start, end)
 
 vis.draw_tripath(tripath)
