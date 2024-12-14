@@ -53,12 +53,12 @@ class CDT:
 
     def get_fixed_edges(self, to_numpy=False):
         if to_numpy:
-            return np.array([[e.v0, e.v1] for e in self.t.fixed_edges])
+            return np.array([[e.v1, e.v2] for e in self.t.fixed_edges])
         return self.t.fixed_edges
 
     def get_edges(self, to_numpy=False):
         if to_numpy:
-            return np.array([[e.v0, e.v1] for e in self.t.edges])
+            return np.array([[e.v1, e.v2] for e in self.t.edges])
         return self.t.edges
 
 
