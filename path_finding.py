@@ -37,6 +37,9 @@ def a_star(
             return path[::-1], f_score[end]
 
         for neighbor in current.neighbors:
+            if current.get_shared_edge(neighbor).is_blocked:
+                continue  # Skip blocked edges
+
             t_g_score = g_score[current] + dist_func(current, neighbor)
             if t_g_score < g_score.get(neighbor, float("inf")):
                 came_from[neighbor] = current
