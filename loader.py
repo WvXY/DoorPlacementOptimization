@@ -41,7 +41,10 @@ class Loader:
             4: self.load_obj("/assets/test_room4.obj"),
             5: self.load_obj("/assets/test_room5.obj"),
         }[idx]
-
+    
+    def get_fp_w_walls(self, idx):
+        return self.load_obj("/assets/fp_w_walls_{}.obj".format(idx))
+    
     def set_root_dir(self, root_dir):
         self.__root_dir = root_dir
 
@@ -80,3 +83,4 @@ class Loader:
                 f.write("v " + " ".join([str(x) for x in vertex]) + "\n")
             for face in faces:
                 f.write("f " + " ".join([str(x) for x in face]) + "\n")
+
