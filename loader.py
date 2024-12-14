@@ -48,29 +48,32 @@ class Loader:
     def set_root_dir(self, root_dir):
         self.__root_dir = root_dir
 
+    def remove_duplicates(self):
+        # TODO: remove duplicate vertices and update indices and face
+        pass
+
 
 # ----------------- Utility functions -----------------
 def _process_indices(indices_list, raw_data):
-    # "l 1 2 3 4" -> [1, 2, 3, 4]
-    indices_raw = [int(i) for i in raw_data.split(" ")[1:]]
+    # "l 1 2 3 4" -> [0, 1, 2, 3]
+    indices_raw = [int(i) - 1 for i in raw_data.split(" ")[1:]]
 
     if len(indices_raw) == 2:
         indices_list.append(indices_raw)
     elif len(indices_raw) >= 3:
         for i in range(len(indices_raw) - 1):
             indices_list.append([indices_raw[i], indices_raw[i + 1]])
-        indices_list.append([indices_raw[-1], indices_raw[0]])
     return True
 
 
 def _process_faces(faces_list, raw_data):
-    # "f 1/1/1 2/2/2 3/3/3" -> [1, 2, 3] only first matter
+    # "f 1/1/1 2/2/2 3/3/3" -> [0, 1, 2] only first matter
     face_raw = [ls.split("/")[0] for ls in raw_data.split(" ")]
 
     if len(face_raw) != 3:
         return False
 
-    faces_list.append([int(x) for x in face_raw[1:]])
+    faces_list.append([int(x) - 1 for x in face_raw[1:]])
     return True
 
 
@@ -92,7 +95,7 @@ def _process_vertices(vertices_list, raw_data):
 if __name__ == "__main__":
     ld = Loader()
     ld.set_root_dir(".")
-    ld.load_wo_wall_case(1)
-    ld.load_w_walls_case(1)
+    ld.load_wo_wall_case(0)
+    ld.load_w_walls_case(0)
     print(ld.vertices)
     print(ld.indices)
