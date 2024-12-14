@@ -16,9 +16,15 @@ class Loader:
         self.success = self._load("/assets/fp_w_walls_{}.obj".format(idx))
 
     def _load(self, obj_file):
+        self.clear()
         self._load_obj(self.__root_dir + obj_file)
         self._optimize_data()
         return True
+
+    def clear(self):
+        self.faces = None
+        self.indices = None
+        self.vertices = None
 
     def _optimize_data(self):
         normalize = lambda x: (x - np.min(x)) / (np.max(x) - np.min(x))
