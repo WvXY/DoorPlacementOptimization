@@ -37,6 +37,7 @@ def a_star(
             return path[::-1], f_score[end]
 
         for neighbor in current.neighbors:
+            print(f"{current.fid}  {neighbor.fid} ")
             if current.get_shared_edge(neighbor).is_blocked:
                 continue  # Skip blocked edges
 

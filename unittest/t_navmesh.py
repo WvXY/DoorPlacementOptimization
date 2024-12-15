@@ -37,7 +37,7 @@ class NavmeshTest(unittest.TestCase):
         self.ld.optimize()
 
         nm = NavMesh()
-        nm.create(self.ld.vertices, self.ld.edges)
+        nm.create_mesh(self.ld.vertices, self.ld.edges)
 
         start = Point(np.array([0.2, 0.9]))
         end = Point(np.array([0.1, 0.2]))
@@ -61,7 +61,7 @@ class NavmeshTest(unittest.TestCase):
         self.ld.optimize()
 
         nm = NavMesh()
-        nm.create(self.ld.vertices, self.ld.edges)
+        nm.create_mesh(self.ld.vertices, self.ld.edges)
 
         start = Point(np.array([0.8, 0.2]))
         end = Point(np.array([0.6, 0.25]))

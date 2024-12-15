@@ -18,7 +18,7 @@ ld.load_w_walls_case(case_id)
 ld.optimize()
 
 nm = NavMesh()
-nm.create(ld.vertices, ld.edges, 0)
+nm.create_mesh(ld.vertices, ld.edges, 0)
 inner_walls = nm.inner_fixed_edges
 
 agent = OptiAgent()
@@ -31,6 +31,7 @@ end = Point(np.array([0.1, 0.6]))
 tripath = nm.find_tripath(start, end)
 path = nm.simplify(tripath, start, end)
 
+
 # draw
 vis = Visualizer()
 vis.draw_mesh(nm, show=False)
@@ -40,6 +41,6 @@ vis.draw_point(end, c="r", s=40)
 vis.draw_linepath(path, c="k", lw=10, a=0.3)
 
 for e in inner_walls:
-    vis.draw_linepath([e.origin, e.to], c="b", lw=8, a=1)
+    vis.draw_linepath([e.ori, e.to], c="b", lw=8, a=1)
 
 vis.show(f"Result")

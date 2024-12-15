@@ -14,8 +14,8 @@ class RInfo:
 
 
 class RPoint(Point, RInfo):
-    def __init__(self, xy, id):
-        Point.__init__(self, xy, id)
+    def __init__(self, xy):
+        Point.__init__(self, xy)
         RInfo.__init__(self)
 
 
@@ -31,10 +31,8 @@ class RFace(Face, RInfo):
         if e.is_blocked:
             return False
 
-        e.prev.next = e.twin.next
-        e.next.prev = e.twin.prev
-        e.twin.prev.next = e.next
-        e.twin.next.prev = e.prev
+        e.disconnect()
+
         e.visited = True
         e.twin.visited = True
         return True
@@ -44,6 +42,17 @@ class REdge(Edge, RInfo):
     def __init__(self, origin, to):
         Edge.__init__(self, origin, to)
         RInfo.__init__(self)
+
+    def disconnect(self):
+        if self.visited:
+            return False
+        if self.is_blocked:
+            return False
+
+        super().disconnect()
+        self.visited = True
+        self.twin.visited = True
+        return True
 
 
 class Room(RFace):
@@ -73,14 +82,10 @@ class FloorPlan(NavMesh):
         self.outer_walls = []
         self.inner_walls = []
 
-    def init(self, mesh: Mesh):
-        center = np.array([0.5, 0.5])
-
     def reconnect_closed_edges(self):
         self.reset_visited(self.edges)
-        for f in self.faces:
-            for ff in f.adj_faces:
-                f.merge(ff)
+        for e in self.edges:
+            e.disconnect()
 
     def create_rooms(self):
         self.reset_visited(self.edges)
@@ -110,20 +115,30 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from u_data_loader import Loader
     from u_visualization import Visualizer
+    from u_geometry import split_edge
 
     ld = Loader(".")
-    ld.load_w_walls_case(3)
+    ld.load_w_walls_case(2)
     ld.optimize()
 
     fp = FloorPlan()
-    fp.create(ld.vertices, ld.edges, 0)
+    fp.create_mesh(ld.vertices, ld.edges, 0)
     fp.reconnect_closed_edges()
     fp.create_rooms()
 
+    e1 = Edge.get_by_eid(1)
+    v, e, f = split_edge(e1, [0.5, 0.5], Point=RPoint, Edge=REdge, Face=RFace)
+    fp.append(v=v, e=e, f=f)
+    print(v, e, f)
+
+    e17 = Edge.get_by_eid(17)
+    v, e, f = split_edge(e17, [0.4, 0.2], Point=RPoint, Edge=REdge, Face=RFace)
+    fp.append(v=v, e=e, f=f)
+
     print(len(fp.rooms))
     for r in fp.rooms:
-        print([f.fid for f in r.faces])
-        print([e.eid for e in r.half_edges])
+        print("fids", [f.fid for f in r.faces])
+        print("eids", [e.eid for e in r.half_edges])
 
     vis = Visualizer()
     vis.draw_mesh(fp, show=False, draw_text="ef")

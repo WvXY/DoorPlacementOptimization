@@ -35,6 +35,9 @@ class CDT:
     def erase_outer_triangles_and_holes(self):
         self.t.erase_outer_triangles_and_holes()
 
+    def erase_outer_triangles(self):
+        self.t.erase_outer_triangles()
+
     # get data
     def get_triangles(self, to_numpy=False):
         if to_numpy:

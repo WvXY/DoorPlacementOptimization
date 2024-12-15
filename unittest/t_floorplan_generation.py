@@ -13,7 +13,7 @@ class FloorPlanGenTest(unittest.TestCase):
         self.ld.optimize()
 
         fp = FloorPlan()
-        fp.create(self.ld.vertices, self.ld.edges, 0)
+        fp.create_mesh(self.ld.vertices, self.ld.edges, 0)
         fp.reconnect_closed_edges()
         fp.create_rooms()
 

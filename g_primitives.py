@@ -1,7 +1,5 @@
 import numpy as np
 
-from u_cdt import CDT
-
 
 class _GeoBase:
     __guid = 0
@@ -24,15 +22,15 @@ class _GeoBase:
         return None
 
 
-class Node(_GeoBase):
+class Vertex(_GeoBase):
     __vid = 0
     node_list = []
 
-    def __init__(self, pos, idx=None):
+    def __init__(self, pos):
         super().__init__()
-        Node.node_list.append(self)
+        Vertex.node_list.append(self)
 
-        self.idx = idx
+        # self.idx = idx
         self.pos = pos
         self.next = []
         self.prev = []
@@ -41,8 +39,8 @@ class Node(_GeoBase):
         self.faces = []
         self.border = False
 
-        self.vid = Node.__vid
-        Node.__vid += 1
+        self.vid = Vertex.__vid
+        Vertex.__vid += 1
 
     @property
     def x(self):
@@ -72,7 +70,7 @@ class Node(_GeoBase):
     # def vid(self):
     #     return self.__vid
 
-    def __eq__(self, other: "Node"):
+    def __eq__(self, other: "Vertex"):
         return self.vid == other.vid
         # return np.allclose(self.xy, other.xy)
 
@@ -107,7 +105,7 @@ class Node(_GeoBase):
 
     @staticmethod
     def get_by_vid(nid):
-        for n in Node.node_list:
+        for n in Vertex.node_list:
             if n.vid == nid:
                 return n
         return None
@@ -117,34 +115,50 @@ class Edge(_GeoBase):
     __eid = 0
     edge_list = []
 
-    def __init__(self, origin, to):
+    def __init__(self, origin, to, is_blocked=False):
         super().__init__()
         Edge.edge_list.append(self)
 
         # half edge with direction origin -> to
-        self.origin = origin
+        self.ori = origin
         self.to = to
         self.face = None
         self.twin = None
         self.next = None
         self.prev = None
 
-        self.is_blocked = False
+        self.is_blocked = is_blocked
 
-        self.eid = Edge.__eid
+        # Private
+        self.__diagonal_vertex = None  # for triangulation (Const)
+        self.__eid = Edge.__eid
         Edge.__eid += 1
 
-    def dir(self):
-        return (self.to.xy - self.origin.xy) / self.length()
+    def set_properties(self, face, twin, prev, next, diag_vertex=None):
+        self.face = face
+        self.twin = twin
+        self.next = next
+        self.prev = prev
+        if diag_vertex:
+            self.set_diagonal_vertex(diag_vertex)
 
-    def orth(self):
+    def set_diagonal_vertex(self, vertex):
+        if self.__diagonal_vertex is None:
+            self.__diagonal_vertex = vertex
+        else:
+            raise ValueError("Diagonal vertex is already set")
+
+    def get_dir(self):
+        return (self.to.xy - self.ori.xy) / self.length()
+
+    def get_orth(self):
         return np.array([dir[1], -dir[0]])
 
     def mid(self):
-        return (self.origin.xy + self.to.xy) / 2
+        return (self.ori.xy + self.to.xy) / 2
 
     def length(self):
-        return np.linalg.norm(self.to.xy - self.origin.xy)
+        return np.linalg.norm(self.to.xy - self.ori.xy)
 
     def intersect(self, other):
         pass
@@ -153,6 +167,14 @@ class Edge(_GeoBase):
     def get_all_blocked(edges: list):
         """deprecating, use blocked_edges instead"""
         return [e for e in edges if e.is_blocked]
+
+    @property
+    def eid(self):
+        return self.__eid
+
+    @property
+    def diagonal_vertex(self):
+        return self.__diagonal_vertex
 
     @property
     def outside(self):
@@ -177,6 +199,59 @@ class Edge(_GeoBase):
                 return e
         return None
 
+    # geometry utils
+    def disconnect(self):
+        if self.outside:
+            return
+
+        self.prev.next = self.twin.next
+        self.next.prev = self.twin.prev
+        self.twin.prev.next = self.next
+        self.twin.next.prev = self.prev
+
+    # def cut(self, position, Point=Vertex, Edge="Edge", Face=Face):
+    #     p_cut = Point(position)
+    #     e_new = Edge(p_cut, self.to)
+    #     e_new_t = Edge(self.to, p_cut)
+    #     diag, diag_t = self.diagonal_vertex, self.twin.diagonal_vertex
+    #     e0, e0_t = Edge(p_cut, diag), Edge(diag, p_cut)
+    #     e1, e1_t = Edge(diag_t, p_cut), Edge(p_cut, diag_t)
+    #     f0, f1 = Face(), Face()
+    #
+    #     # set properties[face, twin, prev, next, diag]
+    #     e_new.set_properties(f0, e_new_t, self, self.next, diag)
+    #     e_new_t.set_properties(f1, e_new, self.twin.prev, self.twin, diag_t)
+    #     e0.set_properties(self.face, e0_t, self, self.prev, self.ori)
+    #     e0_t.set_properties(f0, e0, self.next, e_new, self.to)
+    #     e1.set_properties(
+    #         self.twin.face, e1_t, self.twin.next, self.twin, self.ori
+    #     )
+    #     e1_t.set_properties(f1, e1, e_new_t, self.twin.prev, self.to)
+    #
+    #     # set vertices
+    #     p_cut.edges = [e_new, e_new_t, e0, e0_t, e1, e1_t]
+    #     p_cut.faces = [f0, f1, self.face, self.twin.face]
+    #
+    #     # set faces
+    #     f0.half_edges = [self.next, e0_t, e_new]
+    #     f1.half_edges = [e1_t, self.twin.prev, e_new_t]
+    #     f1.adj_faces = [f0, self.twin.prev.face, self.twin.face]
+    #     f0.adj_faces = [f1, self.next.face, self.face]
+    #
+    #     # update other
+    #     self.face.adj_faces = [f0, self.prev.face, self.twin.face]
+    #     self.twin.face.adj_faces = [f1, self.twin.next.face, self.face]
+    #     self.face.half_edges = [self.prev, self, e0]
+    #     self.twin.face.half_edges = [e1, self.twin, self.twin.next]
+    #
+    #     self.twin.ori = p_cut
+    #     self.twin.prev = e1
+    #     self.to = p_cut
+    #     self.next = e0
+    #
+    #     # newly added Points, Edges, Faces
+    #     return [p_cut], [e_new, e_new_t, e0, e0_t, e1, e1_t], [f0, f1]
+
 
 class Face(_GeoBase):
     __fid = 0
@@ -186,22 +261,33 @@ class Face(_GeoBase):
         super().__init__()
         Face.face_list.append(self)
 
-        self.nodes = []
+        self.verts = []
         self.half_edges = []
         self.adj_faces = []
-        self.center = None
 
-        self.fid = Face.__fid
+        # private
+        self.__fid = Face.__fid
         Face.__fid += 1
+
+    def set_adj_faces(self):
+        self.adj_faces = []
+        for e in self.half_edges:
+            if e.twin:
+                self.adj_faces.append(e.twin.face)
+        return self.adj_faces
+
+    def remove_duplicate(self):
+        self.verts = set(self.verts)
+        self.half_edges = set(self.half_edges)
 
     @property
     def area(self):
         area = 0
-        for i in range(3):
+        for i in range(len(self.verts)):
             j = (i + 1) % 3
             area += (
-                self.nodes[i].x * self.nodes[j].y
-                - self.nodes[j].x * self.nodes[i].y
+                self.verts[i].x * self.verts[j].y
+                - self.verts[j].x * self.verts[i].y
             )
         return area / 2
 
@@ -212,6 +298,10 @@ class Face(_GeoBase):
     @property
     def neighbors(self):
         return self.adj_faces
+
+    @property
+    def fid(self):
+        return self.__fid
 
     @property
     def xy(self):
@@ -225,29 +315,10 @@ class Face(_GeoBase):
     def y(self):
         return self.center[1]
 
-    def __gt__(self, other):
-        return self.gid > other.gid
-
-    def __lt__(self, other):
-        return self.gid < other.gid
-
-    def set_adj_faces(self):
-        self.adj_faces = []
-        for e in self.half_edges:
-            if e.twin:
-                self.adj_faces.append(e.twin.face)
-        return self.adj_faces
-
-    def remove_duplicate(self):
-        self.nodes = set(self.nodes)
-        self.half_edges = set(self.half_edges)
-
-    def set_center(self):
-        if not self.nodes:
-            return
-        else:
-            xys = [n.xy for n in self.nodes]
-            self.center = np.average(xys, axis=0)
+    @property
+    def center(self):
+        xys = [n.xy for n in self.verts]
+        return np.average(xys, axis=0)
 
     def get_shared_edge(self, other: "Face"):
         for e in self.half_edges:
@@ -262,8 +333,14 @@ class Face(_GeoBase):
                 return f
         return None
 
+    def __gt__(self, other):
+        return self.fid > other.fid
+
+    def __lt__(self, other):
+        return self.fid < other.fid
+
 
 # alias
-Point = Node
-Vertex = Node
+Point = Vertex
+# Vertex = Node
 Line = Edge

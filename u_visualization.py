@@ -30,8 +30,8 @@ class Visualizer:
         for f in tripath:
             if f:
                 self.fig.fill(
-                    [n.x for n in f.nodes],
-                    [n.y for n in f.nodes],
+                    [n.x for n in f.verts],
+                    [n.y for n in f.verts],
                     "y",
                     alpha=0.3,
                 )
@@ -41,11 +41,12 @@ class Visualizer:
             if f is None:
                 continue
 
-            tri = [n.xy for n in f.nodes]
+            tri = [n.xy for n in f.verts]
+            print(tri)
             self.fig.add_patch(patches.Polygon(tri, color="k", alpha=0.1))
 
-        for fe in mesh.fixed_edges:
-            ori, to = fe.origin, fe.to
+        for fe in mesh.get_block_edges():
+            ori, to = fe.ori, fe.to
             self.fig.plot([ori.x, to.x], [ori.y, to.y], "k", lw=2)
 
         for v in mesh.vertices:

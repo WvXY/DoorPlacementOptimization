@@ -1,6 +1,6 @@
 import numpy as np
 
-from g_primitives import Node, Point, Face
+from g_primitives import Vertex, Point, Face
 from g_mesh import Mesh
 from u_path_finding import a_star
 
@@ -34,8 +34,8 @@ class NavMesh(Mesh):
             j = (i + 1) % 3
             if (
                 np.cross(
-                    face.nodes[j].xy - face.nodes[i].xy,
-                    point.xy - face.nodes[i].xy,
+                    face.verts[j].xy - face.verts[i].xy,
+                    point.xy - face.verts[i].xy,
                 )
                 < 0
             ):
@@ -46,14 +46,14 @@ class NavMesh(Mesh):
         portals = []
         for i in range(len(tripath) - 1):
             e = tripath[i].get_shared_edge(tripath[i + 1])
-            left, right = e.origin, e.to
+            left, right = e.ori, e.to
             if left is None or right is None:
                 print("Error: portal is None")
                 continue
             portals.append((left, right))
         return portals
 
-    def funnel_algorithm(self, tripath, start: Node, end: Node):
+    def funnel_algorithm(self, tripath, start: Vertex, end: Vertex):
         raw_portals = self.get_portals(tripath)
         portals = raw_portals + [(end, end)]
 
