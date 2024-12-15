@@ -1,8 +1,8 @@
-from g_primitives import Node, Edge, Face
+from g_primitives import Node, Edge, Face, _GeoBase
 from u_cdt import CDT
 
 
-class Mesh:
+class Mesh(_GeoBase):
     """Half-edge data structure"""
 
     def __init__(self):
@@ -27,7 +27,7 @@ class Mesh:
     def fixed_edges(self):
         return self.border_edges + self.inner_fixed_edges
 
-    def set_default(self, Node=Node, Edge=Edge, Face=Face):
+    def set_default_types(self, Node=Node, Edge=Edge, Face=Face):
         self.Node = Node
         self.Edge = Edge
         self.Face = Face
@@ -37,11 +37,11 @@ class Mesh:
         self.edges.clear()
         self.nodes.clear()
 
-    def get_node_by_vid(self, vid):
-        for n in self.nodes:
-            if n.vid == vid:
-                return n
-        return None
+    # def get_node_by_vid(self, vid):
+    #     for n in self.nodes:
+    #         if n.vid == vid:
+    #             return n
+    #     return None
 
     def create(self, vertices, edges, min_dist_to_constraint_edge=0.0):
         self.cdt = CDT(min_dist_to_constraint_edge)

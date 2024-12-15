@@ -5,21 +5,32 @@ from u_cdt import CDT
 
 class _GeoBase:
     __guid = 0
+    obj_list = []
 
     def __init__(self):
         self.guid = _GeoBase.__guid
         _GeoBase.__guid += 1
+        _GeoBase.obj_list.append(self)
 
     @staticmethod
     def reset_guid():
         _GeoBase.__guid = 0
 
+    @staticmethod
+    def get_by_guid(guid):
+        for obj in _GeoBase.obj_list:
+            if obj.guid == guid:
+                return obj
+        return None
+
 
 class Node(_GeoBase):
     __vid = 0
+    node_list = []
 
     def __init__(self, pos, idx=None):
         super().__init__()
+        Node.node_list.append(self)
 
         self.idx = idx
         self.pos = pos
@@ -94,10 +105,21 @@ class Node(_GeoBase):
     def xy(self, value):
         self._xy = value
 
+    @staticmethod
+    def get_by_vid(nid):
+        for n in Node.node_list:
+            if n.vid == nid:
+                return n
+        return None
+
 
 class Edge(_GeoBase):
+    __eid = 0
+    edge_list = []
+
     def __init__(self, origin, to):
         super().__init__()
+        Edge.edge_list.append(self)
 
         # half edge with direction origin -> to
         self.origin = origin
@@ -109,11 +131,17 @@ class Edge(_GeoBase):
 
         self.is_blocked = False
 
+        self.eid = Edge.__eid
+        Edge.__eid += 1
+
     def dir(self):
         return (self.to.xy - self.origin.xy) / self.length()
 
     def orth(self):
         return np.array([dir[1], -dir[0]])
+
+    def mid(self):
+        return (self.origin.xy + self.to.xy) / 2
 
     def length(self):
         return np.linalg.norm(self.to.xy - self.origin.xy)
@@ -142,16 +170,29 @@ class Edge(_GeoBase):
     def can_pass(self):
         return not self.is_blocked
 
+    @staticmethod
+    def get_by_eid(eid):
+        for e in Edge.edge_list:
+            if e.eid == eid:
+                return e
+        return None
+
 
 class Face(_GeoBase):
+    __fid = 0
+    face_list = []
+
     def __init__(self):
         super().__init__()
+        Face.face_list.append(self)
 
         self.nodes = []
-        self.gid = 0
         self.half_edges = []
         self.adj_faces = []
         self.center = None
+
+        self.fid = Face.__fid
+        Face.__fid += 1
 
     @property
     def area(self):
@@ -212,6 +253,13 @@ class Face(_GeoBase):
         for e in self.half_edges:
             if e.twin and e.twin.face == other:
                 return e
+        return None
+
+    @staticmethod
+    def get_by_fid(fid):
+        for f in Face.face_list:
+            if f.fid == fid:
+                return f
         return None
 
 
