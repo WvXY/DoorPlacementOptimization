@@ -64,7 +64,7 @@ class CDT:
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-    from loader import Loader
+    from u_data_loader import Loader
 
     ld = Loader(".")
     ld.load_w_walls_case(3)

@@ -1,13 +1,13 @@
 import unittest
 import numpy as np
 
-from geometry import Point
-from visualizer import Visualizer
-from navmesh import NavMesh
-from loader import Loader
-from debug_log import DbgLogger
+from g_primitives import Point
+from u_visualization import Visualizer
+from g_navmesh import NavMesh
+from u_data_loader import Loader
+from u_logging import DbgLogger
 
-from geometry import _GeoBase
+from g_primitives import _GeoBase
 
 should_draw = True
 
@@ -34,9 +34,10 @@ class NavmeshTest(unittest.TestCase):
         self.reset()
         logger.info("------------test_simple_path------------")
         self.ld.load_wo_wall_case(2)
+        self.ld.optimize()
 
         nm = NavMesh()
-        nm.create(self.ld.vertices, self.ld.indices)
+        nm.create(self.ld.vertices, self.ld.edges)
 
         start = Point(np.array([0.2, 0.9]))
         end = Point(np.array([0.1, 0.2]))
@@ -57,9 +58,10 @@ class NavmeshTest(unittest.TestCase):
         self.reset()
         logger.info("------------test_complicated_path--------------")
         self.ld.load_wo_wall_case(4)
+        self.ld.optimize()
 
         nm = NavMesh()
-        nm.create(self.ld.vertices, self.ld.indices)
+        nm.create(self.ld.vertices, self.ld.edges)
 
         start = Point(np.array([0.8, 0.2]))
         end = Point(np.array([0.6, 0.25]))

@@ -1,13 +1,13 @@
 import numpy as np
 
-from geometry import Point
-from loader import Loader
-from navmesh import NavMesh
-from visualizer import Visualizer
+from g_primitives import Point
+from u_data_loader import Loader
+from g_navmesh import NavMesh
+from u_visualization import Visualizer
 
 # from time import time
 
-# from optimizer import Optimizer
+from f_optimization import Optimizer, OptiAgent
 
 # settings
 case_id = "0a"
@@ -25,11 +25,14 @@ def path_length(path):
 np.random.seed(np_seed_id)
 ld = Loader(".")
 ld.load_w_walls_case(case_id)
+ld.optimize()
 
 nm = NavMesh()
 nm.create(ld.vertices, ld.edges, 0)
 vis = Visualizer()
 vis.draw_mesh(nm, show=False)
+
+agent = OptiAgent()
 
 
 path_lens = 0
@@ -50,5 +53,8 @@ while valid_samples < sample_size:
 cost = path_lens / sample_size
 
 vis.show(
-    f"Result | Case:{case_id} | Sample Size:{sample_size} | cost:{cost:.2f}"
+    f"Result "
+    f"| Case:{case_id} "
+    f"| Sample Size:{sample_size} "
+    f"| cost:{cost:.2f}"
 )

@@ -1,42 +1,45 @@
 import numpy as np
 
-from geometry import Point
-from loader import Loader
-from navmesh import NavMesh
-from visualizer import Visualizer
+from g_primitives import Point
+from u_data_loader import Loader
+from g_navmesh import NavMesh
+from u_visualization import Visualizer
 
 # from time import time
 
-# from optimizer import Optimizer
+from f_optimization import Optimizer, OptiAgent
 
 # settings
-case_id = 6
+case_id = "0a"
 
 np.random.seed(0)
 ld = Loader(".")
 ld.load_w_walls_case(case_id)
+ld.optimize()
 
 nm = NavMesh()
 nm.create(ld.vertices, ld.edges, 0)
-vis = Visualizer()
-vis.draw_mesh(nm, show=False)
+inner_walls = nm.inner_fixed_edges
+
+agent = OptiAgent()
+agent.xy = np.array([0.5, 0.5])
+
 
 start = Point(np.array([0.2, 0.3]))
 end = Point(np.array([0.1, 0.6]))
-c = np.random.rand(3)
 
 tripath = nm.find_tripath(start, end)
-
-if tripath is None:
-    print("No path found")
-    vis.show("Mesh")
-    exit()
-
 path = nm.simplify(tripath, start, end)
 
+# draw
+vis = Visualizer()
+vis.draw_mesh(nm, show=False)
 vis.draw_tripath(tripath)
 vis.draw_point(start, c="g", s=40, m="s")
 vis.draw_point(end, c="r", s=40)
 vis.draw_linepath(path, c="k", lw=10, a=0.3)
+
+for e in inner_walls:
+    vis.draw_linepath([e.origin, e.to], c="b", lw=8, a=1)
 
 vis.show(f"Result")

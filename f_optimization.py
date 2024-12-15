@@ -3,7 +3,9 @@ import numpy as np
 
 class OptiAgent:
     def __init__(self):
-        self.obj = None
+        self.edge = None
+        self.center = None
+        self.rooms = []
 
     def step(self):
         pass

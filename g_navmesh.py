@@ -1,7 +1,8 @@
 import numpy as np
 
-from geometry import Node, Point, Face, Mesh
-from path_finding import a_star
+from g_primitives import Node, Point, Face
+from g_mesh import Mesh
+from u_path_finding import a_star
 
 
 class NavMesh(Mesh):

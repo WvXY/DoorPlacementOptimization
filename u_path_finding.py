@@ -2,7 +2,7 @@ import heapq
 
 import numpy as np
 
-from geometry import Point
+from g_primitives import Point
 
 
 def euclidean_distance(a, b):

@@ -36,7 +36,7 @@ class Visualizer:
                     alpha=0.3,
                 )
 
-    def draw_mesh(self, mesh: "Mesh", title=None, show=True):
+    def draw_mesh(self, mesh: "Mesh", title=None, show=True, draw_text=False):
         for f in mesh.faces:
             if f is None:
                 continue
@@ -52,14 +52,15 @@ class Visualizer:
             if v is None:
                 continue
             plt.scatter(v.x, v.y, c="k", s=10)
-            plt.text(
-                v.x,
-                v.y,
-                str(v.guid),
-                fontsize=12,
-                horizontalalignment="right",
-                verticalalignment="top",
-            )
+            if draw_text:
+                plt.text(
+                    v.x,
+                    v.y,
+                    str(v.guid),
+                    fontsize=12,
+                    horizontalalignment="right",
+                    verticalalignment="top",
+                )
 
         if title:
             self.fig.set_title(title)

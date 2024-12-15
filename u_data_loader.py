@@ -1,5 +1,4 @@
 import numpy as np
-from networkx.classes import edges
 
 
 class Loader:
@@ -26,7 +25,10 @@ class Loader:
         self.edges = None
         self.vertices = None
 
-    def optimize_data(self):
+    def optimize(self):
+        """remove duplicates and normalize"""
+        self.remove_duplicates()
+
         normalize = lambda x: (x - np.min(x)) / (np.max(x) - np.min(x))
         # delete y-axis because its zero in our 2D case and normalize
         self.vertices = normalize(np.delete(self.vertices, 1, 1))
