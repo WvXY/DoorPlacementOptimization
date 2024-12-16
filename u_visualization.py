@@ -122,6 +122,10 @@ class Visualizer:
                     c="m",
                 )
 
-    def show(self, title=None):
+    def show(self, title=None, axis="equal"):
         self.fig.set_title(title)
+        if axis:
+            plt.axis(axis)
+        else:
+            plt.axis("off")
         plt.show()
