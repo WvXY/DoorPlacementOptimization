@@ -88,25 +88,25 @@ class Visualizer:
                 )
 
         if e:
-            mesh.reset_visited(mesh.edges)
+            mesh.reset_all_visited(mesh.edges)
             for f in mesh.faces:
                 if f is None:
                     continue
                 for e in f.half_edges:
-                    if e is None or e.visited:
+                    if e is None or e.is_visited:
                         continue
                     self.fig.text(
-                        e.mid()[0],
-                        e.mid()[1],
+                        e.get_mid()[0],
+                        e.get_mid()[1],
                         str(f"{e.eid}/{e.twin.eid}" if e.twin else e.eid),
                         fontsize=10,
                         horizontalalignment="center",
                         verticalalignment="center",
                         c="r" if e.is_blocked else "g",
                     )
-                    e.visited = True
+                    e.is_visited = True
                     if e.twin:
-                        e.twin.visited = True
+                        e.twin.is_visited = True
 
         if v:
             for v in mesh.vertices:

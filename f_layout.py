@@ -1,16 +1,10 @@
-from heapq import merge
-
-import numpy as np
-
 from g_primitives import Point, Edge, Face
-from g_mesh import Mesh
 from g_navmesh import NavMesh
 
 
 class RInfo:
     def __init__(self):
         self.room = None
-        self.visited = False
 
 
 class RPoint(Point, RInfo):
@@ -26,15 +20,15 @@ class RFace(Face, RInfo):
 
     def merge(self, other: "RFace"):
         e = self.get_shared_edge(other)
-        if e is None or e.visited:
+        if e is None or e.is_visited:
             return False
         if e.is_blocked:
             return False
 
         e.disconnect()
 
-        e.visited = True
-        e.twin.visited = True
+        e.is_visited = True
+        e.twin.is_visited = True
         return True
 
 
@@ -44,14 +38,14 @@ class REdge(Edge, RInfo):
         RInfo.__init__(self)
 
     def disconnect(self):
-        if self.visited:
+        if self.is_visited:
             return False
         if self.is_blocked:
             return False
 
         super().disconnect()
-        self.visited = True
-        self.twin.visited = True
+        self.is_visited = True
+        self.twin.is_visited = True
         return True
 
 
@@ -64,8 +58,6 @@ class Room(RFace):
         Room.__id += 1
 
         self.faces = []
-        # self.edges = []
-        # self.nodes = []
         self.type = 0
         self.inner_walls = []
         self.outer_walls = []
@@ -83,32 +75,28 @@ class FloorPlan(NavMesh):
         self.inner_walls = []
 
     def reconnect_closed_edges(self):
-        self.reset_visited(self.edges)
+        self.reset_all_visited(self.edges)
         for e in self.edges:
             e.disconnect()
 
     def create_rooms(self):
-        self.reset_visited(self.edges)
+        self.reset_all_visited(self.edges)
 
         wall_edges = [e for e in self.edges if e.is_blocked]
-        remains = [e for e in wall_edges if not e.visited]
+        remains = [e for e in wall_edges if not e.is_visited]
         while remains:
             room = Room()
             self.traverse_edges(remains[0])
             self.rooms.append(room)
-            room.faces = set([e.face for e in remains if e.visited])
-            room.half_edges = [e for e in remains if e.visited]
-            remains = [e for e in wall_edges if not e.visited]
+            room.faces = set([e.face for e in remains if e.is_visited])
+            room.half_edges = [e for e in remains if e.is_visited]
+            remains = [e for e in wall_edges if not e.is_visited]
 
     def traverse_edges(self, e: REdge):
-        if e.visited:
+        if e.is_visited:
             return
-        e.visited = True
+        e.is_visited = True
         self.traverse_edges(e.next)
-
-    def reset_visited(self, rgeos):
-        for g in rgeos:
-            g.visited = False
 
 
 if __name__ == "__main__":
@@ -118,28 +106,37 @@ if __name__ == "__main__":
     from u_geometry import split_edge
 
     ld = Loader(".")
-    ld.load_w_walls_case(2)
+    ld.load_w_walls_case(3)
     ld.optimize()
 
-    fp = FloorPlan()
+    fp = NavMesh()
+    fp.set_default_types(Node=RPoint, Edge=REdge, Face=RFace)
     fp.create_mesh(ld.vertices, ld.edges, 0)
-    fp.reconnect_closed_edges()
-    fp.create_rooms()
-
-    e1 = Edge.get_by_eid(1)
-    v, e, f = split_edge(e1, [0.5, 0.5], Point=RPoint, Edge=REdge, Face=RFace)
-    fp.append(v=v, e=e, f=f)
-    print(v, e, f)
+    # fp.reconnect_closed_edges()
+    # fp.create_rooms()
 
     e17 = Edge.get_by_eid(17)
-    v, e, f = split_edge(e17, [0.4, 0.2], Point=RPoint, Edge=REdge, Face=RFace)
+    v, e, f = split_edge(e17, [0.2, 0.1], Point=RPoint, Edge=REdge, Face=RFace)
     fp.append(v=v, e=e, f=f)
 
-    print(len(fp.rooms))
-    for r in fp.rooms:
-        print("fids", [f.fid for f in r.faces])
-        print("eids", [e.eid for e in r.half_edges])
+    # e6 = Edge.get_by_eid(6)
+    # v, e, f = split_edge(e6, [0.7, 0.5], Point=RPoint, Edge=REdge, Face=RFace)
+    # fp.append(v=v, e=e, f=f)
+
+    # debug
+    f10 = Face.get_by_fid(10)
+    f5 = Face.get_by_fid(5)
+    f9 = Face.get_by_fid(9)
+    f11 = Face.get_by_fid(11)
+    f7 = Face.get_by_fid(7)
 
     vis = Visualizer()
-    vis.draw_mesh(fp, show=False, draw_text="ef")
+
+    vis.draw_half_edges(f10.half_edges)
+    vis.draw_half_edges(f5.half_edges, c="r")
+    vis.draw_half_edges(f11.half_edges, c="g")
+    vis.draw_half_edges(f9.half_edges, c="b")
+    vis.draw_half_edges(f7.half_edges, c="y")
+
+    vis.draw_mesh(fp, show=False, draw_text="vef")
     plt.show()

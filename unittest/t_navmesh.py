@@ -11,7 +11,7 @@ from g_primitives import _GeoBase
 
 should_draw = True
 
-logger = DbgLogger()
+# logger = DbgLogger()
 
 
 class NavmeshTest(unittest.TestCase):
@@ -32,7 +32,7 @@ class NavmeshTest(unittest.TestCase):
 
     def test_simple_path(self):
         self.reset()
-        logger.info("------------test_simple_path------------")
+        # logger.info("------------test_simple_path------------")
         self.ld.load_wo_wall_case(2)
         self.ld.optimize()
 
@@ -50,13 +50,13 @@ class NavmeshTest(unittest.TestCase):
 
         expected_res = [52, 11, 53]
         observed_res = [p.guid for p in path]
-        logger.debug(f"observed_res: {observed_res}")
-        logger.debug(f"expected_res: {expected_res}")
+        # logger.debug(f"observed_res: {observed_res}")
+        # logger.debug(f"expected_res: {expected_res}")
         self.assertEqual(expected_res, observed_res)
 
     def test_complicated_path(self):
         self.reset()
-        logger.info("------------test_complicated_path--------------")
+        # logger.info("------------test_complicated_path--------------")
         self.ld.load_wo_wall_case(4)
         self.ld.optimize()
 
@@ -74,8 +74,8 @@ class NavmeshTest(unittest.TestCase):
 
         expected_res = [372, 34, 33, 28, 25, 24, 22, 21, 20, 8, 9, 373]
         observed_res = [p.guid for p in path]
-        logger.debug(f"observed_res: {observed_res}")
-        logger.debug(f"expected_res: {expected_res}")
+        # logger.debug(f"observed_res: {observed_res}")
+        # logger.debug(f"expected_res: {expected_res}")
         self.assertEqual(expected_res, observed_res)
 
 

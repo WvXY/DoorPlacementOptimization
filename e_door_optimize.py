@@ -1,4 +1,5 @@
 import numpy as np
+import tqdm
 
 from u_data_loader import Loader
 from f_layout import FloorPlan, RPoint, RFace, REdge
@@ -46,6 +47,8 @@ agent = OptiAgent()
 
 path_lens = 0
 valid_samples = 0
+pbar = tqdm.tqdm(total=sample_size)  # showing progress
+
 while valid_samples < sample_size:
     start = RPoint(np.random.rand(2))
     end = RPoint(np.random.rand(2))
@@ -59,7 +62,10 @@ while valid_samples < sample_size:
     path_lens += path_length(path)
     vis.draw_linepath(path, c="r", lw=10, a=1 / np.sqrt(sample_size))
 
+    pbar.update(1)
+
 cost = path_lens / sample_size
+pbar.close()
 
 vis.show(
     f"Result "

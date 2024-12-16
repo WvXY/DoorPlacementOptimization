@@ -136,7 +136,7 @@ class Pixel:
 
     def swap_status(self, other):
         self.type, other.type = other.type, self.type
-        self.visited, other.visited = other.visited, self.visited
+        self.visited, other.is_visited = other.is_visited, self.visited
         self.neighbors8, other.neighbors8 = other.neighbors8, self.neighbors8
         self.neighbors4, other.neighbors4 = other.neighbors4, self.neighbors4
 
@@ -176,6 +176,7 @@ class Pixel:
     @property
     def pos(self):
         return self.index
+
 
 class Agent:
     def __init__(self, agent: Pixel = None):
@@ -235,13 +236,12 @@ class Metropolis:
         score_avg = 0
         # for pairs in combinations(sp, 2):
         for i in range(0, N_SAMPLES, 2):
-            s, e = self.map[i],  self.map[i + 1]
+            s, e = self.map[i], self.map[i + 1]
             _, score = aStar(s, e)
             score_avg += score
         score_avg /= N_SAMPLES / 2
         # return np.exp(-score_avg)
         return score_avg
-
 
 
 # visualization
@@ -280,8 +280,6 @@ class Visualize:
 
 def optimize_single_step():
     pass
-
-
 
 
 def main():
