@@ -23,6 +23,12 @@ class Visualizer:
                 [n.x for n in path], [n.y for n in path], c=c, lw=lw, alpha=a
             )
 
+    def draw_half_edges(self, half_edges, c="c", s=60, a=1, lw=2):
+        for e in half_edges:
+            x, y = e.ori.x, e.ori.y
+            dx, dy = e.get_length() * e.get_dir() * 0.9
+            self.fig.arrow(x, y, dx, dy, width=0.01, color=c)
+
     def draw_tripath(self, tripath):
         if tripath is None:
             return
@@ -78,6 +84,7 @@ class Visualizer:
                     fontsize=12,
                     horizontalalignment="right",
                     verticalalignment="top",
+                    c="k",
                 )
 
         if e:
@@ -112,6 +119,7 @@ class Visualizer:
                     fontsize=12,
                     horizontalalignment="right",
                     verticalalignment="top",
+                    c="m",
                 )
 
     def show(self, title=None):
