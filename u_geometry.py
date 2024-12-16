@@ -5,6 +5,8 @@ from g_primitives import Vertex, Edge, Face
 
 def split_edge(edge, position, Point=Vertex, Edge=Edge, Face=Face):
     """Split edge into two edges by a point"""
+    if edge.is_outer_wall:
+        return [], [], []
 
     p_cut = Point(position)
     e_new = Edge(p_cut, edge.to)
