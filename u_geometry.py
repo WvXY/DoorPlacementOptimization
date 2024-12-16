@@ -38,6 +38,7 @@ def split_edge(edge, position, Point=Vertex, Edge=Edge, Face=Face):
         f_adj_0 = edge.next.twin.face
         f_adj_0.replace_adj_face(edge.face, f0)
         f0.set_adjs([edge.face, f1, f_adj_0])
+        edge.face.replace_adj_face(f_adj_0, f0)
     else:
         f0.set_adjs([edge.face, f1])
 
@@ -45,20 +46,21 @@ def split_edge(edge, position, Point=Vertex, Edge=Edge, Face=Face):
         f_adj_1 = edge.twin.prev.twin.face
         f_adj_1.replace_adj_face(edge.twin.face, f1)
         f1.set_adjs([edge.twin.face, f0, f_adj_1])
+        edge.twin.face.replace_adj_face(f_adj_1, f1)
     else:
         f1.set_adjs([edge.twin.face, f0])
 
     edge.face.replace_edge(edge.next, e0)
     edge.twin.face.replace_edge(edge.twin.prev, e1)
 
+    edge.next.face = f0
+    edge.twin.prev.face = f1
+
     # update edge.next and edge.twin.prev
     edge.twin.ori = p_cut
     edge.twin.prev = e1
     edge.to = p_cut
     edge.next = e0
-
-    print(f"f0: {f0.fid}, f1: {f1.fid}")
-    print(f"f: {edge.face.fid}, f_twin: {edge.twin.face.fid}")
 
     # newly added Points, Edges, Faces
     return [p_cut], [e_new, e_new_t, e0, e0_t, e1, e1_t], [f0, f1]

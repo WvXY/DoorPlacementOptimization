@@ -10,8 +10,8 @@ from u_geometry import split_edge
 from f_optimization import Optimizer, OptiAgent
 
 # settings
-case_id = "1"
-sample_size = 300
+case_id = "5"
+sample_size = 100
 np_seed_id = 0
 
 
@@ -32,11 +32,14 @@ fp.create_mesh(ld.vertices, ld.edges, 0)
 fp.reconnect_closed_edges()
 fp.create_rooms()
 
-e0 = REdge.get_by_eid(0)
-v, e, f = split_edge(e0, [0.2, 0.5], Point=RPoint, Edge=REdge, Face=RFace)
-fp.append(v=v, e=e, f=f)
-for face in fp.faces:
-    print(f"face: {face.fid} | {[f.fid for f in face.neighbors]}")
+# e0 = REdge.get_by_eid(0)
+# v, e, f = split_edge(e0, [0.2, 0.5], Point=RPoint, Edge=REdge, Face=RFace)
+# fp.append(v=v, e=e, f=f)
+
+# for face in fp.faces:
+#     print(f"face: {face.fid} | {[f.fid for f in face.neighbors]}")
+#     print(f"edges: {[e.eid for e in face.half_edges]}")
+
 
 # draw
 vis = Visualizer()
