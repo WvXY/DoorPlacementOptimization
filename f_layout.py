@@ -70,6 +70,7 @@ class FloorPlan(NavMesh):
         self.Face = RFace
         self.Edge = REdge
 
+        self.clear()
         self.rooms = []
         self.outer_walls = []
         self.inner_walls = []
@@ -97,6 +98,11 @@ class FloorPlan(NavMesh):
             return
         e.is_visited = True
         self.traverse_edges(e.next)
+
+    def clear(self):
+        self.Face.clear()
+        self.Edge.clear()
+        self.Node.clear()
 
 
 if __name__ == "__main__":

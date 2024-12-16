@@ -34,8 +34,8 @@ class NavMesh(Mesh):
             j = (i + 1) % 3
             if (
                 np.cross(
-                    face.verts[j].xy - face.verts[i].xy,
-                    point.xy - face.verts[i].xy,
+                    face.verts[j] - face.verts[i],
+                    point - face.verts[i],
                 )
                 < 0
             ):

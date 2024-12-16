@@ -32,6 +32,14 @@ class _GeoBase:
     def remove_duplicate(self):
         _GeoBase.obj_list = set(_GeoBase.obj_list)
 
+    @staticmethod
+    def clear():
+        pass
+
+    @staticmethod
+    def clear_all(self):
+        _GeoBase.obj_list = []
+        _GeoBase.__guid = 0
 
 class _GInfo:
     def __init__(self):
@@ -62,7 +70,7 @@ class Vertex(_GeoBase, _GInfo):
         super().__init__()
         Vertex.node_list.append(self)
 
-        self.pos = pos
+        self.pos = np.array(pos)
         self.half_edges = []
 
         self.vid = Vertex.__vid
@@ -107,7 +115,9 @@ class Vertex(_GeoBase, _GInfo):
         # return np.allclose(self.xy, other.xy)
 
     def __sub__(self, other):
-        return self.pos - other.pos
+        if isinstance(other.pos, np.ndarray):
+            return self.pos - other.pos
+        return [self.x - other.x, self.y - other.y]
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -138,6 +148,11 @@ class Vertex(_GeoBase, _GInfo):
             if n.vid == nid:
                 return n
         return None
+
+    @staticmethod
+    def clear():
+        Vertex.node_list = []
+        Vertex.__vid = 0
 
 
 class Edge(_GeoBase, _GInfo):
@@ -223,6 +238,11 @@ class Edge(_GeoBase, _GInfo):
 
     def remove_duplicate(self):
         Edge.edge_list = set(Edge.edge_list)
+
+    @staticmethod
+    def clear():
+        Edge.edge_list = []
+        Edge.__eid = 0
 
 
 class Face(_GeoBase, _GInfo):
@@ -330,6 +350,11 @@ class Face(_GeoBase, _GInfo):
 
     def __lt__(self, other):
         return self.fid < other.fid
+
+    @staticmethod
+    def clear():
+        Face.face_list = []
+        Face.__fid = 0
 
 
 # alias
