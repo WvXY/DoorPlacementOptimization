@@ -32,7 +32,6 @@ end = Point(np.array([0.1, 0.6]))
 tripath = nm.find_tripath(start, end)
 path = nm.simplify(tripath, start, end)
 
-
 # draw
 vis = Visualizer()
 vis.draw_mesh(nm, show=False)
@@ -49,5 +48,10 @@ for e in outer_walls:
 
 for v in nm.vertices:
     vis.draw_point(v, c="k", s=40)
+
+for f in nm.faces:
+    # vis.draw_half_edges(f.half_edges, c="b", lw=0.003)
+    c = np.random.rand(3) * 0.8
+    vis.draw_tri_half_edges(f, c=c, lw=0.006)
 
 vis.show(None, axis_off=True)

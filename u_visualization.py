@@ -23,11 +23,32 @@ class Visualizer:
                 [n.x for n in path], [n.y for n in path], c=c, lw=lw, alpha=a
             )
 
-    def draw_half_edges(self, half_edges, c="c", s=60, a=1, lw=2):
+    def draw_half_edges(self, half_edges, c="c", lw=0.01):
         for e in half_edges:
             x, y = e.ori.x, e.ori.y
-            dx, dy = e.get_length() * e.get_dir() * 0.9
-            self.fig.arrow(x, y, dx, dy, width=0.01, color=c)
+            dx, dy = e.to.x - e.ori.x, e.to.y - e.ori.y
+            self.fig.arrow(x, y, dx, dy, width=lw, color=c, length_includes_head=True)
+
+    def draw_tri_half_edges(self, triangle, c="c", lw=0.01, scale=0.8):
+        # Calculate the centroid of the triangle
+        verts = triangle.verts
+        centroid_x = sum(v.x for v in verts) / 3
+        centroid_y = sum(v.y for v in verts) / 3
+
+        # Shrink vertices toward the centroid
+        shrunk_verts = []
+        for v in verts:
+            shrunk_x = centroid_x + (v.x - centroid_x) * scale
+            shrunk_y = centroid_y + (v.y - centroid_y) * scale
+            shrunk_verts.append((shrunk_x, shrunk_y))
+
+        # Draw the edges of the shrunk triangle
+        for i in range(3):
+            x, y = shrunk_verts[i]
+            dx, dy = shrunk_verts[(i + 1) % 3][0] - x, shrunk_verts[(i + 1) % 3][1] - y
+            self.fig.arrow(x, y, dx, dy, width=lw, color=c, length_includes_head=True)
+
+
 
     def draw_tripath(self, tripath):
         if tripath is None:
@@ -122,10 +143,9 @@ class Visualizer:
                     c="m",
                 )
 
-    def show(self, title=None, axis="equal"):
+    def show(self, title=None, axis="equal", axis_off=False):
         self.fig.set_title(title)
-        if axis:
-            plt.axis(axis)
-        else:
+        plt.axis(axis)
+        if axis_off:
             plt.axis("off")
         plt.show()
