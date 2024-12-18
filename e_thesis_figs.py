@@ -54,12 +54,30 @@ for v in nm.vertices:
 
 portals = track[0]
 for i, p in enumerate(portals):
-    if i == len(portals) - 1:
-        break
-    fig.scatter(p[0].x, p[0].y, c="b", s=60, marker="s")
-    fig.scatter(p[1].x, p[1].y, c="b", s=60, marker="s")
-    fig.plot([p[0].x, p[1].x], [p[0].y, p[1].y], c="b", lw=3)
+    if i >= 4:
+        # fig.scatter(p[0].x, p[0].y, c="g", s=60, marker="s")
+        # fig.scatter(p[1].x, p[1].y, c="g", s=60, marker="s")
+        fig.plot([p[0].x, p[1].x], [p[0].y, p[1].y], "--", c="g", lw=1)
+    else:
+        fig.plot([p[0].x, p[1].x], [p[0].y, p[1].y], "--", c="b", lw=1)
 
+funnels = track[1]
+
+funnel = funnels[2]
+apex, left, right = funnel
+fig.plot([apex.x, left.x], [apex.y, left.y], c="c", lw=2)
+fig.plot([apex.x, right.x], [apex.y, right.y], c="c", lw=2)
+fig.plot([left.x, right.x], [left.y, right.y], c="b", lw=2)
+vis.fig.fill(
+    [n.x for n in funnel],
+    [n.y for n in funnel],
+    "b",
+    alpha=0.5,
+)
+
+paths = track[2]
+path = paths[1][:2]
+vis.draw_linepath(path, c="g", lw=2, a=1)  # path is always the same (refs)
 
 # vis.fig.fill(
 #     [n.x for n in tk],
