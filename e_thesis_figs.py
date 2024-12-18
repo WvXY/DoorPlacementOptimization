@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 from g_primitives import Point
 from u_data_loader import Loader
@@ -26,19 +27,19 @@ agent = OptiAgent()
 agent.xy = np.array([0.5, 0.5])
 
 
-start = Point(np.array([0.2, 0.3]))
-end = Point(np.array([0.1, 0.6]))
+start = Point(np.array([0.96, 0.29]))
+end = Point(np.array([0.45, 0.63]))
 
 tripath = nm.find_tripath(start, end)
-path = nm.simplify(tripath, start, end)
+path, track = nm.simplify(tripath, start, end)
 
 # draw
 vis = Visualizer()
 vis.draw_mesh(nm, show=False)
-# vis.draw_tripath(tripath)
-# vis.draw_point(start, c="g", s=40, m="s")
-# vis.draw_point(end, c="r", s=40)
-# vis.draw_linepath(path, c="k", lw=10, a=0.3)
+vis.draw_tripath(tripath)
+vis.draw_point(start, c="g", s=50, m="s")
+vis.draw_point(end, c="r", s=50)
+# vis.draw_linepath(path, c="g", lw=2, a=1)
 
 for e in inner_walls:
     vis.draw_linepath([e.ori, e.to], c="k", lw=2, a=1)
@@ -49,9 +50,19 @@ for e in outer_walls:
 for v in nm.vertices:
     vis.draw_point(v, c="k", s=40)
 
-for f in nm.faces:
-    # vis.draw_half_edges(f.half_edges, c="b", lw=0.003)
-    c = np.random.rand(3) * 0.8
-    vis.draw_tri_half_edges(f, c=c, lw=0.006)
+
+tk = track[2]
+vis.fig.fill(
+    [n.x for n in tk],
+    [n.y for n in tk],
+    "r",
+    alpha=0.5,
+)
+
+
+# for f in nm.faces:
+#     # vis.draw_half_edges(f.half_edges, c="b", lw=0.003)
+#     c = np.random.rand(3) * 0.8
+#     vis.draw_tri_half_edges(f, c=c, lw=0.006)
 
 vis.show(None, axis_off=True)

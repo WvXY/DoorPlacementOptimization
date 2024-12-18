@@ -69,7 +69,6 @@ class Visualizer:
                 continue
 
             tri = [n.xy for n in f.verts]
-            print(tri)
             self.fig.add_patch(patches.Polygon(tri, color="k", alpha=0.1))
 
         for fe in mesh.get_block_edges():
