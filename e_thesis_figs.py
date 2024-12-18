@@ -35,6 +35,7 @@ path, track = nm.simplify(tripath, start, end)
 
 # draw
 vis = Visualizer()
+fig = vis.get_fig()
 vis.draw_mesh(nm, show=False)
 vis.draw_tripath(tripath)
 vis.draw_point(start, c="g", s=50, m="s")
@@ -51,13 +52,21 @@ for v in nm.vertices:
     vis.draw_point(v, c="k", s=40)
 
 
-tk = track[2]
-vis.fig.fill(
-    [n.x for n in tk],
-    [n.y for n in tk],
-    "r",
-    alpha=0.5,
-)
+portals = track[0]
+for i, p in enumerate(portals):
+    if i == len(portals) - 1:
+        break
+    fig.scatter(p[0].x, p[0].y, c="b", s=60, marker="s")
+    fig.scatter(p[1].x, p[1].y, c="b", s=60, marker="s")
+    fig.plot([p[0].x, p[1].x], [p[0].y, p[1].y], c="b", lw=3)
+
+
+# vis.fig.fill(
+#     [n.x for n in tk],
+#     [n.y for n in tk],
+#     "r",
+#     alpha=0.5,
+# )
 
 
 # for f in nm.faces:

@@ -7,6 +7,12 @@ class Visualizer:
     def __init__(self):
         self.ax, self.fig = plt.subplots()
 
+    def get_fig(self):
+        return self.fig
+
+    def get_axis(self):
+        return self.ax
+
     def draw_point(self, point, c="r", s=60, m="o"):
         self.fig.scatter(point.x, point.y, c=c, s=s, marker=m)
 
@@ -27,7 +33,9 @@ class Visualizer:
         for e in half_edges:
             x, y = e.ori.x, e.ori.y
             dx, dy = e.to.x - e.ori.x, e.to.y - e.ori.y
-            self.fig.arrow(x, y, dx, dy, width=lw, color=c, length_includes_head=True)
+            self.fig.arrow(
+                x, y, dx, dy, width=lw, color=c, length_includes_head=True
+            )
 
     def draw_tri_half_edges(self, triangle, c="c", lw=0.01, scale=0.8):
         # Calculate the centroid of the triangle
@@ -45,10 +53,13 @@ class Visualizer:
         # Draw the edges of the shrunk triangle
         for i in range(3):
             x, y = shrunk_verts[i]
-            dx, dy = shrunk_verts[(i + 1) % 3][0] - x, shrunk_verts[(i + 1) % 3][1] - y
-            self.fig.arrow(x, y, dx, dy, width=lw, color=c, length_includes_head=True)
-
-
+            dx, dy = (
+                shrunk_verts[(i + 1) % 3][0] - x,
+                shrunk_verts[(i + 1) % 3][1] - y,
+            )
+            self.fig.arrow(
+                x, y, dx, dy, width=lw, color=c, length_includes_head=True
+            )
 
     def draw_tripath(self, tripath):
         if tripath is None:
