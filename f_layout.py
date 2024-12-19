@@ -2,7 +2,6 @@ from f_primitives import RPoint, REdge, RFace
 from g_navmesh import NavMesh
 
 
-
 class FloorPlan(NavMesh):
     def __init__(self):
         super().__init__()

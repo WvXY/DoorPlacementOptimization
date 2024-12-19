@@ -3,6 +3,7 @@ from g_primitives import _GeoBase
 
 class Door(_GeoBase):
     door_list = []
+
     def __init__(self, number, status):
         super().__init__()
         self.number = number
@@ -11,13 +12,13 @@ class Door(_GeoBase):
         Door.door_list.append(self)
 
     def open(self):
-        self.status = 'open'
+        self.status = "open"
 
     def close(self):
-        self.status = 'closed'
+        self.status = "closed"
 
     def create(self):
-        self.status = 'created'
+        self.status = "created"
 
     def __str__(self):
         return f"Door {self.number} is {self.status}"
