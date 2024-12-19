@@ -193,10 +193,10 @@ class Edge(_GeoBase, _GInfo):
             raise ValueError("Diagonal vertex is already set")
 
     def get_dir(self):
-        return (self.to.xy - self.ori.xy) / self.get_length()
+        return (self.to.xy - self.ori.xy) / np.linalg.norm(self.to.xy - self.ori.xy)
 
     def get_orth(self):
-        return np.array([dir[1], -dir[0]])
+        return np.array([self.get_dir()[1], -self.get_dir()[0]])
 
     def get_mid(self):
         return (self.ori.xy + self.to.xy) / 2
