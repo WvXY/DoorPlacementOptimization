@@ -57,14 +57,9 @@ class NavMesh(Mesh):
         raw_portals = self.get_portals(tripath)
         portals = raw_portals + [(end, end)]
 
-        track = [portals, [], []]
-
         path = [start]
         apex = left = right = start
         apex_index = left_index = right_index = 0
-
-        track[1].append([apex, left, right])
-        track[2].append(path)
 
         i = 0
         while i < len(portals):
@@ -82,9 +77,6 @@ class NavMesh(Mesh):
                     if path[-1] != left:
                         path.append(left)
 
-                    track[1].append([apex, left, right])
-                    track[2].append(path)
-
                     apex = left
                     apex_index = left_index
                     left = right = apex
@@ -101,9 +93,6 @@ class NavMesh(Mesh):
                     if path[-1] != right:
                         path.append(right)
 
-                    track[1].append([apex, left, right])
-                    track[2].append(path)
-
                     apex = right
                     apex_index = right_index
                     left = right = apex
@@ -116,7 +105,7 @@ class NavMesh(Mesh):
         if path[-1] != end:
             path.append(end)
 
-        return path, track
+        return path
 
 
 class MathUtils:
