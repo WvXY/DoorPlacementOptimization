@@ -7,7 +7,7 @@ from u_visualization import Visualizer
 
 # from time import time
 from u_geometry import split_edge
-from f_optimization import Optimizer, OptiAgent
+from o_optimizer import Optimizer
 
 # settings
 case_id = "0"

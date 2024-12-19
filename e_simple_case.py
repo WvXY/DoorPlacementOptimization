@@ -7,7 +7,7 @@ from u_visualization import Visualizer
 
 # from time import time
 
-from f_optimization import Optimizer, OptiAgent
+from o_optimizer import Optimizer, OptiAgent
 
 # settings
 case_id = "0a"

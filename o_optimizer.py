@@ -1,19 +1,9 @@
 import numpy as np
 
 
-class OptiAgent:
-    def __init__(self):
-        self.edge = None
-        self.center = None
-        self.rooms = []
-
-    def step(self):
-        pass
-
-
 class Optimizer:
     def __init__(self):
-        self.agent: OptiAgent
+        self.agent: None
 
         self.agent = None
         self.map = None

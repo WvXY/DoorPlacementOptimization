@@ -8,7 +8,7 @@ from u_visualization import Visualizer
 
 # from time import time
 
-from f_optimization import Optimizer, OptiAgent
+from o_optimizer import Optimizer, OptiAgent
 
 # settings
 case_id = "5"
@@ -43,7 +43,12 @@ for t in nm.faces:
     for tt in nm.faces:
         shared_e = t.get_shared_edge(tt)
         if shared_e and shared_e.is_blocked is False:
-            fig.plot([t.center[0], tt.center[0]], [t.center[1], tt.center[1]], c="g", lw=3)
+            fig.plot(
+                [t.center[0], tt.center[0]],
+                [t.center[1], tt.center[1]],
+                c="g",
+                lw=3,
+            )
 
 
 # vis.draw_tripath(tripath)

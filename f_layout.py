@@ -1,66 +1,6 @@
-from g_primitives import Point, Edge, Face
+from f_primitives import RPoint, REdge, RFace
 from g_navmesh import NavMesh
 
-
-class RInfo:
-    def __init__(self):
-        self.room = None
-
-
-class RPoint(Point, RInfo):
-    def __init__(self, xy):
-        Point.__init__(self, xy)
-        RInfo.__init__(self)
-
-
-class RFace(Face, RInfo):
-    def __init__(self):
-        Face.__init__(self)
-        RInfo.__init__(self)
-
-    def merge(self, other: "RFace"):
-        e = self.get_shared_edge(other)
-        if e is None or e.is_visited:
-            return False
-        if e.is_blocked:
-            return False
-
-        e.disconnect()
-
-        e.is_visited = True
-        e.twin.is_visited = True
-        return True
-
-
-class REdge(Edge, RInfo):
-    def __init__(self, origin, to):
-        Edge.__init__(self, origin, to)
-        RInfo.__init__(self)
-
-    def disconnect(self):
-        if self.is_visited:
-            return False
-        if self.is_blocked:
-            return False
-
-        super().disconnect()
-        self.is_visited = True
-        self.twin.is_visited = True
-        return True
-
-
-class Room(RFace):
-    __id = 0
-
-    def __init__(self):
-        super().__init__()
-        self.id = Room.__id
-        Room.__id += 1
-
-        self.faces = []
-        self.type = 0
-        self.inner_walls = []
-        self.outer_walls = []
 
 
 class FloorPlan(NavMesh):
@@ -121,7 +61,7 @@ if __name__ == "__main__":
     # fp.reconnect_closed_edges()
     # fp.create_rooms()
 
-    e17 = Edge.get_by_eid(17)
+    e17 = REdge.get_by_eid(17)
     v, e, f = split_edge(e17, [0.2, 0.1], Point=RPoint, Edge=REdge, Face=RFace)
     fp.append(v=v, e=e, f=f)
 
@@ -130,11 +70,11 @@ if __name__ == "__main__":
     # fp.append(v=v, e=e, f=f)
 
     # debug
-    f10 = Face.get_by_fid(10)
-    f5 = Face.get_by_fid(5)
-    f9 = Face.get_by_fid(9)
-    f11 = Face.get_by_fid(11)
-    f7 = Face.get_by_fid(7)
+    f10 = RFace.get_by_fid(10)
+    f5 = RFace.get_by_fid(5)
+    f9 = RFace.get_by_fid(9)
+    f11 = RFace.get_by_fid(11)
+    f7 = RFace.get_by_fid(7)
 
     vis = Visualizer()
 
