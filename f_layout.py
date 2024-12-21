@@ -2,6 +2,15 @@ from f_primitives import RPoint, REdge, RFace
 from g_navmesh import NavMesh
 
 
+class Room:
+    def __init__(self):
+        self.faces = set()
+        self.half_edges = []
+
+    def __repr__(self):
+        return f"Room({len(self.faces)})"
+
+
 class FloorPlan(NavMesh):
     def __init__(self):
         super().__init__()
@@ -42,6 +51,12 @@ class FloorPlan(NavMesh):
         self.Face.clear()
         self.Edge.clear()
         self.Node.clear()
+
+    def get_by_eid(self, eid):
+        for e in self.edges:
+            if e.eid == eid:
+                return e
+        return None
 
 
 if __name__ == "__main__":

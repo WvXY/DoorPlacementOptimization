@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 
+import numpy as np
 from g_primitives import Vertex, Edge, Face
 
 
@@ -64,3 +65,38 @@ def split_edge(edge, position, Point=Vertex, Edge=Edge, Face=Face):
 
     # newly added Points, Edges, Faces
     return [p_cut], [e_new, e_new_t, e0, e0_t, e1, e1_t], [f0, f1]
+
+
+def delete_vertex(vertex):
+    """Delete vertex from mesh"""
+    if vertex.is_outer_wall:
+        return
+
+    # delete faces
+    # delete edges
+    # delete vertex
+
+    vertex.clear()
+
+
+def closet_position_on_edge(edge, point):
+    """Find the closest position on edge from point"""
+    if edge.is_outer_wall:
+        return None
+
+    p0, p1 = np.array(edge.ori.xy), np.array(edge.to.xy)
+    v = p1 - p0
+    w = point - p0
+
+    c1 = w.dot(v)
+    if c1 <= 0:
+        return p0
+
+    c2 = v.dot(v)
+    if c2 <= c1:
+        return p1
+
+    b = c1 / c2
+    pb = p0 + b * v
+
+    return pb

@@ -5,6 +5,7 @@ from g_navmesh import NavMesh
 class RInfo:
     def __init__(self):
         self.room = None
+        self.is_visited = False
 
 
 class RPoint(Point, RInfo):
