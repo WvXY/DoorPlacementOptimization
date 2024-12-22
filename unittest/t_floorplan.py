@@ -29,7 +29,7 @@ class FloorPlanTest(unittest.TestCase):
 
     def test_split_edge(self):
         from f_layout import FloorPlan, RPoint, RFace, REdge
-        from u_geometry import split_edge
+        from u_geometry import add_vertex
 
         self.ld.load_w_walls_case(0)
         self.ld.optimize()
@@ -41,7 +41,9 @@ class FloorPlanTest(unittest.TestCase):
 
         # modify the mesh
         e0 = REdge.get_by_eid(2)
-        v, e, f = split_edge(e0, [0.65, 0.55], Point=RPoint, Edge=REdge, Face=RFace)
+        v, e, f = add_vertex(
+            e0, [0.65, 0.55], Point=RPoint, Edge=REdge, Face=RFace
+        )
         fp.append(v=v, e=e, f=f)
 
         v3 = RPoint.get_by_vid(3)
@@ -56,6 +58,7 @@ class FloorPlanTest(unittest.TestCase):
         expected_res = [10, 3, 9, 11]
         observed_res = [p.vid for p in path]
         self.assertEqual(expected_res, observed_res)
+
 
 if __name__ == "__main__":
     unittest.main()

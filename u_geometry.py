@@ -1,10 +1,9 @@
-import matplotlib.pyplot as plt
-
 import numpy as np
+
 from g_primitives import Vertex, Edge, Face
 
 
-def split_edge(edge, position, Point=Vertex, Edge=Edge, Face=Face):
+def add_vertex(edge, position, Point=Vertex, Edge=Edge, Face=Face):
     """Split edge into two edges by a point"""
     if edge.is_outer_wall:
         return [], [], []
@@ -18,22 +17,31 @@ def split_edge(edge, position, Point=Vertex, Edge=Edge, Face=Face):
     f0, f1 = Face(), Face()
 
     # set properties[face, twin, prev, next, diag]
-    e_new.set_properties(f0, e_new_t, edge, edge.next, diag)
-    e_new_t.set_properties(f1, e_new, edge.twin.prev, edge.twin, diag_t)
+    e_new.set_properties(f0, e_new_t, e0_t, edge.next, diag)
+    e_new_t.set_properties(f1, e_new, edge.twin.prev, e1_t, diag_t)
     e0.set_properties(edge.face, e0_t, edge, edge.prev, edge.ori)
     e0_t.set_properties(f0, e0, edge.next, e_new, edge.to)
     e1.set_properties(edge.twin.face, e1_t, edge.twin.next, edge.twin, edge.ori)
     e1_t.set_properties(f1, e1, e_new_t, edge.twin.prev, edge.to)
+    # update existing edges
+    edge.next.prev = e_new
+    edge.next.next = e0_t
+    edge.twin.prev.next = e_new_t
+    edge.twin.prev.prev = e1_t
 
     e_new.is_blocked = edge.is_blocked
     e_new_t.is_blocked = edge.twin.is_blocked
 
     # set vertices
-    p_cut.set_half_edges([edge, edge.twin, e_new, e_new_t, e0, e0_t, e1, e1_t])
+    p_cut.set_edges([edge, edge.twin, e_new, e_new_t, e0, e0_t, e1, e1_t])
+    edge.to.replace_edge(edge, e_new)
+    edge.to.replace_edge(edge.twin, e_new_t)
+    edge.diagonal_vertex.half_edges.extend([e0, e0_t])
+    edge.twin.diagonal_vertex.half_edges.extend([e1, e1_t])
 
     # update faces
-    f0.set_half_edges([e_new, e0_t, edge.next][::-1])
-    f1.set_half_edges([e_new_t, edge.twin.prev, e1_t][::-1])
+    f0.set_edges([e_new, e0_t, edge.next][::-1])
+    f1.set_edges([e_new_t, edge.twin.prev, e1_t][::-1])
 
     if edge.next.twin is not None:
         f_adj_0 = edge.next.twin.face
@@ -67,16 +75,96 @@ def split_edge(edge, position, Point=Vertex, Edge=Edge, Face=Face):
     return [p_cut], [e_new, e_new_t, e0, e0_t, e1, e1_t], [f0, f1]
 
 
-def delete_vertex(vertex):
-    """Delete vertex from mesh"""
-    if vertex.is_outer_wall:
+def del_vertex(vertex):
+    n_edges = len(vertex.half_edges)
+    if n_edges != 8:
+        print(
+            f"ERROR: vertex {vertex.vid} has {n_edges} half edges(not 2 or 4)"
+        )
         return
 
-    # delete faces
-    # delete edges
-    # delete vertex
+    # 1. Set the edge to keep
+    print(f"v{vertex.vid}.hafl_edges: {[e.eid for e in vertex.half_edges]}")
+    e_keep = vertex.half_edges[0]
+    for e in vertex.half_edges:
+        if e.eid < e_keep.eid:
+            e_keep = e
+    e_keep = e_keep if e_keep.ori == vertex else e_keep.twin
+    e_keep_t = e_keep.twin
 
-    vertex.clear()
+    # 2. Set the twins and edges to delete
+    e_del = e_keep.prev.twin.prev
+    e_del_t = e_del.twin
+    e0 = e_keep.prev
+    e1 = e_keep_t.next
+    e0_t = e0.twin
+    e1_t = e1.twin
+
+    print(f"e_keep: {e_keep.eid}, e_keep_t: {e_keep_t.eid}")
+
+    print(f"e_del: {e_del.eid}, e_del_t: {e_del_t.eid}")
+    print(f"e0: {e0.eid}, e0_t: {e0_t.eid}")
+    print(f"e1: {e1.eid}, e1_t: {e1_t.eid}")
+
+    # 3. Update the start/end vertex of the edges
+    e_keep.ori = e_del.ori
+    e_keep_t.to = e_del.ori
+    e_keep_t.next.ori = e_del.ori
+
+    e_del.ori.replace_edge(e_del, e_keep)
+    e_del.ori.replace_edge(e_del_t, e_keep_t)
+
+    e_keep.prev = e_del.prev
+    e_keep_t.next = e_del_t.next
+
+    e_keep.next.next = e_del.prev
+    e_keep_t.prev.prev = e_del_t.next
+
+    e_del.next.ori = e_del_t.prev.ori
+    e_del_t.prev.to = e_del.next.to
+
+    # 4. Set the faces
+    f0, f0_t = e_keep.face, e_del.face
+    f1, f1_t = e_keep_t.face, e_del_t.face
+
+    print(f"f0: {f0.fid}, f0_t: {f0_t.fid}")
+    print(f"f1: {f1.fid}, f1_t: {f1_t.fid}")
+
+    if e0_t.next.twin is not None:
+        f_adj_0 = e0_t.next.twin.face
+        f0.replace_adj_face(f0_t, f_adj_0)
+        f_adj_0.replace_adj_face(f0_t, f0)
+    f0.replace_edge(e0, e0_t.next)
+
+    if e1_t.prev.twin is not None:
+        f_adj_1 = e1_t.prev.twin.face
+        f1.replace_adj_face(f1_t, f_adj_1)
+        f_adj_1.replace_adj_face(f1_t, f1)
+    f1.replace_edge(e1, e1_t.prev)
+
+    e0_t.next.face = f0
+    e1_t.prev.face = f1
+
+    # 5. Remove the vertex
+    e0.ori.remove_edges(e0, e0_t)
+    e1.to.remove_edges(e1, e1_t)
+
+    # e_kp = [
+    #     e_keep,
+    #     e_keep_t,
+    #     e_keep.next,
+    #     e_keep.prev,
+    #     e_keep_t.next,
+    #     e_keep_t.prev,
+    # ]
+    # for e in e_kp:
+    #     print(
+    #         f"e{e.eid}: {e.ori.vid} -> {e.to.vid}",
+    #         f"next: {e.next.eid}, prev: {e.prev.eid}",
+    #     )
+
+    # return the deleted vertices, edges, faces (1v, 6e, 2f)
+    return [vertex], [e_del, e_del_t, e0, e0_t, e1, e1_t], [f0_t, f1_t]
 
 
 def closet_position_on_edge(edge, point):

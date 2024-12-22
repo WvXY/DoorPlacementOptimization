@@ -63,7 +63,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from u_data_loader import Loader
     from u_visualization import Visualizer
-    from u_geometry import split_edge
+    from u_geometry import add_vertex
 
     ld = Loader(".")
     ld.load_w_walls_case(3)
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     # fp.create_rooms()
 
     e17 = REdge.get_by_eid(17)
-    v, e, f = split_edge(e17, [0.2, 0.1], Point=RPoint, Edge=REdge, Face=RFace)
+    v, e, f = add_vertex(e17, [0.2, 0.1], Point=RPoint, Edge=REdge, Face=RFace)
     fp.append(v=v, e=e, f=f)
 
     # e6 = Edge.get_by_eid(6)

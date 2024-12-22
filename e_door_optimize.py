@@ -6,7 +6,7 @@ from f_layout import FloorPlan, RPoint, RFace, REdge
 from u_visualization import Visualizer
 
 # from time import time
-from u_geometry import split_edge
+from u_geometry import add_vertex
 from o_optimizer import Optimizer
 
 # settings
@@ -33,7 +33,7 @@ fp.reconnect_closed_edges()
 fp.create_rooms()
 
 e0 = REdge.get_by_eid(2)
-v, e, f = split_edge(e0, [0.65, 0.55], Point=RPoint, Edge=REdge, Face=RFace)
+v, e, f = add_vertex(e0, [0.65, 0.55], Point=RPoint, Edge=REdge, Face=RFace)
 fp.append(v=v, e=e, f=f)
 
 v3 = RPoint.get_by_vid(3)

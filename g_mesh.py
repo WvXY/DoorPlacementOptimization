@@ -26,6 +26,14 @@ class Mesh(_GeoBase):
         if f:
             self.faces += f
 
+    def remove(self, v_list=None, e_list=None, f_list=None):
+        if v_list:
+            self.verts = [v for v in self.verts if v not in v_list]
+        if e_list:
+            self.edges = [e for e in self.edges if e not in e_list]
+        if f_list:
+            self.faces = [f for f in self.faces if f not in f_list]
+
     # alias
     @property
     def vertices(self):

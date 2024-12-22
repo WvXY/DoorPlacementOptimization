@@ -41,6 +41,7 @@ class _GeoBase:
         _GeoBase.obj_list = []
         _GeoBase.__guid = 0
 
+
 class _GInfo:
     def __init__(self):
         self.is_visited = False
@@ -79,8 +80,15 @@ class Vertex(_GeoBase, _GInfo):
     def set_pos(self, new_pos):
         self.pos = new_pos
 
-    def set_half_edges(self, half_edges):
+    def set_edges(self, half_edges):
         self.half_edges = half_edges
+
+    def remove_edges(self, *half_edges):
+        for half_edge in half_edges:
+            self.half_edges.remove(half_edge)
+
+    def replace_edge(self, old_edge, new_edge):
+        self._replace(self.half_edges, old_edge, new_edge)
 
     @property
     def x(self):
@@ -193,7 +201,9 @@ class Edge(_GeoBase, _GInfo):
             raise ValueError("Diagonal vertex is already set")
 
     def get_dir(self):
-        return (self.to.xy - self.ori.xy) / np.linalg.norm(self.to.xy - self.ori.xy)
+        return (self.to.xy - self.ori.xy) / np.linalg.norm(
+            self.to.xy - self.ori.xy
+        )
 
     def get_orth(self):
         return np.array([self.get_dir()[1], -self.get_dir()[0]])
@@ -267,7 +277,7 @@ class Face(_GeoBase, _GInfo):
                 self.adjs.append(e.twin.face)
         return self.adjs
 
-    def set_half_edges(self, half_edges):
+    def set_edges(self, half_edges):
         self.half_edges = half_edges
 
     def set_adjs(self, adj_faces):
