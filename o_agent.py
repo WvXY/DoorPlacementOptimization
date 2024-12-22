@@ -72,13 +72,14 @@ class Agent:
     def deactivate(self):
         # 1 -> 0 is working, but 0 -> 1 is not working
         v_del, e_del, f_del = del_vertex(self.new_verts[1])
+        # print("===================")
         v, e, f = del_vertex(self.new_verts[0])
         v_del.extend(v)
         e_del.extend(e)
         f_del.extend(f)
 
-        for f in f_del:
-            print(f.fid)
+        # for f in f_del:
+        #     print(f.fid)
 
         # for v in v_del:
         #     self.new_verts.remove(v)
