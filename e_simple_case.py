@@ -32,7 +32,7 @@ nm.create_mesh(ld.vertices, ld.edges, 0)
 inner_walls = nm.inner_fixed_edges
 
 e0 = nm.get_by_eid(0)
-agent = Agent(e0, np.array([0.5, 0.9]))
+agent = Agent(e0, np.array([0.5, 0.8]))
 agent.activate()
 # print(len(agent.new_verts), len(agent.new_edges), len(agent.new_faces))
 nm.append(agent.new_verts, agent.new_edges, agent.new_faces)
@@ -70,17 +70,30 @@ def score_func(path):
     return score
 
 
-sample_points = np.random.rand(1000, 2)
+sample_points = np.random.rand(2000, 2)
 scores, locs = [], []
 
-# run
-prev_score = 1
-best_score = 1
-ds = 0.01
-for l in range(100):
+###############################
+# metropolis hastings
+T = 1
+
+
+def dx():
+    return np.random.normal(1) * 0.06
+
+
+def pi(fx, T=T):
+    return np.exp(-fx / T)
+
+
+def proposal(agent):
+    agent.move_by(dx())
+
+
+def f():
     score = 0
     i = 0
-    for i in range(500):
+    for i in range(1000):
         start = Point(sample_points[i])
         end = Point(sample_points[i + 1])
 
@@ -88,25 +101,29 @@ for l in range(100):
         path = nm.simplify(tripath, start, end)
         if path:
             i += 1
-            # vis.draw_linepath(path, c="k", lw=6, a=0.01)
             score += score_func(path)
-
-    if score <= 0:
-        continue
-
-    score /= i
-    ds = score - prev_score
-    print(f"score: {score} | agent: {agent.center} | ds: {ds}")
-    if score < best_score:
-        best_score = score
-        best_loc = agent.center
-    scores.append(score)
-    locs.append(agent.center[1])
-    prev_score = score
-    agent.move_by(0.01)
+    return score / i
 
 
-print(f"best_score: {best_score} | best_loc: {best_loc}")
+# run
+for l in range(100):
+
+    old_score = f()
+    old_pos = agent.center.copy()
+
+    proposal(agent)
+    new_score = f()
+
+    alpha = np.exp((old_score - new_score) / T)
+    print(f"alpha: {alpha}")
+    u = np.random.rand()
+    if u >= alpha:
+        agent.set_pos(old_pos)  # reject
+
+    print(
+        f"agent: {agent.center} | old_score: {old_score} | new_score: {new_score}"
+    )
+
 vis.draw_mesh(nm, show=False, draw_text="vef")
 
 # vis.draw_tripath(tripath)
@@ -123,5 +140,5 @@ vis.draw_mesh(nm, show=False, draw_text="vef")
 
 vis.show(f"Result")
 
-plt.plot(locs, scores)
-plt.show()
+# plt.plot(locs, scores)
+# plt.show()

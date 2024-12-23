@@ -1,4 +1,4 @@
-from resource import RLIMIT_CPU
+import numpy as np
 
 from u_geometry import add_vertex, closet_position_on_edge, del_vertex
 from f_primitives import RPoint, REdge, RFace
@@ -10,12 +10,14 @@ class Agent:
         self.center = location
         self.dir = edge.get_dir()
         self.length = 0.1
+        self.ori = edge.ori.xy.copy()
+        self.edge_len = edge.get_length()
         # self.rooms = []
 
         self.move_limit = [
-            edge.ori.xy + self.dir * self.length / 2,
-            edge.to.xy - self.dir * self.length / 2,
-        ]
+            self.length / 2 / self.edge_len,
+            1 - self.length / 2 / self.edge_len,
+        ]  # lower and upper limit
 
         self.new_verts = []
         self.new_edges = []
@@ -49,22 +51,22 @@ class Agent:
         self.is_active = True
 
     def move_by(self, delta):
-        self.center += delta * self.dir
-        # if self.in_limit(self.center):
-        for v in self.new_verts:
-            v.xy += delta * self.dir
-        #     return True
-        # else:
-        #     return False
+        new_center = self.center + delta * self.dir
+        if self.in_limit(new_center):
+            self.center = new_center
+            for v in self.new_verts:
+                v.xy += delta * self.dir
+
+    def set_pos(self, pos):
+        self.center = pos
+        self.new_verts[0].xy = pos + self.dir * self.length / 2
+        self.new_verts[1].xy = pos - self.dir * self.length / 2
 
     def in_limit(self, pos):
-        return (
-            self.move_limit[0][0] <= pos[0] <= self.move_limit[1][0]
-            and self.move_limit[0][1] <= pos[1] <= self.move_limit[1][1]
-        )
+        return self.move_limit[0] <= self.fraction(pos) <= self.move_limit[1]
 
     def fraction(self, pos):
-        return (self.bind_edge.ori.xy - pos).length / self.bind_edge.length
+        return np.linalg.norm(self.ori - pos) / self.edge_len
 
     def step(self):
         pass
