@@ -6,19 +6,14 @@ from g_primitives import Point
 from f_primitives import RPoint, REdge, RFace
 from u_data_loader import Loader
 from u_visualization import Visualizer
-
-# from time import time
 from f_layout import FloorPlan
-from o_optimizer import Optimizer
 from o_agent import Agent
 
-from u_geometry import add_vertex
-
-
-# settings
+# Settings
 case_id = "0a"
-
 np.random.seed(0)
+
+# Load data
 ld = Loader(".")
 ld.load_w_walls_case(case_id)
 ld.optimize()
@@ -26,119 +21,80 @@ ld.optimize()
 nm = FloorPlan()
 nm.set_default_types(RPoint, REdge, RFace)
 nm.create_mesh(ld.vertices, ld.edges, 0)
-# nm.reconnect_closed_edges()
-# nm.create_rooms()
 
-inner_walls = nm.inner_fixed_edges
-
+# Initialize agent
 e0 = nm.get_by_eid(0)
-agent = Agent(e0, np.array([0.5, 0.8]))
-agent.activate()
-# print(len(agent.new_verts), len(agent.new_edges), len(agent.new_faces))
+agent = Agent(e0)
+agent.activate(np.array([0.5, 0.4]))
 nm.append(agent.new_verts, agent.new_edges, agent.new_faces)
 
-# for e in agent.new_edges:
-#     print(f"e{e.eid}= next: {e.next.eid}, prev: {e.prev.eid}")
+sp = np.random.rand(500, 2)
+sp = [Point(p) for p in sp]
 
-# dv, de, df = agent.deactivate()
-# # # print([e.eid for e in de])
-# nm.remove(dv, de, df)
-
-# print(agent.move_by(-0.2))
-
-# v, e, f = split_edge(e0, [0.45, 0.5], Point=RPoint, Edge=REdge, Face=RFace)
-# nm.append(v, e, f)
-
-
-# start = Point(np.array([0.2, 0.4]))
-# end = Point(np.array([0.6, 0.6]))
-#
-# tripath = nm.find_tripath(start, end)
-# path = nm.simplify(tripath, start, end)
-#
-# print(f"tripath: {tripath}")
-
-
-# draw
+# Visualization
 vis = Visualizer()
 
-
 def score_func(path):
+    return sum(np.linalg.norm(path[i].xy - path[i + 1].xy) for i in range(len(path) - 1))
+
+def f(batch_size=50):
+    # indices = np.random.choice(range(0, 500, 2), batch_size, replace=False)
     score = 0
-    for i in range(len(path) - 1):
-        score += np.linalg.norm(path[i].xy - path[i + 1].xy)
-    return score
-
-
-sample_points = np.random.rand(2000, 2)
-scores, locs = [], []
-
-###############################
-# metropolis hastings
-T = 1
-
-
-def dx():
-    return np.random.normal(1) * 0.06
-
-
-def pi(fx, T=T):
-    return np.exp(-fx / T)
-
-
-def proposal(agent):
-    agent.move_by(dx())
-
-
-def f():
-    score = 0
-    i = 0
-    for i in range(1000):
-        start = Point(sample_points[i])
-        end = Point(sample_points[i + 1])
-
+    valid_paths = 0
+    for i in range(0, 500, 2):
+        start = sp[i]
+        end = sp[i + 1]
         tripath = nm.find_tripath(start, end)
         path = nm.simplify(tripath, start, end)
         if path:
-            i += 1
+            valid_paths += 1
             score += score_func(path)
-    return score / i
+    return score / valid_paths if valid_paths > 0 else float('inf')
 
+# Metropolis-Hastings settings
+T = 0.01
+old_score = f()
+samples = []
+best_x = agent.center.copy()
+best_score = old_score
 
-# run
-for l in range(100):
-
-    old_score = f()
+for iteration in range(300):
     old_pos = agent.center.copy()
 
-    proposal(agent)
+    # Propose a new position
+    status = agent.move_by(np.random.normal(0, .03))
+    if not status:
+        continue
+
     new_score = f()
+    df = new_score - old_score
 
-    alpha = np.exp((old_score - new_score) / T)
-    print(f"alpha: {alpha}")
-    u = np.random.rand()
-    if u >= alpha:
-        agent.set_pos(old_pos)  # reject
+    # Accept or reject proposal
+    alpha = np.exp(-df / T)
+    # if delta_f < 0 or np.random.rand() < np.exp(-delta_f / T):  # Accept criterion
+    if  df < 0 or np.random.rand() < alpha:
+        old_score = new_score
+        if new_score < best_score:
+            best_x = agent.center.copy()
+            best_score = new_score
+    else:
+        agent.set_pos(old_pos)  # Reject proposal
 
-    print(
-        f"agent: {agent.center} | old_score: {old_score} | new_score: {new_score}"
-    )
+    samples.append(agent.center[1])
+    T *= 0.99  # Annealing
 
+    print(f"Iteration: {iteration}, Agent: {agent.center}, "
+          f"Old Score: {old_score:.3f}, New Score: {new_score:.3f}, Alpha: {alpha:.3f}")
+
+# Visualize results
 vis.draw_mesh(nm, show=False, draw_text="vef")
+vis.show(f"Result {case_id} | Best Center: {best_x} | Final T: {T:.3f}")
 
-# vis.draw_tripath(tripath)
-# vis.draw_point(start, c="g", s=40, m="s")
-# vis.draw_point(end, c="r", s=40)
-
-# for f in nm.faces:
-#     # vis.draw_half_edges(f.half_edges, c="b", lw=0.003)
-#     c = np.random.rand(3) * 0.8
-#     vis.draw_tri_half_edges(f, c=c, lw=0.006)
-
-# for e in inner_walls:
-#     vis.draw_linepath([e.ori, e.to], c="b", lw=8, a=1)
-
-vis.show(f"Result")
-
-# plt.plot(locs, scores)
-# plt.show()
+# # Plot samples
+plt.hist(samples, bins=100, density=True, alpha=0.5, label="Samples")
+# yy = np.linspace(0.4, 1, 100)
+# for y in yy:
+#     agent.set_pos(np.array([0.46875, y]))
+#     plt.plot(y, f(), 'ro')
+plt.legend()
+plt.show()
