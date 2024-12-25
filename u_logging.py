@@ -3,8 +3,6 @@ import logging
 import os
 from logging.handlers import TimedRotatingFileHandler
 
-from scipy.ndimage import label
-
 
 # from threading import Lock
 
