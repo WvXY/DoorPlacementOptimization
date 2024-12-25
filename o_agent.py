@@ -5,9 +5,9 @@ from f_primitives import RPoint, REdge, RFace
 
 
 class Agent:
-    def __init__(self, edge, location):
+    def __init__(self, edge):
         self.bind_edge = edge
-        self.center = location
+
         self.dir = edge.get_dir()
         self.length = 0.1
         self.ori = edge.ori.xy.copy()
@@ -25,15 +25,15 @@ class Agent:
 
         self.is_active = False
 
-    def _correct_location(self):
+    def _correct_location(self, loc):
         if self.bind_edge is None:
-            return
-        self.center = closet_position_on_edge(self.bind_edge, self.center)
+            return None
+        return closet_position_on_edge(self.bind_edge, loc)
 
-    def activate(self):
-        self._correct_location()
-        cut_p0 = self.center + self.dir * self.length / 2
-        cut_p1 = self.center - self.dir * self.length / 2
+    def activate(self, center):
+        new_center = self._correct_location(center)
+        cut_p0 = new_center + self.dir * self.length / 2
+        cut_p1 = new_center - self.dir * self.length / 2
         self.new_verts, self.new_edges, self.new_faces = add_vertex(
             self.bind_edge, cut_p0, Point=RPoint, Edge=REdge, Face=RFace
         )
@@ -53,23 +53,36 @@ class Agent:
     def move_by(self, delta):
         new_center = self.center + delta * self.dir
         if self.in_limit(new_center):
-            self.center = new_center
             for v in self.new_verts:
                 v.xy += delta * self.dir
+            return True
+        else:
+            return False
 
     def set_pos(self, pos):
-        self.center = pos
-        self.new_verts[0].xy = pos + self.dir * self.length / 2
-        self.new_verts[1].xy = pos - self.dir * self.length / 2
+        new_center = closet_position_on_edge(self.bind_edge, pos)
+        if not self.in_limit(new_center):
+            return False
+        self.new_verts[0].xy = self.center + self.dir * self.length / 2
+        self.new_verts[1].xy = self.center - self.dir * self.length / 2
 
     def in_limit(self, pos):
         return self.move_limit[0] <= self.fraction(pos) <= self.move_limit[1]
 
+    # TODO: use fraction to determine in or out of limit
     def fraction(self, pos):
-        return np.linalg.norm(self.ori - pos) / self.edge_len
+        frac = np.linalg.norm(self.ori - pos) / self.edge_len
+        if (self.ori - pos) @ self.dir > 0:
+            return -frac
+        else:
+            return frac
 
     def step(self):
         pass
+
+    @property
+    def center(self):
+        return (self.new_verts[0].xy + self.new_verts[1].xy) / 2
 
     def deactivate(self):
         # 1 -> 0 is working, but 0 -> 1 is not working
@@ -91,3 +104,41 @@ class Agent:
         #     self.new_faces.remove(f)
 
         return v_del, e_del, f_del
+
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    from f_primitives import RPoint, REdge, RFace
+    from u_data_loader import Loader
+    from f_layout import FloorPlan
+    from u_geometry import add_vertex
+
+
+    # settings
+    case_id = "0a"
+
+    np.random.seed(0)
+    ld = Loader(".")
+    ld.load_w_walls_case(case_id)
+    ld.optimize()
+
+    nm = FloorPlan()
+    nm.set_default_types(RPoint, REdge, RFace)
+    nm.create_mesh(ld.vertices, ld.edges, 0)
+    # nm.reconnect_closed_edges()
+    # nm.create_rooms()
+
+    inner_walls = nm.inner_fixed_edges
+
+    e0 = nm.get_by_eid(0)
+    agent = Agent(e0, np.array([0.5, 0.8]))
+    agent.activate()
+    nm.append(agent.new_verts, agent.new_edges, agent.new_faces)
+
+    for i in range(10):
+        agent.move_by(0.02)
+        agent.set_pos(np.array([0.5, 0.8]))
+        print(f"agent.center: {agent.center} "
+              f"| agent.ys {agent.new_verts[0].y:.4f} {agent.new_verts[1].y:.4f}")

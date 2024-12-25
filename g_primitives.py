@@ -148,7 +148,9 @@ class Vertex(_GeoBase, _GInfo):
 
     @xy.setter
     def xy(self, value):
-        self._xy = value
+        if len(value) != 2:
+            raise ValueError("The input must have exactly two elements.")
+        self.pos[:2] = value
 
     @staticmethod
     def get_by_vid(nid):
