@@ -3,17 +3,29 @@
 ## Dependencies
 - PythonCDT : for generating constrained delaunay triangulation mesh
 
-## Installation
+## Usage
+### Clone this repo
+```bash
+git clone --recurse-submodules git@github.com:WvXY/MasterProject.git
+```
+
 ### PIP
 ```bash
-pip install numpy matplotlib PythonCDT
+py -m venv .venv
+.venv\Scripts\activate 
+# source .venv/bin/activate # Linux/MacOS
+pip install numpy matplotlib
+pip install PythonCDT
 ```
  
 ### Conda Environment
 ```bash
-conda install numpy matplotlib 
+conda create -n mProj python=3.12 numpy matplotlib
+conda activate mProj 
 pip install PythonCDT
 ```
+
+
 
 ## Progress
 - [X] Fix navmesh 

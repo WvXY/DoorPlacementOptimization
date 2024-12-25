@@ -1,0 +1,3 @@
+[submodule "PythonCDT"]
+	path = PythonCDT
+	url = ttps://github.com/artem-ogre/PythonCDT.git
