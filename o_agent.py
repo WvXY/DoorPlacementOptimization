@@ -60,13 +60,14 @@ class Agent:
             return False
 
     def set_pos(self, pos):
-        new_center = closet_position_on_edge(self.bind_edge, pos)
+        new_center = pos # closet_position_on_edge(self.bind_edge, pos)
         if not self.in_limit(new_center):
             return False
-        self.new_verts[0].xy = self.center + self.dir * self.length / 2
-        self.new_verts[1].xy = self.center - self.dir * self.length / 2
+        self.new_verts[0].xy = new_center + self.dir * self.length / 2
+        self.new_verts[1].xy = new_center - self.dir * self.length / 2
 
     def in_limit(self, pos):
+        # print(f"fraction: {self.fraction(pos)} pos: {pos}")
         return self.move_limit[0] <= self.fraction(pos) <= self.move_limit[1]
 
     # TODO: use fraction to determine in or out of limit

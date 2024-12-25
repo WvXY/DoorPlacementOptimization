@@ -24,8 +24,8 @@ nm.create_mesh(ld.vertices, ld.edges, 0)
 
 # Initialize agent
 e0 = nm.get_by_eid(0)
-agent = Agent(e0, np.array([0.5, 0.4]))
-agent.activate()
+agent = Agent(e0)
+agent.activate(np.array([0.5, 0.4]))
 nm.append(agent.new_verts, agent.new_edges, agent.new_faces)
 
 sp = np.random.rand(500, 2)
@@ -52,9 +52,9 @@ def f():
 
 # Plot samples
 # plt.hist(samples, bins=100, density=True, alpha=0.5, label="Samples")
-yy = np.linspace(0.4, 1, 100)
+yy = np.linspace(0.4, 1, 35)
 for y in yy:
     agent.set_pos(np.array([0.46875, y]))
     plt.plot(y, f(), 'ro')
-plt.legend()
+# plt.legend()
 plt.show()

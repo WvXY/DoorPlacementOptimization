@@ -41,7 +41,7 @@ def f(batch_size=50):
     # indices = np.random.choice(range(0, 500, 2), batch_size, replace=False)
     score = 0
     valid_paths = 0
-    for i in range(0, 500, 2):
+    for i in range(0, 200, 2):
         start = sp[i]
         end = sp[i + 1]
         tripath = nm.find_tripath(start, end)
