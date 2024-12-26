@@ -8,7 +8,8 @@ from u_visualization import Visualizer
 
 # from time import time
 
-from o_optimizer import Optimizer, OptiAgent
+from o_optimizer import Optimizer
+from o_door import ODoor
 
 # settings
 case_id = "5"
@@ -23,8 +24,8 @@ nm.create_mesh(ld.vertices, ld.edges, 0)
 inner_walls = nm.inner_fixed_edges
 outer_walls = nm.border_edges
 
-agent = OptiAgent()
-agent.xy = np.array([0.5, 0.5])
+# agent = ODoor()
+# agent.xy = np.array([0.5, 0.5])
 
 
 start = Point(np.array([0.96, 0.29]))

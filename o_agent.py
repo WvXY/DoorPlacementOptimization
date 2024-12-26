@@ -1,145 +1,113 @@
+import concurrent.futures
 import numpy as np
 
-from u_geometry import add_vertex, closet_position_on_edge, del_vertex
+# Your project imports
 from f_primitives import RPoint, REdge, RFace
-
+from f_layout import FloorPlan
+from u_visualization import Visualizer
+from u_data_loader import Loader
 
 class Agent:
-    def __init__(self, edge):
-        self.bind_edge = edge
+    def __init__(self):
+        self.prev_pos = None
+        self.curr_pos = None
+        self.fp = None  # reference to shared FloorPlan
 
-        self.dir = edge.get_dir()
-        self.length = 0.1
-        self.ori = edge.ori.xy.copy()
-        self.edge_len = edge.get_length()
-        # self.rooms = []
+    def set_floor_plan(self, floor_plan):
+        self.fp = floor_plan
 
-        self.move_limit = [
-            self.length / 2 / self.edge_len,
-            1 - self.length / 2 / self.edge_len,
-        ]  # lower and upper limit
+    def init(self):
+        # We'll pick two random positions so that prev_pos != curr_pos
+        self.next()
+        self.next()
 
-        self.new_verts = []
-        self.new_edges = []
-        self.new_faces = []
+    def next(self):
+        self.prev_pos = self.curr_pos
+        self.curr_pos = RPoint(np.random.rand(2))
+        # Keep trying until we find a random position inside the floor plan
+        while not self.inside_floor_plan():
+            self.curr_pos = RPoint(np.random.rand(2))
 
-        self.is_active = False
+    def inside_floor_plan(self):
+        return self.fp.get_point_inside_face(self.curr_pos) is not None
 
-    def _correct_location(self, loc):
-        if self.bind_edge is None:
-            return None
-        return closet_position_on_edge(self.bind_edge, loc)
 
-    def activate(self, center):
-        new_center = self._correct_location(center)
-        cut_p0 = new_center + self.dir * self.length / 2
-        cut_p1 = new_center - self.dir * self.length / 2
-        self.new_verts, self.new_edges, self.new_faces = add_vertex(
-            self.bind_edge, cut_p0, Point=RPoint, Edge=REdge, Face=RFace
-        )
-
-        v, e, f = add_vertex(
-            self.bind_edge, cut_p1, Point=RPoint, Edge=REdge, Face=RFace
-        )
-        self.new_verts.extend(v)
-        self.new_edges.extend(e)
-        self.new_faces.extend(f)
-
-        e[0].is_blocked = False
-        e[1].is_blocked = False  # twin of e[0]
-
-        self.is_active = True
-
-    def move_by(self, delta):
-        new_center = self.center + delta * self.dir
-        if self.in_limit(new_center):
-            for v in self.new_verts:
-                v.xy += delta * self.dir
-            return True
-        else:
-            return False
-
-    def set_pos(self, pos):
-        new_center = pos # closet_position_on_edge(self.bind_edge, pos)
-        if not self.in_limit(new_center):
-            return False
-        self.new_verts[0].xy = new_center + self.dir * self.length / 2
-        self.new_verts[1].xy = new_center - self.dir * self.length / 2
-
-    def in_limit(self, pos):
-        # print(f"fraction: {self.fraction(pos)} pos: {pos}")
-        return self.move_limit[0] <= self.fraction(pos) <= self.move_limit[1]
-
-    # TODO: use fraction to determine in or out of limit
-    def fraction(self, pos):
-        frac = np.linalg.norm(self.ori - pos) / self.edge_len
-        if (self.ori - pos) @ self.dir > 0:
-            return -frac
-        else:
-            return frac
-
-    def step(self):
-        pass
-
-    @property
-    def center(self):
-        return (self.new_verts[0].xy + self.new_verts[1].xy) / 2
-
-    def deactivate(self):
-        # 1 -> 0 is working, but 0 -> 1 is not working
-        v_del, e_del, f_del = del_vertex(self.new_verts[1])
-        # print("===================")
-        v, e, f = del_vertex(self.new_verts[0])
-        v_del.extend(v)
-        e_del.extend(e)
-        f_del.extend(f)
-
-        # for f in f_del:
-        #     print(f.fid)
-
-        # for v in v_del:
-        #     self.new_verts.remove(v)
-        # for e in e_del:
-        #     self.new_edges.remove(e)
-        # for f in f_del:
-        #     self.new_faces.remove(f)
-
-        return v_del, e_del, f_del
+def run_agent(agent, steps=100):
+    """
+    Worker function (run in a thread).
+    The agent references the same 'floor_plan' in memory as other agents.
+    We collect and return the path data for visualization later.
+    """
+    all_paths = []
+    for _ in range(steps):
+        tripath = agent.fp.find_tripath(agent.prev_pos, agent.curr_pos)
+        path    = agent.fp.simplify(tripath, agent.prev_pos, agent.curr_pos)
+        all_paths.append(path)
+        agent.next()
+    return all_paths
 
 
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-    import numpy as np
+    import sys, sysconfig
 
-    from f_primitives import RPoint, REdge, RFace
-    from u_data_loader import Loader
-    from f_layout import FloorPlan
-    from u_geometry import add_vertex
+    # Check GIL status
+    py_version = float(".".join(sys.version.split()[0].split(".")[0:2]))
+    status = sysconfig.get_config_var("Py_GIL_DISABLED")
 
+    if py_version >= 3.13:
+        status = sys._is_gil_enabled()
+    if status is None:
+        print("GIL cannot be disabled for Python version <= 3.12")
+    if status == 0:
+        print("GIL is currently disabled")
+    if status == 1:
+        print("GIL is currently active")
 
-    # settings
-    case_id = "0a"
+    # -------------------------------------
+    # 1) Build one FloorPlan in main thread
+    # -------------------------------------
+    np.random.seed(0)  # for reproducibility
 
-    np.random.seed(0)
     ld = Loader(".")
-    ld.load_w_walls_case(case_id)
+    ld.load_w_walls_case(5)
     ld.optimize()
 
-    nm = FloorPlan()
-    nm.set_default_types(RPoint, REdge, RFace)
-    nm.create_mesh(ld.vertices, ld.edges, 0)
-    # nm.reconnect_closed_edges()
-    # nm.create_rooms()
+    fp = FloorPlan()
+    fp.set_default_types(RPoint, REdge, RFace)
+    fp.create_mesh(ld.vertices, ld.edges, 0)
 
-    inner_walls = nm.inner_fixed_edges
+    # -------------------------------------
+    # 2) Create multiple Agents
+    #    All share the SAME floor_plan object
+    # -------------------------------------
+    num_agents = 12
+    agents = []
+    for i in range(num_agents):
+        agent = Agent()
+        agent.set_floor_plan(fp)  # all agents see the same fp
+        agent.init()
+        agents.append(agent)
 
-    e0 = nm.get_by_eid(0)
-    agent = Agent(e0, np.array([0.5, 0.8]))
-    agent.activate()
-    nm.append(agent.new_verts, agent.new_edges, agent.new_faces)
+    # -------------------------------------
+    # 3) Use Threads for concurrency
+    # -------------------------------------
+    steps_per_agent = 100
+    with concurrent.futures.ThreadPoolExecutor(max_workers=12) as executor:
+        # Submit each agent to the thread pool
+        futures = [executor.submit(run_agent, agent, steps_per_agent) for agent in agents]
+        # Gather the results (list of lists of paths)
+        results = [f.result() for f in futures]
 
-    for i in range(10):
-        agent.move_by(0.02)
-        agent.set_pos(np.array([0.5, 0.8]))
-        print(f"agent.center: {agent.center} "
-              f"| agent.ys {agent.new_verts[0].y:.4f} {agent.new_verts[1].y:.4f}")
+    # -------------------------------------
+    # 4) Visualization in the main thread
+    # -------------------------------------
+    vis = Visualizer()
+    vis.draw_mesh(fp, show=False)
+
+    # 'results[i]' is the list of paths for agent i
+    for agent_paths in results:
+        for path in agent_paths:
+            # Draw each path
+            vis.draw_linepath(path, c="k", lw=2)
+
+    vis.show()

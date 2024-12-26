@@ -7,7 +7,7 @@ from f_primitives import RPoint, REdge, RFace
 from u_data_loader import Loader
 from u_visualization import Visualizer
 from f_layout import FloorPlan
-from o_agent import Agent
+from o_door import ODoor
 
 # Settings
 case_id = "0a"
@@ -24,7 +24,7 @@ nm.create_mesh(ld.vertices, ld.edges, 0)
 
 # Initialize agent
 e0 = nm.get_by_eid(0)
-agent = Agent(e0)
+agent = ODoor(e0)
 agent.activate(np.array([0.5, 0.4]))
 nm.append(agent.new_verts, agent.new_edges, agent.new_faces)
 
@@ -85,6 +85,8 @@ for iteration in range(300):
 
     print(f"Iteration: {iteration}, Agent: {agent.center}, "
           f"Old Score: {old_score:.3f}, New Score: {new_score:.3f}, Alpha: {alpha:.3f}")
+
+agent.set_pos(best_x)
 
 # Visualize results
 vis.draw_mesh(nm, show=False, draw_text="vef")

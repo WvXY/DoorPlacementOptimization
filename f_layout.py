@@ -47,6 +47,13 @@ class FloorPlan(NavMesh):
         e.is_visited = True
         self.traverse_edges(e.next)
 
+    def insider(self, p):
+        for r in self.rooms:
+            for f in r.faces:
+                if f.is_inside(p):
+                    return r
+        return None
+
     def clear(self):
         self.Face.clear()
         self.Edge.clear()
