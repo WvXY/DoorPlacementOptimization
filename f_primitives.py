@@ -2,24 +2,24 @@ from g_primitives import Point, Edge, Face
 from g_navmesh import NavMesh
 
 
-class RInfo:
+class FInfo:
     def __init__(self):
         self.room = None
         self.is_visited = False
 
 
-class RPoint(Point, RInfo):
+class FPoint(Point, FInfo):
     def __init__(self, xy):
         Point.__init__(self, xy)
-        RInfo.__init__(self)
+        FInfo.__init__(self)
 
 
-class RFace(Face, RInfo):
+class FFace(Face, FInfo):
     def __init__(self):
         Face.__init__(self)
-        RInfo.__init__(self)
+        FInfo.__init__(self)
 
-    def merge(self, other: "RFace"):
+    def merge(self, other: "FFace"):
         e = self.get_shared_edge(other)
         if e is None or e.is_visited:
             return False
@@ -33,10 +33,10 @@ class RFace(Face, RInfo):
         return True
 
 
-class REdge(Edge, RInfo):
+class FEdge(Edge, FInfo):
     def __init__(self, origin, to):
         Edge.__init__(self, origin, to)
-        RInfo.__init__(self)
+        FInfo.__init__(self)
 
     def disconnect(self):
         if self.is_visited:

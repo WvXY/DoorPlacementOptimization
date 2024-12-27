@@ -1,4 +1,4 @@
-from f_primitives import RPoint, REdge, RFace
+from f_primitives import FPoint, FEdge, FFace
 from g_navmesh import NavMesh
 
 
@@ -11,12 +11,12 @@ class Room:
         return f"Room({len(self.faces)})"
 
 
-class FloorPlan(NavMesh):
+class FLayout(NavMesh):
     def __init__(self):
         super().__init__()
-        self.Node = RPoint
-        self.Face = RFace
-        self.Edge = REdge
+        self.Node = FPoint
+        self.Face = FFace
+        self.Edge = FEdge
 
         self.clear()
         self.rooms = []
@@ -41,7 +41,7 @@ class FloorPlan(NavMesh):
             room.half_edges = [e for e in remains if e.is_visited]
             remains = [e for e in wall_edges if not e.is_visited]
 
-    def traverse_edges(self, e: REdge):
+    def traverse_edges(self, e: FEdge):
         if e.is_visited:
             return
         e.is_visited = True
@@ -77,13 +77,13 @@ if __name__ == "__main__":
     ld.optimize()
 
     fp = NavMesh()
-    fp.set_default_types(Node=RPoint, Edge=REdge, Face=RFace)
+    fp.set_default_types(Node=FPoint, Edge=FEdge, Face=FFace)
     fp.create_mesh(ld.vertices, ld.edges, 0)
     # fp.reconnect_closed_edges()
     # fp.create_rooms()
 
-    e17 = REdge.get_by_eid(17)
-    v, e, f = add_vertex(e17, [0.2, 0.1], Point=RPoint, Edge=REdge, Face=RFace)
+    e17 = FEdge.get_by_eid(17)
+    v, e, f = add_vertex(e17, [0.2, 0.1], Point=FPoint, Edge=FEdge, Face=FFace)
     fp.append(v=v, e=e, f=f)
 
     # e6 = Edge.get_by_eid(6)
@@ -91,11 +91,11 @@ if __name__ == "__main__":
     # fp.append(v=v, e=e, f=f)
 
     # debug
-    f10 = RFace.get_by_fid(10)
-    f5 = RFace.get_by_fid(5)
-    f9 = RFace.get_by_fid(9)
-    f11 = RFace.get_by_fid(11)
-    f7 = RFace.get_by_fid(7)
+    f10 = FFace.get_by_fid(10)
+    f5 = FFace.get_by_fid(5)
+    f9 = FFace.get_by_fid(9)
+    f11 = FFace.get_by_fid(11)
+    f7 = FFace.get_by_fid(7)
 
     vis = Visualizer()
 

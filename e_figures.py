@@ -9,7 +9,7 @@ from u_visualization import Visualizer
 # from time import time
 
 from o_optimizer import Optimizer
-from o_door import ODoor
+from o_door import FDoor
 
 # settings
 case_id = "5"

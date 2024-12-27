@@ -3,11 +3,11 @@ import numpy as np
 from copy import deepcopy
 
 from g_primitives import Point
-from f_primitives import RPoint, REdge, RFace
+from f_primitives import FPoint, FEdge, FFace
 from u_data_loader import Loader
 from u_visualization import Visualizer
-from f_layout import FloorPlan
-from o_door import ODoor
+from f_layout import FLayout
+from o_door import FDoor
 
 # Settings
 case_id = "0a"
@@ -18,13 +18,13 @@ ld = Loader(".")
 ld.load_w_walls_case(case_id)
 ld.optimize()
 
-nm = FloorPlan()
-nm.set_default_types(RPoint, REdge, RFace)
+nm = FLayout()
+nm.set_default_types(FPoint, FEdge, FFace)
 nm.create_mesh(ld.vertices, ld.edges, 0)
 
 # Initialize agent
 e0 = nm.get_by_eid(0)
-agent = ODoor(e0)
+agent = FDoor(e0)
 agent.activate(np.array([0.5, 0.4]))
 nm.append(agent.new_verts, agent.new_edges, agent.new_faces)
 

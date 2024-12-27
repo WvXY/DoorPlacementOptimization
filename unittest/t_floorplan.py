@@ -7,12 +7,12 @@ class FloorPlanTest(unittest.TestCase):
     ld = Loader("..")
 
     def test_room_generation(self):
-        from f_layout import FloorPlan
+        from f_layout import FLayout
 
         self.ld.load_w_walls_case(3)
         self.ld.optimize()
 
-        fp = FloorPlan()
+        fp = FLayout()
         fp.create_mesh(self.ld.vertices, self.ld.edges, 0)
         fp.reconnect_closed_edges()
         fp.create_rooms()
@@ -28,29 +28,29 @@ class FloorPlanTest(unittest.TestCase):
         self.assertIn([0, 6, 7, 13, 14, 15, 18, 19], room_faces)
 
     def test_split_edge(self):
-        from f_layout import FloorPlan, RPoint, RFace, REdge
+        from f_layout import FLayout, FPoint, FFace, FEdge
         from u_geometry import add_vertex
 
         self.ld.load_w_walls_case(0)
         self.ld.optimize()
 
-        fp = FloorPlan()
+        fp = FLayout()
         fp.create_mesh(self.ld.vertices, self.ld.edges, 0)
         fp.reconnect_closed_edges()
         fp.create_rooms()
 
         # modify the mesh
-        e0 = REdge.get_by_eid(2)
+        e0 = FEdge.get_by_eid(2)
         v, e, f = add_vertex(
-            e0, [0.65, 0.55], Point=RPoint, Edge=REdge, Face=RFace
+            e0, [0.65, 0.55], Point=FPoint, Edge=FEdge, Face=FFace
         )
         fp.append(v=v, e=e, f=f)
 
-        v3 = RPoint.get_by_vid(3)
+        v3 = FPoint.get_by_vid(3)
         v3.pos = [0.6, 0.8]
 
-        start = RPoint([0.5, 0.55])
-        end = RPoint([0.55, 0.45])
+        start = FPoint([0.5, 0.55])
+        end = FPoint([0.55, 0.45])
 
         tripath = fp.find_tripath(start, end)
         path = fp.simplify(tripath, start, end)

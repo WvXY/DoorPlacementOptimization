@@ -59,7 +59,7 @@ class Mesh(_GeoBase):
 
     def get_block_edges(self):
         self.inner_fixed_edges = [
-            e for e in self.edges if e.is_blocked and not e.is_outer_wall
+            e for e in self.edges if e.is_blocked and not e.is_outer
         ]
         return self.inner_fixed_edges + self.border_edges
 

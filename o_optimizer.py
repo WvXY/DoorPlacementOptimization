@@ -1,10 +1,11 @@
 import numpy as np
-
+from o_door import FDoor
 
 class Optimizer:
     def __init__(self):
         self.agent: None
 
+        self.sampler = None
         self.agent = None
         self.map = None
 

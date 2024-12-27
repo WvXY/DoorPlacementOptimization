@@ -228,8 +228,12 @@ class Edge(_GeoBase, _GInfo):
         return self.__diagonal_vertex
 
     @property
-    def is_outer_wall(self):
+    def is_outer(self):
         return not self.twin
+
+    @property
+    def is_inner(self):
+        return self.is_blocked and self.twin is not None
 
     @staticmethod
     def get_by_eid(eid):
@@ -240,7 +244,7 @@ class Edge(_GeoBase, _GInfo):
 
     # geometry utils
     def disconnect(self):
-        if self.is_outer_wall:
+        if self.is_outer:
             return
 
         self.prev.next = self.twin.next

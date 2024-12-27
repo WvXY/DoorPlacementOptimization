@@ -5,7 +5,7 @@ from g_primitives import Vertex, Edge, Face
 
 def add_vertex(edge, position, Point=Vertex, Edge=Edge, Face=Face):
     """Split edge into two edges by a point"""
-    if edge.is_outer_wall:
+    if edge.is_outer:
         return [], [], []
 
     p_cut = Point(position)
@@ -159,7 +159,7 @@ def del_vertex(vertex):
 
 def closet_position_on_edge(edge, point):
     """Find the closest position on edge from point"""
-    if edge.is_outer_wall:
+    if edge.is_outer:
         return None
 
     p0, p1 = np.array(edge.ori.xy), np.array(edge.to.xy)

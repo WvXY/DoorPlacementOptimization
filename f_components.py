@@ -1,27 +1,27 @@
 from g_primitives import _GeoBase
 
 
-class Door(_GeoBase):
-    door_list = []
-
-    def __init__(self, number, status):
-        super().__init__()
-        self.number = number
-        self.status = status
-
-        Door.door_list.append(self)
-
-    def open(self):
-        self.status = "open"
-
-    def close(self):
-        self.status = "closed"
-
-    def create(self):
-        self.status = "created"
-
-    def __str__(self):
-        return f"Door {self.number} is {self.status}"
+# class Door(_GeoBase):
+#     door_list = []
+#
+#     def __init__(self, number, status):
+#         super().__init__()
+#         self.number = number
+#         self.status = status
+#
+#         Door.door_list.append(self)
+#
+#     def open(self):
+#         self.status = "open"
+#
+#     def close(self):
+#         self.status = "closed"
+#
+#     def create(self):
+#         self.status = "created"
+#
+#     def __str__(self):
+#         return f"Door {self.number} is {self.status}"
 
 
 class Room(_GeoBase):

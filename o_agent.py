@@ -2,8 +2,8 @@ import concurrent.futures
 import numpy as np
 
 # Your project imports
-from f_primitives import RPoint, REdge, RFace
-from f_layout import FloorPlan
+from f_primitives import FPoint, FEdge, FFace
+from f_layout import FLayout
 from u_visualization import Visualizer
 from u_data_loader import Loader
 
@@ -23,10 +23,10 @@ class Agent:
 
     def next(self):
         self.prev_pos = self.curr_pos
-        self.curr_pos = RPoint(np.random.rand(2))
+        self.curr_pos = FPoint(np.random.rand(2))
         # Keep trying until we find a random position inside the floor plan
         while not self.inside_floor_plan():
-            self.curr_pos = RPoint(np.random.rand(2))
+            self.curr_pos = FPoint(np.random.rand(2))
 
     def inside_floor_plan(self):
         return self.fp.get_point_inside_face(self.curr_pos) is not None
@@ -72,8 +72,8 @@ if __name__ == "__main__":
     ld.load_w_walls_case(5)
     ld.optimize()
 
-    fp = FloorPlan()
-    fp.set_default_types(RPoint, REdge, RFace)
+    fp = FLayout()
+    fp.set_default_types(FPoint, FEdge, FFace)
     fp.create_mesh(ld.vertices, ld.edges, 0)
 
     # -------------------------------------
