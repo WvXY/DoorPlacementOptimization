@@ -5,13 +5,13 @@ from f_primitives import FPoint, FEdge, FFace
 
 
 class FDoor:
-    def __init__(self, edge):
+    def __init__(self, edge, fp=None):
         self.bind_edge = edge
 
         self.dir = edge.get_dir()
         self.len = 0.1
         self.edge_len = edge.get_length()
-        self.proportion = 0
+        self.ratio = 0
         # self.rooms = []
 
         self.move_limit = [
@@ -23,16 +23,31 @@ class FDoor:
         self.new_edges = []
         self.new_faces = []
 
+        self.fp = fp
         self.is_active = False
+
+        self.__history = {
+            "bind_edge": None,
+            "ratio": 0.0,
+            "center": None,
+        }
 
     def _correct_location(self, loc):
         if self.bind_edge is None:
             return None
         return closet_position_on_edge(self.bind_edge, loc)
 
-    def activate(self, center):
-        new_center = self._correct_location(center)
-        self.proportion = self._fraction(new_center)
+    def activate(self, center=None):
+        if center is None:
+            if self.__history["ratio"] > 0.5:
+                new_center = (self.bind_edge.to.xy
+                              - self.move_limit[0] * self.dir * self.edge_len)
+            else:
+                new_center = (self.bind_edge.ori.xy
+                              + self.move_limit[0] * self.dir * self.edge_len)
+        else:
+            new_center = self._correct_location(center)
+        self.ratio = self._cal_ratio(new_center)
         cut_p0 = new_center + self.dir * self.len / 2
         cut_p1 = new_center - self.dir * self.len / 2
         self.new_verts, self.new_edges, self.new_faces = add_vertex(
@@ -52,8 +67,10 @@ class FDoor:
         self.is_active = True
 
     def move_by(self, delta):
-        if self._in_limit(self.proportion + delta):
-            self.proportion += delta / self.edge_len
+        if self._in_limit(self.ratio + delta):
+            self.save_history()
+
+            self.ratio += delta / self.edge_len
             for v in self.new_verts:
                 v.xy += delta * self.dir
             return True
@@ -62,18 +79,20 @@ class FDoor:
 
     def set_pos(self, pos):
         new_center = pos # closet_position_on_edge(self.bind_edge, pos)
-        p = self._fraction(new_center)
+        p = self._cal_ratio(new_center)
         if not self._in_limit(p):
             return False
+
+        self.save_history()
         self.new_verts[0].xy = new_center + self.dir * self.len / 2
         self.new_verts[1].xy = new_center - self.dir * self.len / 2
-        self.proportion = p
+        self.ratio = p
 
-    def _in_limit(self, proportion):
+    def _in_limit(self, ratio):
         # print(f"fraction: {self.fraction(pos)} pos: {pos}")
-        return self.move_limit[0] <= proportion <= self.move_limit[1]
+        return self.move_limit[0] <= ratio <= self.move_limit[1]
 
-    def _fraction(self, pos):
+    def _cal_ratio(self, pos):
         frac = np.linalg.norm(self.bind_edge.ori.xy - pos) / self.edge_len
         if (self.bind_edge.ori.xy - pos) @ self.dir > 0:
             return -frac
@@ -81,19 +100,48 @@ class FDoor:
             return frac
 
     def step(self):
-        pass
+        # delta = np.random.normal(0, 0.05)
+        delta = -0.05
+        ratio = self.ratio + delta
+        self.save_history()
+        if not self._in_limit(ratio):
+            self.deactivate()
+            self.next_edge(ratio)
+            self._update_properties()
+            self.activate()
+            self.update_fp()
+            print(f"bind_edge: {self.bind_edge.eid} | ratio: {self.ratio} | ori: {self.bind_edge.ori.vid}")
+        else:
+            self.ratio = ratio
+            for v in self.new_verts:
+                v.xy += delta * self.dir
 
-    def next_edge(self):
-        v = None
-        if self.proportion >= self.move_limit[1]:
+    def next_edge(self, ratio):
+        def search_next_edge(vertex):
+            for e in vertex.half_edges:
+                if (e.is_inner and
+                        not (self.bind_edge is e or
+                             e is self.bind_edge.twin)):
+                    return e
+            return None
+
+        if ratio >= self.move_limit[1]:
             v = self.bind_edge.to
-        elif self.proportion <= self.move_limit[0]:
+            e = search_next_edge(v)
+            self.bind_edge = e if e.ori is v else e.twin
+        elif ratio <= self.move_limit[0]:
             v = self.bind_edge.ori
+            e = search_next_edge(v)
+            self.bind_edge = e if e.to is v else e.twin
 
-        for e in v.half_edges:
-            if e.is_inner:
-                self.bind_edge = e
-                return
+    def _update_properties(self):
+        self.dir = self.bind_edge.get_dir()
+        self.edge_len = self.bind_edge.get_length()
+        self.move_limit = [
+            self.len / 2.0 / self.edge_len, # lower limit
+            1 - self.len / 2.0 / self.edge_len, # upper limit
+        ]
+        self.ratio = self._cal_ratio(self.center)
 
     @property
     def center(self):
@@ -108,17 +156,24 @@ class FDoor:
         e_del.extend(e)
         f_del.extend(f)
 
-        # for f in f_del:
-        #     print(f.fid)
-
-        # for v in v_del:
-        #     self.new_verts.remove(v)
-        # for e in e_del:
-        #     self.new_edges.remove(e)
-        # for f in f_del:
-        #     self.new_faces.remove(f)
-
         return v_del, e_del, f_del
+
+    def set_fp(self, fp):
+        self.fp = fp
+
+    def update_fp(self):
+        self.fp.append(self.new_verts, self.new_edges, self.new_faces)
+
+    # history
+    def save_history(self):
+        self.__history["bind_edge"] = self.bind_edge
+        self.__history["ratio"] = self.ratio
+        self.__history["center"] = self.center
+
+    def load_history(self):
+        self.bind_edge = self.__history["bind_edge"]
+        self.ratio = self.__history["ratio"]
+        self.activate(self.__history["center"])
 
 
 if __name__ == "__main__":
