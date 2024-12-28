@@ -15,6 +15,9 @@ class Loader:
     def load_w_walls_case(self, idx):
         self.success = self._load("/assets/fp_w_walls_{}.obj".format(idx))
 
+    def load_closed_rooms_case(self, idx):
+        self.success = self._load("/assets/fp_closed_rooms_{}.obj".format(idx))
+
     def _load(self, obj_file):
         self.clear()
         self._load_obj(self.__root_dir + obj_file)
@@ -131,7 +134,7 @@ def _process_vertices(vertices_list, raw_data):
 if __name__ == "__main__":
     ld = Loader()
     ld.set_root_dir(".")
-    ld.load_wo_wall_case(0)
-    ld.load_w_walls_case(3)
+    ld.load_closed_rooms_case(2)
+    # ld.load_closed_rooms_case(1)
     print(ld.vertices)
     print(ld.edges)

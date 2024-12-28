@@ -216,9 +216,6 @@ class Edge(_GeoBase, _GInfo):
     def get_length(self):
         return np.linalg.norm(self.to.xy - self.ori.xy)
 
-    def intersect(self, other):
-        pass
-
     @property
     def eid(self):
         return self.__eid

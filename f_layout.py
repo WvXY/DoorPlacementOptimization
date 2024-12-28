@@ -65,6 +65,11 @@ class FLayout(NavMesh):
                 return e
         return None
 
+    def clean(self):
+        self.verts = [v for v in self.verts if v.is_active]
+        self.edges = [e for e in self.edges if e.is_active]
+        self.faces = [f for f in self.faces if f.is_active]
+
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt

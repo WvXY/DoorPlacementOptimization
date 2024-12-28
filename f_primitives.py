@@ -6,6 +6,7 @@ class FInfo:
     def __init__(self):
         self.room = None
         self.is_visited = False
+        self.is_active = True
 
 
 class FPoint(Point, FInfo):
