@@ -62,7 +62,7 @@ if __name__ == "__main__":
 
 
     # Metropolis-Hastings settings
-    T = 0.01
+    T = 0.1
     old_score = f(fp, sp)
     samples = []
     best_score = old_score
@@ -89,7 +89,7 @@ if __name__ == "__main__":
         else:
             agent.load_history()
 
-        samples.append(agent.center[1])
+        samples.append(agent.center)
         T *= 0.99  # Annealing
 
         print(f"Agent: {agent.center}, "
@@ -99,13 +99,16 @@ if __name__ == "__main__":
     #
     # # Visualize results
     vis.draw_mesh(fp, show=False)
+    for v in samples:
+        plt.scatter(v[0], v[1], c="r", s=20, alpha=0.1, marker="s")
+
     vis.show(f"Result {case_id} | Best Center: {best_x} | Final T: {T:.3f}")
     #
     # # # Plot samples
-    plt.hist(samples, bins=100, density=True, alpha=0.5, label="Samples")
+    # plt.hist(samples, bins=100, density=True, alpha=0.5, label="Samples")
     # yy = np.linspace(0.4, 1, 100)
     # # for y in yy:
     # #     agent.set_pos(np.array([0.46875, y]))
     # #     plt.plot(y, f(), 'ro')
     # plt.legend()
-    plt.show()
+    # plt.show()

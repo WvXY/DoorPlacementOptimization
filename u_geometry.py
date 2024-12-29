@@ -71,6 +71,14 @@ def add_vertex(edge, position, Point=Vertex, Edge=Edge, Face=Face):
     edge.to = p_cut
     edge.next = e0
 
+    # print(f"e_new: {e_new.eid}, e_new_t: {e_new_t.eid}")
+    # print(f"e0: {e0.eid}, e0_t: {e0_t.eid}")
+    # print(f"e1: {e1.eid}, e1_t: {e1_t.eid}")
+
+    # for e in [e_new, e_new_t, e0, e0_t, e1, e1_t]:
+    #     if e.eid == 101:
+    #         print(f"**** e{e.eid}.ori: {e.ori.vid}, to: {e.to.vid}")
+
     # newly added Points, Edges, Faces
     return [p_cut], [e_new, e_new_t, e0, e0_t, e1, e1_t], [f0, f1]
 
@@ -110,6 +118,7 @@ def del_vertex(vertex):
     # print(f"e_kp: face: {e_keep.face.fid}, twin: {e_keep.twin.face.fid}")
     # print(f"e_del: face: {e_del.face.fid}, twin: {e_del.twin.face.fid}")
 
+
     # 3. Update the start/end vertex of the edges
     e_keep.ori = e_del.ori
     e_keep_t.to = e_del.ori
@@ -138,12 +147,14 @@ def del_vertex(vertex):
         f_adj_0 = e0_t.next.twin.face
         f0.replace_adj_face(f0_t, f_adj_0)
         f_adj_0.replace_adj_face(f0_t, f0)
+        print(f"f_adj_0: {f_adj_0.fid}")
     f0.replace_edge(e0, e0_t.next)
 
     if e1_t.prev.twin is not None:
         f_adj_1 = e1_t.prev.twin.face
         f1.replace_adj_face(f1_t, f_adj_1)
         f_adj_1.replace_adj_face(f1_t, f1)
+        print(f"f_adj_1: {f_adj_1.fid}")
     f1.replace_edge(e1, e1_t.prev)
 
     e0_t.next.face = f0
@@ -152,6 +163,21 @@ def del_vertex(vertex):
     # 5. Remove the vertex
     e0.ori.remove_edges(e0, e0_t)
     e1.to.remove_edges(e1, e1_t)
+
+    # print(f"f0: {f0.fid}, f0_t: {f0_t.fid}")
+    # print(f"f1: {f1.fid}, f1_t: {f1_t.fid}")
+    # print(f"e0_t.next.face {e0_t.next.face.fid}")
+    # print(f"e1_t.prev.face {e1_t.prev.face.fid}")
+
+    #
+    # print(f"e_del: {e_del.eid}, e_del_t: {e_del_t.eid}")
+    # print(f"e0: {e0.eid}, e0_t: {e0_t.eid}")
+    # print(f"e1: {e1.eid}, e1_t: {e1_t.eid}")
+    #
+    # for e in [e_del, e_del_t, e0, e0_t, e1, e1_t]:
+    #     if e.eid == 101:
+    #         print(e.__str__())
+    #         print(f"**** e{e.eid}.ori: {e.ori.vid}, to: {e.to.vid}")
 
     # return the deleted vertices, edges, faces (1v, 6e, 2f)
     return [vertex], [e_del, e_del_t, e0, e0_t, e1, e1_t], [f0_t, f1_t]
