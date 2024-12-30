@@ -14,7 +14,7 @@ class Visualizer:
         return self.ax
 
     def draw_point(self, point, c="r", s=60, m="o"):
-        self.fig.scatter(point.x, point.y, c=c, s=s, marker=m)
+        self.fig.scatter(point.x, point.y, color=c, s=s, marker=m)
 
     def draw_linepath(self, path, c, s=60, a=1, lw=2):
         if path is None:
@@ -80,7 +80,7 @@ class Visualizer:
                 continue
 
             tri = [n.xy for n in f.verts]
-            self.fig.add_patch(patches.Polygon(tri, color="k", alpha=0.1))
+            self.fig.add_patch(patches.Polygon(tri, color="k", alpha=0.4))
 
         for fe in mesh.get_block_edges():
             ori, to = fe.ori, fe.to

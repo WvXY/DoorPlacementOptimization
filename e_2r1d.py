@@ -60,10 +60,6 @@ best_score = old_score
 for iteration in range(200):
     old_pos = door.center.copy()
 
-    # Propose a new position
-    # success = door.move_by(np.random.normal(0, .03))
-    # if not status:
-    #     continue
     door.step()
 
     new_score = f()

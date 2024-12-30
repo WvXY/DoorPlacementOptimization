@@ -58,53 +58,47 @@ class FDoor:
         self.floor_plan = fp
 
     def set_door_center(self, center):
+        assert self.is_active, "Door need to be activate first"
+
         new_center = center  # closet_position_on_edge(self.bind_edge, pos)
         p = self.__cal_ratio(new_center)
         if not self.__within_limit(p):
             return False
 
-        self.new["v"][0].xy = new_center + self.dir * self.d_len / 2
-        self.new["v"][1].xy = new_center - self.dir * self.d_len / 2
+        dir = self.get_dir()
+        self.new["v"][0].xy, self.new["v"][1].xy \
+            = self.__cut_at_position(new_center)
         self.ratio = p
 
     # actions
-    def activate(self, center=None):
-        if self.is_active:
-            RuntimeError("Door is already active")
-            return
+    def activate(self, center, need_correction=True):
+        assert self.is_active is False, "Door is already active"
+        assert self.bind_edge is not None, "Door is not binded to any edge"
+        assert center is not None, "Center is not defined"
 
-        if self.bind_edge is None:
-            RuntimeError("Door is not binded to any edge")
-            return
-
-        # find the first center
-        if center is None:
-            new_center = self.bind_edge.get_mid()
-        else:
-            new_center = self.__correct_location(center)
+        if need_correction:
+            center = self.__correct_location(center)
 
         # init some properties
         self.e_len = self.get_edge_len()
-        self.ratio = self.__cal_ratio(new_center)
+        self.ratio = self.__cal_ratio(center)
         self.move_limit = self.__cal_limits()
-        dir = self.get_dir()
 
         # Reconstruct mesh and add new v e f
-        cut_p0 = new_center + dir * self.d_len / 2
-        cut_p1 = new_center - dir * self.d_len / 2
+        cut_p0, cut_p1 = self.__cut_at_position(center)
         self.new["v"], self.new["e"], self.new["f"] = add_vertex(
             self.bind_edge, cut_p0, Point=FPoint, Edge=FEdge, Face=FFace
         )
 
-        # v, e, f = add_vertex(
-        #     self.bind_edge, cut_p1, Point=FPoint, Edge=FEdge, Face=FFace
-        # )
-        # self.new["v"] += v
-        # self.new["e"] += e
-        # self.new["f"] += f
+        v, e, f = add_vertex(
+            self.bind_edge, cut_p1, Point=FPoint, Edge=FEdge, Face=FFace
+        )
+        self.new["v"] += v
+        self.new["e"] += e
+        self.new["f"] += f
 
         e[0].is_blocked = False
-        # e[1].is_blocked = False  # twin of e[0]
+        e[1].is_blocked = False  # twin of e[0]
         self.is_active = True
 
         # set properties
@@ -138,32 +132,35 @@ class FDoor:
         # return v_del, e_del, f_del
 
     def step(self):
-        if not self.is_active:
-            RuntimeError("Door is not active")
+        assert self.is_active, "Door is not active"
 
-        delta = np.random.normal(0, 0.2)
-        # delta = -0.05
+        self.save_history() # current state
+
+        delta = np.random.normal(0, 0.1)
+        # delta = -0.11
         ratio = self.ratio + delta / self.e_len
-        # print(f"ratio: {self.ratio} | edge{self.bind_edge.eid} | center: {self.center}")
-        self.save_history()
 
         if not self.__within_limit(ratio):
-            print("STEP: to next edge")
+            # print("STEP: to next edge")
             self._to_next_edge(ratio)
-            print(f"bind_edge: {self.bind_edge.eid} | ratio: {self.ratio} | center: {self.center}")
         else:
-            print("STEP: move")
+            # print("STEP: move")
             self._move_door(delta, ratio)
 
     def _to_next_edge(self, ratio):
         self.deactivate()
-        self.__find_next_edge(ratio)
-        self.activate()
+        success = self.__find_next_edge(ratio)
+        if not success:
+            # manually revert, better reduce the redundant calculation by skipping
+            self.activate(self.__history["center"])
+        else:
+            center = self.__find_next_center(ratio)
+            self.activate(center)
 
     def _move_door(self, delta, ratio):
         self.ratio = ratio
         for v in self.new["v"]:
-            v.xy += delta * self.dir
+            v.xy += delta * self.get_dir()
 
     # utility
     def __correct_location(self, loc):
@@ -200,11 +197,24 @@ class FDoor:
 
         return True
 
+    def __find_next_center(self, ratio):
+        if ratio >= self.move_limit[1]:
+            return self.bind_edge.ori.xy + self.get_dir() * self.d_len / 2
+        elif ratio <= self.move_limit[0]:
+            return self.bind_edge.to.xy - self.get_dir() * self.d_len / 2
+
     def __init_properties(self):
         # self.dir = self.get_dir()
         self.e_len = self.get_edge_len()
         self.move_limit = self.__cal_limits()
         self.ratio = self.__cal_ratio(self.center)
+
+    def __cut_at_position(self, center):
+        # slightly reduce the length of the door to avoid overlap the vertices
+        offset = self.get_dir() * self.d_len / 2 * 0.95
+        cut_p0 = center + offset
+        cut_p1 = center - offset
+        return cut_p0, cut_p1
 
     # properties
     @property
@@ -225,7 +235,7 @@ class FDoor:
 
     # history
     def save_history(self):
-        self.__history["bind_edge"] = self.bind_edge.eid
+        self.__history["bind_edge"] = self.bind_edge    # or save eid
         self.__history["center"] = self.center.copy()
 
     def load_history(self):
@@ -236,25 +246,29 @@ class FDoor:
             return None
 
         if self.bind_edge is self.__history["bind_edge"]:
-            print("=== load history (same) ===")
+            # print("=== load history (same) ===")
             # on the same edge
             self.set_door_center(self.__history["center"])
         else:   # on the different edge
-            print("=== load history (diff) ===")
+            # print("=== load history (diff) ===")
             self.deactivate()
-            # self.bind_edge = self.__history["bind_edge"]
-            self.bind_edge = find_edge(self.__history["bind_edge"])
+            self.bind_edge = self.__history["bind_edge"]
+            # self.bind_edge = find_edge(self.__history["bind_edge"])
             self.activate(self.__history["center"])
-            print(f"bind_edge: {self.bind_edge.eid} | ratio: {self.ratio}")
+
+    def load_manually(self, edge, center):
+        self.deactivate()
+        self.bind_edge = edge
+        self.activate(center)
 
 
     # floor plan
     def sync_floor_plan(self):
         if self.is_active:
-            print("FDoor::sync floor plan - Append")
+            # print("FDoor::sync floor plan - Append")
             self.floor_plan.append(self.new["v"], self.new["e"], self.new["f"])
         else:
-            print("FDoor::sync floor plan - Remove")
+            # print("FDoor::sync floor plan - Remove")
             self.floor_plan.remove(self.new["v"], self.new["e"], self.new["f"])
 
 
@@ -285,20 +299,27 @@ if __name__ == "__main__":
     e = nm.get_by_eid(12)
     agent = FDoor(e, nm)
     agent.activate(np.array([0.75, 0.75]))
+    # for f in nm.faces:
+    #     print(f"fid: {f.fid} "
+    #           f"| verts: {[v.vid for v in f.verts]} "
+    #           f"| adj: {[f.fid for f in f.adjs]}")
+    #
+    # print("===")
+    # agent._to_next_edge(0.999)
+    # # agent.sync_floor_plan()
+    # for f in nm.faces:
+    #     print(f"fid: {f.fid} "
+    #           f"| verts: {[v.vid for v in f.verts]} "
+    #           f"| adj: {[f.fid for f in f.adjs]}")
 
-    agent._to_next_edge(0.999)
-    # agent.sync_floor_plan()
-    for f in nm.faces:
-        print(f"fid: {f.fid} | verts: {[v.vid for v in f.verts]}")
 
-
-    # for i in range(85):
-    #     agent.step()
-    #     print("+++")
-    #     for f in nm.faces:
-    #         print(f"fid: {f.fid} | verts: {[v.vid for v in f.verts]}")
-        # print(f"center: {agent.center} | ratio: {agent.ratio}")
-    # agent.deactivate()
+    for i in range(85):
+        agent.step()
+        print("+++")
+        for f in nm.faces:
+            print(f"fid: {f.fid} | verts: {[v.vid for v in f.verts]}")
+        print(f"center: {agent.center} | ratio: {agent.ratio}")
+    agent.deactivate()
 
     from u_visualization import Visualizer
 

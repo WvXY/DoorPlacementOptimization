@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from copy import deepcopy
+from copy import deepcopy, copy
 
 from g_primitives import Point
 from f_primitives import FPoint, FEdge, FFace
@@ -35,7 +35,7 @@ def f(fp, sp, batch_size=50):
     # indices = np.random.choice(range(0, 500, 2), batch_size, replace=False)
     score = 0
     valid_paths = 0
-    for i in range(0, 200, 2):
+    for i in range(0, 1000, 2):
         start = sp[i]
         end = sp[i + 1]
         tripath = fp.find_tripath(start, end)
@@ -57,7 +57,11 @@ if __name__ == "__main__":
 
     # vis.draw_mesh(fp, show=True, draw_text="ve")
 
-    sp = np.random.rand(500, 2)
+    sp = np.random.normal(0.8, 0.2, (500, 2))
+    sp = np.append(sp, np.random.normal(0.2, 0.2, (500, 2)), axis=0)
+    sp = np.clip(sp, 0, 1)
+    np.random.shuffle(sp)
+    # sp = np.random.rand(1000, 2)
     sp = [Point(p) for p in sp]
 
 
@@ -68,7 +72,7 @@ if __name__ == "__main__":
     best_score = old_score
     best_x = agent.center.copy()
 
-    for iteration in range(200):
+    for iteration in range(100):
         old_pos = agent.center.copy()
 
         print(f"************Iter: {iteration}************")
@@ -80,11 +84,12 @@ if __name__ == "__main__":
 
         # Accept or reject proposal
         alpha = np.exp(-df / T)
-        # if delta_f < 0 or np.random.rand() < np.exp(-delta_f / T):  # Accept criterion
         if  df < 0 or np.random.rand() < alpha:
             old_score = new_score
             if new_score < best_score:
                 best_x = agent.center.copy()
+                best_e = agent.bind_edge
+                print(f"New Best: at {best_x}, edge: {best_e.eid}")
                 best_score = new_score
         else:
             agent.load_history()
@@ -92,15 +97,30 @@ if __name__ == "__main__":
         samples.append(agent.center)
         T *= 0.99  # Annealing
 
-        print(f"Agent: {agent.center}, "
-              f"Old Score: {old_score:.3f}, New Score: {new_score:.3f}, Alpha: {alpha:.3f}")
+        print(f"Door: {agent.center}, "
+              f"Old: {old_score:.4f}, New: {new_score:.4f}, Best: {best_score:.4f}, "
+              f"Alpha: {alpha:.3f}")
 
-    agent.set_door_center(best_x)
+
+    agent.load_manually(best_e, best_x)
     #
     # # Visualize results
     vis.draw_mesh(fp, show=False)
     for v in samples:
-        plt.scatter(v[0], v[1], c="r", s=20, alpha=0.1, marker="s")
+        plt.scatter(v[0], v[1], c="r", s=30, alpha=0.5, marker="s")
+
+    for i in range(0, 50, 2):
+        start = sp[i]
+        end = sp[i + 1]
+        tripath = fp.find_tripath(start, end)
+        path = fp.simplify(tripath, start, end)
+        if path:
+            c = np.random.rand(3)
+            vis.draw_point(start, c=c, s=50)
+            vis.draw_point(end, c=c, s=50)
+            vis.draw_linepath(path, c=c, lw=8, a=0.3)
+
+
 
     vis.show(f"Result {case_id} | Best Center: {best_x} | Final T: {T:.3f}")
     #
