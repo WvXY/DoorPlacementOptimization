@@ -8,10 +8,10 @@ from u_visualization import Visualizer
 from u_data_loader import Loader
 
 class Agent:
-    def __init__(self):
+    def __init__(self, fp=None):
         self.prev_pos = None
         self.curr_pos = None
-        self.fp = None  # reference to shared FloorPlan
+        self.fp = fp  # reference to shared FloorPlan
 
     def set_floor_plan(self, floor_plan):
         self.fp = floor_plan
