@@ -84,12 +84,12 @@ class Visualizer:
 
         for fe in mesh.get_block_edges():
             ori, to = fe.ori, fe.to
-            self.fig.plot([ori.x, to.x], [ori.y, to.y], "k", lw=2)
+            self.fig.plot([ori.x, to.x], [ori.y, to.y], "k", lw=3)
 
         for v in mesh.vertices:
             if v is None:
                 continue
-            plt.scatter(v.x, v.y, c="k", s=10)
+            plt.scatter(v.x, v.y, c="k", s=16)
 
         if draw_text:
             self.draw_infos(
