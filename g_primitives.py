@@ -72,24 +72,30 @@ class Vertex(_GeoBase, _GInfo):
         Vertex.node_list.append(self)
 
         self.pos = np.array(pos)
-        self.half_edges = []
+        self.edges = []
 
         self.vid = Vertex.__vid
         Vertex.__vid += 1
 
+    # position actions
     def set_pos(self, new_pos):
         self.pos = new_pos
 
-    def set_edges(self, half_edges):
-        self.half_edges = half_edges
+    # edge actions
+    def set_edges(self, edges):
+        self.edges = edges
 
     def remove_edges(self, *half_edges):
         for half_edge in half_edges:
             self.half_edges.remove(half_edge)
 
     def replace_edge(self, old_edge, new_edge):
-        self._replace(self.half_edges, old_edge, new_edge)
+        self._replace(self.edges, old_edge, new_edge)
 
+    def add_edges(self, new_edges: list):
+        self.edges += new_edges
+
+    # properties and aliases
     @property
     def x(self):
         return self.pos[0]
@@ -108,16 +114,17 @@ class Vertex(_GeoBase, _GInfo):
 
     @property
     def faces(self):
-        return set([e.face for e in self.half_edges])
+        return set([e.face for e in self.edges])
 
     @property
-    def edges(self):
-        return set(self.half_edges)
+    def half_edges(self):
+        return self.edges
 
     @property
     def dim(self):
         return len(self.pos)
 
+    # other methods
     def __eq__(self, other: "Vertex"):
         return self.vid == other.vid
         # return np.allclose(self.xy, other.xy)
@@ -130,21 +137,11 @@ class Vertex(_GeoBase, _GInfo):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    # def move(self, dx, dy) -> None:
-    #     if self.border:
-    #         return
-    #     xy_old = self.xy.copy()
-    #     self.xy += [dx, dy]
-    #     for f in self.faces:
-    #         if f.flipped:
-    #             self.xy = xy_old
-    #             return
-
     def is_same_id(self, other):
         return self.vid == other.vid
 
     def remove_duplicate(self):
-        self.half_edges = set(self.half_edges)
+        self.edges = set(self.edges)
 
     @xy.setter
     def xy(self, value):
@@ -266,40 +263,34 @@ class Face(_GeoBase, _GInfo):
         super().__init__()
         Face.face_list.append(self)
 
-        self.half_edges = []
-        self.adjs = []
+        self.edges = []
 
         # private
         self.__fid = Face.__fid
         Face.__fid += 1
 
-    def auto_set_adj_faces(self):
-        self.adjs = []
-        for e in self.half_edges:
-            if e.twin:
-                self.adjs.append(e.twin.face)
-        return self.adjs
+    @property
+    def adjs(self):
+        """Get adjacent faces"""
+        return set([e.twin.face for e in self.edges if e.twin])
 
-    def set_edges(self, half_edges):
-        self.half_edges = half_edges
+    @property
+    def half_edges(self):
+        return self.edges
 
-    def set_adjs(self, adj_faces):
-        self.adjs = adj_faces
+    def set_edges(self, edges):
+        self.edges = edges
 
     def replace_edge(self, old_edge, new_edge):
-        self._replace(self.half_edges, old_edge, new_edge)
-
-    def replace_adj_face(self, old_face, new_face):
-        self._replace(self.adjs, old_face, new_face)
+        self._replace(self.edges, old_edge, new_edge)
 
     def remove_duplicate(self):
-        self.adjs = set(self.adjs)
-        self.half_edges = set(self.half_edges)
+        self.edges = set(self.edges)
         Face.face_list = set(Face.face_list)
 
     @property
     def verts(self):
-        return [e.ori for e in self.half_edges]
+        return [e.ori for e in self.edges]
 
     @property
     def area(self):
@@ -313,8 +304,8 @@ class Face(_GeoBase, _GInfo):
         return area / 2
 
     @property
-    def edges(self):
-        return self.half_edges
+    def half_edges(self):
+        return self.edges
 
     @property
     def flipped(self):

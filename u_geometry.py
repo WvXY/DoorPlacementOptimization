@@ -43,22 +43,6 @@ def add_vertex(edge, position, Point=Vertex, Edge=Edge, Face=Face):
     f0.set_edges([e_new, e0_t, edge.next][::-1])
     f1.set_edges([e_new_t, edge.twin.prev, e1_t][::-1])
 
-    if edge.next.twin is not None:
-        f_adj_0 = edge.next.twin.face
-        f_adj_0.replace_adj_face(edge.face, f0)
-        f0.set_adjs([edge.face, f1, f_adj_0])
-        edge.face.replace_adj_face(f_adj_0, f0)
-    else:
-        f0.set_adjs([edge.face, f1])
-
-    if edge.twin.prev.twin is not None:
-        f_adj_1 = edge.twin.prev.twin.face
-        f_adj_1.replace_adj_face(edge.twin.face, f1)
-        f1.set_adjs([edge.twin.face, f0, f_adj_1])
-        edge.twin.face.replace_adj_face(f_adj_1, f1)
-    else:
-        f1.set_adjs([edge.twin.face, f0])
-
     edge.face.replace_edge(edge.next, e0)
     edge.twin.face.replace_edge(edge.twin.prev, e1)
 
@@ -116,16 +100,7 @@ def del_vertex(vertex):
     f0, f0_t = e_keep.face, e_del.face
     f1, f1_t = e_keep_t.face, e_del_t.face
 
-    if e0_t.next.twin is not None:
-        f_adj_0 = e0_t.next.twin.face
-        f0.replace_adj_face(f0_t, f_adj_0)
-        f_adj_0.replace_adj_face(f0_t, f0)
     f0.replace_edge(e0, e0_t.next)
-
-    if e1_t.prev.twin is not None:
-        f_adj_1 = e1_t.prev.twin.face
-        f1.replace_adj_face(f1_t, f_adj_1)
-        f_adj_1.replace_adj_face(f1_t, f1)
     f1.replace_edge(e1, e1_t.prev)
 
     # edges in deleting faces

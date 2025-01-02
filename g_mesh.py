@@ -113,17 +113,15 @@ class Mesh(_GeoBase):
             eki.set_diagonal_vertex(self.verts[fj])
 
             self.edges += [eij, ejk, eki]
-            self.faces[i].half_edges = [eij, ejk, eki]
+            self.faces[i].set_edges([eij, ejk, eki])
 
             # node.edges
-            self.verts[fi].half_edges += [eij, eki]
-            self.verts[fj].half_edges += [eij, ejk]
-            self.verts[fk].half_edges += [ejk, eki]
+            self.verts[fi].add_edges([eij, eki])
+            self.verts[fj].add_edges([eij, ejk])
+            self.verts[fk].add_edges([ejk, eki])
 
     def __post_processing(self):
         self.__set_twins()
-        # self.__set_nodes_info()
-        self.__set_faces_info()
         self.__set_fixed_edges()
 
     def __set_twins(self):
@@ -147,10 +145,6 @@ class Mesh(_GeoBase):
     #             self.verts[e.ori.vid].is_blocked = True
     #             self.verts[e.to.vid].is_blocked = True
     #             e.is_blocked = True
-
-    def __set_faces_info(self):
-        for f in self.faces:
-            f.auto_set_adj_faces()
 
     def __set_fixed_edges(self):
         for fe in self.cdt.get_fixed_edges(to_numpy=True):
