@@ -12,7 +12,7 @@ class FDoor:
 
         # self.dir = self.get_dir()
 
-        self.d_len = 0.1
+        self.d_len = 0.07
 
         self.e_len = None
         self.move_limit = None
@@ -131,13 +131,15 @@ class FDoor:
         }
         # return v_del, e_del, f_del
 
-    def step(self):
+    def step(self, delta=0):
         assert self.is_active, "Door is not active"
 
         self.save_history() # current state
 
-        delta = np.random.normal(0, 0.1)
-        # delta = -0.11
+        # randomize the delta if not provided
+        if delta == 0:
+            delta = np.random.normal(0, 0.1)
+
         ratio = self.ratio + delta / self.e_len
 
         if not self.__within_limit(ratio):
@@ -331,6 +333,4 @@ if __name__ == "__main__":
     # for e in f37.edges:
     #     print(f"eid: {e.eid} | ori: {e.ori.vid} | to: {e.to.vid}")
 
-    # I am not sure the mesh structure is still correct after loading the history or after deactivating the door
-    # TODO: I need to visualize the mesh here for debugging
     vis.draw_mesh(nm, show=True, draw_text="vef")

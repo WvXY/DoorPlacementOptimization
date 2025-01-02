@@ -20,6 +20,7 @@ class Agent:
         # We'll pick two random positions so that prev_pos != curr_pos
         self.next()
         self.next()
+        return True
 
     def next(self):
         self.prev_pos = self.curr_pos

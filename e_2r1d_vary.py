@@ -34,27 +34,28 @@ def init(case_id, np_seed=0):
 
 def f(fp, sp=None, batch_size=50):
     # indices = np.random.choice(range(0, 500, 2), batch_size, replace=False)
+
     score = 0
     valid_paths = 0
-    agent = Agent(fp)
-    agent.init()
+    # agents = [Agent(fp) for _ in range(batch_size)]
+    # agent.init()
     for i in range(0, 300, 2):
-        # start = sp[i]
-        # end = sp[i + 1]
-        start = agent.prev_pos
-        end = agent.curr_pos
+        start = Point(np.random.rand(2))
+        end = Point(np.random.rand(2))
+        # start = agent.prev_pos
+        # end = agent.curr_pos
         tripath = fp.find_tripath(start, end)
         path = fp.simplify(tripath, start, end)
         if path:
             valid_paths += 1
             score += loss_func(path)
-        agent.next()
+        # agent.next()
     return score / valid_paths if valid_paths > 0 else float('inf')
 
 
 if __name__ == "__main__":
     # Initialize
-    case_id = 0
+    case_id = 1
     fp, vis = init(case_id)
 
     e0 = fp.get_by_eid(0)
@@ -72,7 +73,7 @@ if __name__ == "__main__":
 
 
     # Metropolis-Hastings settings
-    T = 0.01
+    T = 0.1
     old_score = f(fp)
     samples = []
     best_score = old_score
@@ -109,9 +110,8 @@ if __name__ == "__main__":
 
 
     door.load_manually(best_e, best_x)
-    #
     # # Visualize results
-    vis.draw_mesh(fp, show=False)
+    vis.draw_mesh(fp, show=False, draw_text="e")
     for v in samples:
         plt.scatter(v[0], v[1], c="r", s=30, alpha=0.5, marker="s")
 
