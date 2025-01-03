@@ -16,17 +16,17 @@ class Visualizer:
     def draw_point(self, point, c="r", s=60, m="o"):
         self.fig.scatter(point.x, point.y, color=c, s=s, marker=m)
 
-    def draw_linepath(self, path, c, s=60, a=1, lw=2):
+    def draw_linepath(self, path, linetype="-", c="k", s=60, a=1, lw=2):
         if path is None:
             return
 
         if isinstance(path[0], np.ndarray):
             self.fig.plot(
-                [n[0] for n in path], [n[1] for n in path], c=c, lw=lw, alpha=a
+                [n[0] for n in path], [n[1] for n in path], linetype, c=c, lw=lw, alpha=a
             )
         else:
             self.fig.plot(
-                [n.x for n in path], [n.y for n in path], c=c, lw=lw, alpha=a
+                [n.x for n in path], [n.y for n in path], linetype, c=c, lw=lw, alpha=a
             )
 
     def draw_half_edges(self, half_edges, c="c", lw=0.01):
@@ -74,17 +74,25 @@ class Visualizer:
                     alpha=0.3,
                 )
 
-    def draw_mesh(self, mesh, title=None, show=True, draw_text=""):
+    def draw_mesh(self,
+                  mesh,
+                  show=True,
+                  draw_text="",
+                  fig_title=None,
+                  axis_show=True,
+                  axis_equal=True
+                  ):
+
         for f in mesh.faces:
             if f is None:
                 continue
 
             tri = [n.xy for n in f.verts]
-            self.fig.add_patch(patches.Polygon(tri, color="k", alpha=0.4))
+            self.fig.add_patch(patches.Polygon(tri, color="k", alpha=0.1))
 
         for fe in mesh.get_block_edges():
             ori, to = fe.ori, fe.to
-            self.fig.plot([ori.x, to.x], [ori.y, to.y], "k", lw=3)
+            self.fig.plot([ori.x, to.x], [ori.y, to.y], "k", lw=2)
 
         for v in mesh.vertices:
             if v is None:
@@ -96,9 +104,14 @@ class Visualizer:
                 mesh, f="f" in draw_text, e="e" in draw_text, v="v" in draw_text
             )
 
-        if title:
-            self.fig.set_title(title)
-        plt.axis("equal")
+        if fig_title:
+            self.fig.set_title(fig_title)
+
+        if not axis_show:
+            plt.axis("off")
+
+        if axis_equal:
+            plt.axis("equal")
 
         if show:
             plt.show()

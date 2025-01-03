@@ -8,7 +8,7 @@ from f_primitives import FPoint, FEdge, FFace
 from u_data_loader import Loader
 from u_visualization import Visualizer
 from f_layout import FLayout
-from o_door import FDoor
+from o_door import ODoor
 from o_loss_func import loss_func
 from o_agent import Agent
 
@@ -40,11 +40,11 @@ def make_sample_points(n=300):
 def f(fp, sp, batch_size=50):
     # indices = np.random.choice(range(0, 500, 2), batch_size, replace=False)
 
-    score = 0
+    loss = 0
     valid_paths = 0
     # agents = [Agent(fp) for _ in range(batch_size)]
     # agent.init()
-    for i in range(0, len(sp), 2):
+    for i in range(0, len(sp)-1):
         start = sp[i]
         end = sp[i + 1]
         # start = agent.prev_pos
@@ -53,21 +53,24 @@ def f(fp, sp, batch_size=50):
         path = fp.simplify(tripath, start, end)
         if path:
             valid_paths += 1
-            score += loss_func(path)
+            loss += loss_func(path) * (len(path) - 1)
         # agent.next()
-    return score / valid_paths if valid_paths > 0 else float("inf")
+    return loss
 
 
 if __name__ == "__main__":
     # Initialize
-    case_id = 0
+    case_id = 4
     n_sp = 300
     iters = 100
-    T = 0.1
+    T = 1
 
     fp, vis = init(case_id)
+
+    # vis.draw_mesh(fp, show=True, draw_text="vef", axis_show=False, axis_equal=True)
+
     e0 = fp.get_by_eid(0)
-    door = FDoor(e0, fp)
+    door = ODoor(e0, fp)
     door.activate(np.array([0.1, 0.2]))
 
     sp = make_sample_points(n_sp)
@@ -96,6 +99,7 @@ if __name__ == "__main__":
         else:
             door.load_history()
 
+        print(f"edge: {door.bind_edge.eid} | center: {door.center}")
         samples.append(door.center)
         T *= 0.99  # Annealing
 
@@ -119,13 +123,32 @@ if __name__ == "__main__":
     #         vis.draw_linepath(path, c=c, lw=1, a=1)
     #     agent.next()
 
-    vis.show(f"Result {case_id} | Best Center: {best_x} | Final T: {T:.3f}")
+    # vis.show(f"Result {case_id} | Best Center: {best_x} | Final T: {T:.3f}")
+
+    # #
+    # # # # Plot histogram
+    # fig, ax1 = plt.subplots()
+    # ax1.hist(samples, bins=36, density=True, alpha=0.6, label="Samples")
+    # ax1.set_ylabel("Number of Samples")
     #
-    # # # Plot samples
-    # plt.hist(samples, bins=100, density=True, alpha=0.5, label="Samples")
-    # yy = np.linspace(0.4, 1, 100)
-    # # for y in yy:
-    # #     agent.set_pos(np.array([0.46875, y]))
-    # #     plt.plot(y, f(), 'ro')
+    # ndiv = 100
+    # door.deactivate()
+    # door.activate(np.array([0.5, 0.05]))
+    #
+    # ax2 = ax1.twinx()
+    # gt_scores = []
+    # xx = []
+    # for i in tqdm(range(ndiv)):
+    #     door.step(-1/ndiv)
+    #     gt_scores.append(f(fp, sp))
+    #     xx.append(door.center[1])
+    #
+    # ax2.plot(xx, gt_scores, label="Ground Truth", color="red")
+    # ax2.set_ylabel("Traffic Flow Cost")
+    # ax2.tick_params(axis="y", labelcolor="red")
+    #
+    # ax1.set_title("Metropolis-Hastings Sampling")
+    # ax1.set_xlabel("y-coordinate")
+    #
     # plt.legend()
     # plt.show()

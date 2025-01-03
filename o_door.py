@@ -5,7 +5,7 @@ import numpy as np
 from copy import deepcopy, copy
 
 
-class FDoor:
+class ODoor:
     def __init__(self, edge, fp=None):
         self.bind_edge = edge
         self.floor_plan = fp
@@ -138,13 +138,14 @@ class FDoor:
 
         # randomize the delta if not provided
         if delta == 0:
-            delta = np.random.normal(0, 0.1)
+            delta = np.random.normal(0, 0.3)
 
         ratio = self.ratio + delta / self.e_len
 
         if not self.__within_limit(ratio):
             # print("STEP: to next edge")
             self._to_next_edge(ratio)
+            # print(f"edge: {self.bind_edge.eid} | ratio: {self.ratio}")
         else:
             # print("STEP: move")
             self._move_door(delta, ratio)
@@ -152,6 +153,7 @@ class FDoor:
     def _to_next_edge(self, ratio):
         self.deactivate()
         success = self.__find_next_edge(ratio)
+        # print("success: ", success)
         if not success:
             # manually revert, better reduce the redundant calculation by skipping
             self.activate(self.__history["center"])
@@ -176,26 +178,38 @@ class FDoor:
 
     def __find_next_edge(self, ratio):
         def search_next_edge(vertex):
-            for e in vertex.half_edges:
-                if (e.is_inner and e.is_active and
-                        not (self.bind_edge is e or
-                             e is self.bind_edge.twin)):
+            # print(f"search_next_edge: {vertex.vid} | {[e.eid for e in vertex.half_edges]}")
+            random_order = np.random.permutation(len(vertex.half_edges))
+            for i in random_order:
+                e = vertex.half_edges[i]
+                if (e.is_inner and e.is_active
+                        and not (self.bind_edge is e or e is self.bind_edge.twin)):
                     return e
             return None
+
+            # for e in vertex.half_edges:
+            #     if (e.is_inner and e.is_active and
+            #             not (self.bind_edge is e or
+            #                  e is self.bind_edge.twin)):
+            #         return e
+            # return None
 
         if ratio >= self.move_limit[1]:
             v = self.bind_edge.to
             e = search_next_edge(v)
             if e is None:
-                return False
-            self.bind_edge = e if e.ori is v else e.twin
+                self.bind_edge = self.bind_edge.twin
+                # return False
+            else:
+                self.bind_edge = e if e.ori is v else e.twin
 
         elif ratio <= self.move_limit[0]:
             v = self.bind_edge.ori
             e = search_next_edge(v)
             if e is None:
-                return False
-            self.bind_edge = e if e.to is v else e.twin
+                self.bind_edge = self.bind_edge.twin
+            else:
+                self.bind_edge = e if e.to is v else e.twin
 
         return True
 
@@ -299,7 +313,7 @@ if __name__ == "__main__":
     inner_walls = nm.inner_fixed_edges
 
     e = nm.get_by_eid(12)
-    agent = FDoor(e, nm)
+    agent = ODoor(e, nm)
     agent.activate(np.array([0.75, 0.75]))
     # for f in nm.faces:
     #     print(f"fid: {f.fid} "

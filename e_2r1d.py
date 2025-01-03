@@ -7,7 +7,7 @@ from f_primitives import FPoint, FEdge, FFace
 from u_data_loader import Loader
 from u_visualization import Visualizer
 from f_layout import FLayout
-from o_door import FDoor
+from o_door import ODoor
 from o_loss_func import loss_func
 
 # Settings
@@ -25,7 +25,7 @@ nm.create_mesh(ld.vertices, ld.edges, 0)
 
 # Initialize door
 e0 = nm.get_by_eid(0)
-door = FDoor(e0)
+door = ODoor(e0)
 door.activate(np.array([0.5, 0.1]))
 nm.append(door.new_verts, door.new_edges, door.new_faces)
 
