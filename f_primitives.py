@@ -54,7 +54,20 @@ class FRoom(_FInfo):
     def __init__(self):
         _FInfo.__init__(self)
         self.faces = []
-        self.half_edges = []
+
+    def get_all_edges(self):
+        all_edges = []
+        for f in self.faces:
+            all_edges += f.half_edges
+        return set(all_edges)
+
+    def get_wall_edges(self):
+        all_edges = self.get_all_edges()
+        wall_edges = []
+        for e in all_edges:
+            if e.twin is None or e.twin not in all_edges:
+                wall_edges.append(e)
+        return wall_edges
 
 
 # Alias

@@ -35,7 +35,9 @@ class FLayout(NavMesh):
             not_visited = [f for f in self.faces if not f.is_visited]
         return True
 
+    # utils
     def clear(self):
+        """Clear all vertices, edges, faces"""
         FFace.clear()
         FEdge.clear()
         FVertex.clear()
@@ -46,7 +48,9 @@ class FLayout(NavMesh):
                 return e
         return None
 
+    # unused
     def clean(self):
+        """Remove inactive vertices, edges, faces"""
         self.verts = [v for v in self.verts if v.is_active]
         self.edges = [e for e in self.edges if e.is_active]
         self.faces = [f for f in self.faces if f.is_active]
@@ -59,7 +63,7 @@ if __name__ == "__main__":
     from u_geometry import add_vertex
 
     ld = Loader(".")
-    ld.load_w_walls_case(2)
+    ld.load_w_walls_case(3)
     ld.optimize()
 
     fp = FLayout()
@@ -69,6 +73,11 @@ if __name__ == "__main__":
     rooms = fp.rooms
     for r in rooms:
         print(f"Room: {r} | {[f.fid for f in r.faces]}")
+
+    r0 = rooms[0]
+    walls0 = r0.get_wall_edges()
+    for w in walls0:
+        print(f"Wall: {w.eid}")
 
     # fp.reconnect_closed_edges()
     # fp.create_rooms()
@@ -89,6 +98,7 @@ if __name__ == "__main__":
     # f7 = FFace.get_by_fid(7)
 
     vis = Visualizer()
+    vis.draw_half_edges(walls0)
 
     # vis.draw_half_edges(f10.half_edges)
     # vis.draw_half_edges(f5.half_edges, c="r")
