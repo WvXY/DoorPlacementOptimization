@@ -41,8 +41,8 @@ def add_vertex(edge, position):
     p_cut.set_edges([edge, edge.twin, e_new, e_new_t, e0, e0_t, e1, e1_t])
     edge.to.replace_edge(edge, e_new)
     edge.to.replace_edge(edge.twin, e_new_t)
-    edge.diagonal_vertex.half_edges.extend([e0, e0_t])
-    edge.twin.diagonal_vertex.half_edges.extend([e1, e1_t])
+    edge.diagonal_vertex.edges.update([e0, e0_t])
+    edge.twin.diagonal_vertex.edges.update([e1, e1_t])
 
     # update faces
     f0.set_edges([e_new, e0_t, edge.next][::-1])
@@ -75,12 +75,10 @@ def del_vertex(vertex):
     # print(f"v{vertex.vid}.half: {[e.eid for e in vertex.half_edges]}")
 
     # 1. Set the edge to keep
-    e_keep = vertex.half_edges[0]
-    # find the oldest edge (fixed edge)
-    for e in vertex.half_edges:
-        if e.eid < e_keep.eid:
-            e_keep = e
-    e_keep = e_keep if e_keep.ori == vertex else e_keep.twin  # adjust direction
+    e_keep = min(vertex.half_edges, key=lambda e: e.eid)
+    # Ensure it’s oriented correctly
+    if e_keep.ori != vertex:
+        e_keep = e_keep.twin
     e_keep_t = e_keep.twin
 
     # 2. Set the twins and edges to delete

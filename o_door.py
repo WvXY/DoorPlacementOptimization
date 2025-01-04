@@ -97,6 +97,9 @@ class ODoor:
         # set properties
         self.sync_floor_plan()
 
+    def auto_activate(self):
+        self.activate(self.center)
+
     def deactivate(self):
         if not self.is_active:
             return
@@ -127,7 +130,7 @@ class ODoor:
 
         # randomize the delta if not provided
         if delta == 0:
-            delta = np.random.normal(0, 0.3)
+            delta = np.random.normal(0, 0.1)
 
         ratio = self.ratio + delta / self.e_len
 
@@ -169,8 +172,9 @@ class ODoor:
         def search_next_edge(vertex):
             # print(f"search_next_edge: {vertex.vid} | {[e.eid for e in vertex.half_edges]}")
             random_order = np.random.permutation(len(vertex.half_edges))
+            edges = list(vertex.half_edges)
             for i in random_order:
-                e = vertex.half_edges[i]
+                e = edges[i]
                 if (
                     e.is_inner
                     and e.is_active
@@ -277,6 +281,8 @@ class ODoor:
         else:
             # print("FDoor::sync floor plan - Remove")
             self.floor_plan.remove(self.new["v"], self.new["e"], self.new["f"])
+
+        print(f"vertex: {[v.vid for v in self.floor_plan.verts]}")
 
 
 if __name__ == "__main__":

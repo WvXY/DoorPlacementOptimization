@@ -4,8 +4,8 @@ from matplotlib import patches
 
 
 class Visualizer:
-    def __init__(self):
-        self.ax, self.fig = plt.subplots()
+    def __init__(self, dpi=300):
+        self.ax, self.fig = plt.subplots(dpi=dpi)
 
     def get_fig(self):
         return self.fig
@@ -14,7 +14,14 @@ class Visualizer:
         return self.ax
 
     def draw_point(self, point, c="r", s=60, m="o"):
-        self.fig.scatter(point.x, point.y, color=c, s=s, marker=m)
+        if (
+            isinstance(point, np.ndarray)
+            or isinstance(point, list)
+            or isinstance(point, tuple)
+        ):
+            self.fig.scatter(point[0], point[1], color=c, s=s, marker=m)
+        else:
+            self.fig.scatter(point.x, point.y, color=c, s=s, marker=m)
 
     def draw_linepath(self, path, linetype="-", c="k", s=60, a=1, lw=2):
         if path is None:

@@ -41,8 +41,7 @@ def f(fp, sp, batch_size=50):
     valid_paths = 0
     # agents = [Agent(fp) for _ in range(batch_size)]
     # agent.init()
-    # for i in range(0, len(sp) - 1):
-    for i in range(0, len(sp), 2):
+    for i in range(0, len(sp) - 1):
         start = sp[i]
         end = sp[i + 1]
         # start = agent.prev_pos
@@ -51,17 +50,17 @@ def f(fp, sp, batch_size=50):
         path = fp.simplify(tripath, start, end)
         if path:
             valid_paths += 1
-            loss += loss_func(path)
+            loss += loss_func(path) * (len(path) - 1)
         # agent.next()
-    return loss / valid_paths if valid_paths > 0 else float("inf")
+    return loss
 
 
 if __name__ == "__main__":
     # Initialize
-    case_id = 0
+    case_id = 4
     n_sp = 300
     iters = 100
-    T = 0.01
+    T = 1
 
     fp, vis = init(case_id)
 
@@ -69,7 +68,7 @@ if __name__ == "__main__":
 
     e0 = fp.get_by_eid(0)
     door = ODoor(e0, fp)
-    door.activate(np.array([0.6, 0.7]))
+    door.activate(np.array([0.1, 0.2]))
 
     sp = make_sample_points(n_sp)
 
@@ -79,7 +78,8 @@ if __name__ == "__main__":
     best_score = old_score
     best_x = door.center.copy()
 
-    for iteration in range(iters):
+    for iteration in tqdm(range(iters)):
+        old_pos = door.center.copy()
 
         door.step()
         new_score = f(fp, sp)
@@ -94,39 +94,32 @@ if __name__ == "__main__":
                 best_e = door.bind_edge
                 best_score = new_score
         else:
-            # print(f"Rejected.
             door.load_history()
 
-        print(
-            f"edge: {door.bind_edge.eid} | df: {df:.3f}  | center: {door.center}"
-            f"| score: {new_score:.3f} | alpha: {alpha:.3f}"
-        )
-        samples.append([door.center, new_score])
+        # print(f"edge: {door.bind_edge.eid} | center: {door.center}")
+        samples.append(door.center)
         T *= 0.99  # Annealing
 
     door.load_manually(best_e, best_x)
     # # Visualize results
-    vis.draw_mesh(fp, show=False, draw_text="e")
-    for v, s in samples:
-        plt.scatter(v[0], v[1], c=s, s=30, alpha=1, marker="s")
-
-    plt.colorbar()
+    vis.draw_mesh(fp, show=False, draw_text="")
+    for v in samples:
+        plt.scatter(v[0], v[1], c="r", s=30, alpha=0.5, marker="s")
 
     # agent = Agent(fp)
     # agent.init()
-    for i in range(0, 50, 2):
-        start = sp[i]
-        end = sp[i + 1]
-        tripath = fp.find_tripath(start, end)
-        path = fp.simplify(tripath, start, end)
-        # if path:
-        c = np.random.rand(3)
-        vis.draw_point(start, c=c, s=50)
-        vis.draw_point(end, c=c, s=50)
-        vis.draw_linepath(path, c=c, lw=1, a=1)
-        # agent.next()
+    # for i in range(0, 50, 2):
+    #     start = agent.prev_pos
+    #     end = agent.curr_pos
+    #     tripath = fp.find_tripath(start, end)
+    #     path = fp.simplify(tripath, start, end)
+    #     if path:
+    #         c = "g"#np.random.rand(3)
+    #         vis.draw_point(start, c=c, s=50)    #         vis.draw_point(end, c=c, s=50)
+    #         vis.draw_linepath(path, c=c, lw=1, a=1)
+    #     agent.next()
 
-    vis.show(f"Result {case_id} | Best Center: {best_x}")
+    vis.show(f"Result {case_id} | Best Center: {best_x} | Final T: {T:.3f}")
 
     # #
     # # # # Plot histogram

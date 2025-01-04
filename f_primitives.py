@@ -10,8 +10,14 @@ class _FInfo:
 
 class FVertex(Vertex, _FInfo):
     def __init__(self, xy):
-        Vertex.__init__(self, xy)
-        _FInfo.__init__(self)
+        # Vertex.__init__(self, xy)
+        # super()._FInfo.__init__(self)
+        # _FInfo.__init__(self)
+        super().__init__(xy)
+
+    def __hash__(self):
+        # for not hashable error
+        return hash(self.guid)
 
 
 class FEdge(Edge, _FInfo):
@@ -51,23 +57,39 @@ class FFace(Face, _FInfo):
 
 
 class FRoom(_FInfo):
+    __room_list = []
+
     def __init__(self):
         _FInfo.__init__(self)
-        self.faces = []
+        FRoom.__room_list.append(self)
+
+        self.faces = set()
+        self.adjs = set()
 
     def get_all_edges(self):
-        all_edges = []
+        all_edges = set()
         for f in self.faces:
-            all_edges += f.half_edges
-        return set(all_edges)
+            all_edges.update(f.edges)
+        return all_edges
 
     def get_wall_edges(self):
         all_edges = self.get_all_edges()
-        wall_edges = []
+        wall_edges = set()
         for e in all_edges:
             if e.twin is None or e.twin not in all_edges:
-                wall_edges.append(e)
+                wall_edges.add(e)
         return wall_edges
+
+    def get_area(self):
+        return sum([f.area for f in self.faces])
+
+    def get_center(self):
+        centers = [f.center for f in self.faces]
+        areas = [f.area for f in self.faces]
+        area_sum = sum(areas)
+        x = sum([c[0] * a for c, a in zip(centers, areas)]) / area_sum
+        y = sum([c[1] * a for c, a in zip(centers, areas)]) / area_sum
+        return (x, y)
 
 
 # Alias

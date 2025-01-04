@@ -24,10 +24,13 @@ class _GeoBase:
     def get_guid(self):
         return self.__guid
 
-    def _replace(self, in_list: list, old, new):
-        for i, obj in enumerate(in_list):
-            if obj == old:
-                in_list[i] = new
+    def _replace(self, target, old, new):
+        if isinstance(target, list):  # in-place replacement
+            target[target.index(old)] = new
+        elif isinstance(target, set):
+            target.remove(old)
+            target.add(new)
+        return False
 
     def remove_duplicate(self):
         _GeoBase.obj_list = set(_GeoBase.obj_list)
@@ -40,6 +43,9 @@ class _GeoBase:
     def clear_all(self):
         _GeoBase.obj_list = []
         _GeoBase.__guid = 0
+
+    def __hash__(self):
+        return hash(self.guid)
 
 
 class _GInfo:
@@ -72,7 +78,7 @@ class Vertex(_GeoBase, _GInfo):
         Vertex.node_list.append(self)
 
         self.pos = np.array(pos)
-        self.edges = []
+        self.edges = set()
 
         self.vid = Vertex.__vid
         Vertex.__vid += 1
@@ -83,17 +89,17 @@ class Vertex(_GeoBase, _GInfo):
 
     # edge actions
     def set_edges(self, edges):
-        self.edges = edges
+        self.edges = set(edges)
 
     def remove_edges(self, *half_edges):
         for half_edge in half_edges:
-            self.half_edges.remove(half_edge)
+            self.edges.remove(half_edge)
 
     def replace_edge(self, old_edge, new_edge):
         self._replace(self.edges, old_edge, new_edge)
 
-    def add_edges(self, new_edges: list):
-        self.edges += new_edges
+    def add_edges(self, new_edges):
+        self.edges.update(new_edges)
 
     # properties and aliases
     @property
@@ -140,8 +146,8 @@ class Vertex(_GeoBase, _GInfo):
     def is_same_id(self, other):
         return self.vid == other.vid
 
-    def remove_duplicate(self):
-        self.edges = set(self.edges)
+    # def remove_duplicate(self):
+    #     self.edges = set(self.edges)
 
     @xy.setter
     def xy(self, value):
@@ -263,7 +269,7 @@ class Face(_GeoBase, _GInfo):
         super().__init__()
         Face.face_list.append(self)
 
-        self.edges = []
+        self.edges = []  # order matters, do not use set
 
         # private
         self.__fid = Face.__fid
@@ -279,14 +285,10 @@ class Face(_GeoBase, _GInfo):
         return self.edges
 
     def set_edges(self, edges):
-        self.edges = edges
+        self.edges = list(edges)
 
     def replace_edge(self, old_edge, new_edge):
         self._replace(self.edges, old_edge, new_edge)
-
-    def remove_duplicate(self):
-        self.edges = set(self.edges)
-        Face.face_list = set(Face.face_list)
 
     @property
     def verts(self):
@@ -363,5 +365,4 @@ class Face(_GeoBase, _GInfo):
 
 # alias
 Point = Vertex
-# Vertex = Node
 Line = Edge

@@ -1,4 +1,5 @@
 from g_primitives import Vertex, Edge, Face, _GeoBase
+from f_primitives import FVertex, FEdge, FFace, FRoom
 from u_cdt import CDT
 
 
@@ -11,28 +12,28 @@ class Mesh:
         self.Edge = Edge
         self.Face = Face
 
-        self.faces = []
-        self.edges = []
-        self.verts = []
+        self.faces = None
+        self.edges = None
+        self.verts = None
 
         self.border_edges = []
         self.inner_fixed_edges = []
 
     def append(self, v=None, e=None, f=None):
         if v:
-            self.verts += v
+            self.verts.update(v)
         if e:
-            self.edges += e
+            self.edges.update(e)
         if f:
-            self.faces += f
+            self.faces.update(f)
 
     def remove(self, v_list=None, e_list=None, f_list=None):
         if v_list:
-            self.verts = [v for v in self.verts if v not in v_list]
+            self.verts.difference_update(v_list)
         if e_list:
-            self.edges = [e for e in self.edges if e not in e_list]
+            self.edges.difference_update(e_list)
         if f_list:
-            self.faces = [f for f in self.faces if f not in f_list]
+            self.faces.difference_update(f_list)
 
     # alias
     @property
@@ -43,7 +44,7 @@ class Mesh:
     def fixed_edges(self):
         return self.border_edges + self.inner_fixed_edges
 
-    def set_default_types(self, Vertex=Vertex, Edge=Edge, Face=Face):
+    def set_default_types(self, Vertex, Edge, Face):
         self.Vertex = Vertex
         self.Edge = Edge
         self.Face = Face
@@ -61,7 +62,7 @@ class Mesh:
         self.inner_fixed_edges = [
             e for e in self.edges if e.is_blocked and not e.is_outer
         ]
-        return self.inner_fixed_edges + self.border_edges
+        return self.inner_fixed_edges + list(self.border_edges)
 
     def create_mesh(self, vertices, edges, min_dist_to_constraint_edge=0.0):
         self.cdt = CDT(min_dist_to_constraint_edge)
@@ -72,22 +73,25 @@ class Mesh:
         triangles = self.cdt.get_triangles(to_numpy=True)
         vertices = self.cdt.get_vertices(to_numpy=True)
         self.from_mesh(vertices, triangles)
+        del self.cdt
 
     def from_mesh(self, nodes, faces):
-        self.clear()
+        # self.clear()
 
-        # TODO: simplify creation process
+        self.verts, self.edges, self.faces = [], [], []
         self.__init_nodes(nodes)
         self.__init_faces(faces)
         self.__init_half_edges(faces)
-
         self.__post_processing()
+
+        self.__set_to_set()
 
     def __init_nodes(self, nodes):
         for i, xy in enumerate(nodes):
-            self.verts.append(self.Vertex(xy[:2]))
+            vertex = self.Vertex(xy[:2])
+            self.verts.append(vertex)
 
-    def __init_faces(self, faces):
+    def __init_faces(self, faces: list):
         for i, f in enumerate(faces):
             face = self.Face()
             self.faces.append(face)
@@ -164,8 +168,12 @@ class Mesh:
 
                     break
 
-        self.border_edges = list(set(self.border_edges))
-        self.inner_fixed_edges = list(set(self.inner_fixed_edges))
+    def __set_to_set(self):
+        self.verts = set(self.verts)
+        self.edges = set(self.edges)
+        self.faces = set(self.faces)
+        self.border_edges = set(self.border_edges)
+        self.inner_fixed_edges = set(self.inner_fixed_edges)
 
     def __remove_duplicate(self):
         self.verts = set(self.verts)

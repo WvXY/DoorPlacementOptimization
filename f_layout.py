@@ -8,9 +8,9 @@ class FLayout(NavMesh):
         self.set_default_types(FVertex, FEdge, FFace)
 
         self.clear()
-        self.rooms = []
-        self.outer_walls = []
-        self.inner_walls = []
+        self.rooms = set()
+        self.outer_walls = set()
+        self.inner_walls = set()
 
     def init_rooms(self):
         """Create rooms from faces blocked by edges"""
@@ -19,21 +19,29 @@ class FLayout(NavMesh):
             if f.is_visited:
                 return
             f.is_visited = True
-            room.faces.append(f)
+            room.faces.add(f)
             for fa in f.adjs:
                 if f.get_shared_edge(fa).is_blocked:
                     continue
                 visit_face(fa, room)
 
         self.reset_all_visited(self.faces)
-        self.rooms = []
+        self.rooms = set()
         not_visited = self.faces
         while not_visited:
             room = FRoom()
             visit_face(not_visited[0], room)
-            self.rooms.append(room)
+            self.rooms.add(room)
             not_visited = [f for f in self.faces if not f.is_visited]
         return True
+
+    def __find_room_connections(self, room):
+        for f in room.faces:
+            w_edges = f.get_wall_edges()
+            for e in w_edges:
+                if not e.is_outer:
+                    room.adjs.add(e.twin.face)
+        return room.adjs
 
     # utils
     def clear(self):
@@ -66,11 +74,13 @@ if __name__ == "__main__":
     ld.load_w_walls_case(3)
     ld.optimize()
 
+    vis = Visualizer()
+
     fp = FLayout()
     fp.create_mesh(ld.vertices, ld.edges, 0)
     fp.init_rooms()
 
-    rooms = fp.rooms
+    rooms = list(fp.rooms)
     for r in rooms:
         print(f"Room: {r} | {[f.fid for f in r.faces]}")
 
@@ -78,6 +88,10 @@ if __name__ == "__main__":
     walls0 = r0.get_wall_edges()
     for w in walls0:
         print(f"Wall: {w.eid}")
+
+    for room in rooms:
+        center = room.get_center()
+        vis.draw_point(center, c="r")
 
     # fp.reconnect_closed_edges()
     # fp.create_rooms()
@@ -97,7 +111,6 @@ if __name__ == "__main__":
     # f11 = FFace.get_by_fid(11)
     # f7 = FFace.get_by_fid(7)
 
-    vis = Visualizer()
     vis.draw_half_edges(walls0)
 
     # vis.draw_half_edges(f10.half_edges)
