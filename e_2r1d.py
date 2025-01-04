@@ -1,14 +1,13 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from copy import deepcopy
 
-from g_primitives import Point
-from f_primitives import FPoint, FEdge, FFace
-from u_data_loader import Loader
-from u_visualization import Visualizer
 from f_layout import FLayout
+from f_primitives import FPoint, FEdge, FFace
+from g_primitives import Point
 from o_door import ODoor
 from o_loss_func import loss_func
+from u_data_loader import Loader
+from u_visualization import Visualizer
 
 # Settings
 case_id = 0
@@ -48,7 +47,8 @@ def f(batch_size=50):
         if path:
             valid_paths += 1
             score += loss_func(path)
-    return score / valid_paths if valid_paths > 0 else float('inf')
+    return score / valid_paths if valid_paths > 0 else float("inf")
+
 
 # Metropolis-Hastings settings
 T = 0.01
@@ -67,7 +67,7 @@ for iteration in range(200):
 
     # Accept or reject proposal
     alpha = np.exp(-df / T)
-    if  df < 0 or np.random.rand() < alpha:
+    if df < 0 or np.random.rand() < alpha:
         old_score = new_score
         if new_score < best_score:
             best_x = door.center.copy()
@@ -78,8 +78,10 @@ for iteration in range(200):
     samples.append(door.center[1])
     T *= 0.99  # Annealing
 
-    print(f"Iteration: {iteration}, door: {door.center}, "
-          f"Old Score: {old_score:.3f}, New Score: {new_score:.3f}, Alpha: {alpha:.3f}")
+    print(
+        f"Iteration: {iteration}, door: {door.center}, "
+        f"Old Score: {old_score:.3f}, New Score: {new_score:.3f}, Alpha: {alpha:.3f}"
+    )
 
 door.set_pos(best_x)
 

@@ -1,10 +1,8 @@
 from u_geometry import closet_position_on_edge, del_vertex, add_vertex
-from f_primitives import FPoint, FEdge, FFace
-
 import numpy as np
-from copy import deepcopy, copy
 
 
+# Door object for optimization
 class ODoor:
     def __init__(self, edge, fp=None):
         self.bind_edge = edge
@@ -18,11 +16,7 @@ class ODoor:
         self.move_limit = None
         self.ratio = None
 
-        self.new = {
-            "v": [],
-            "e": [],
-            "f": []
-        }
+        self.new = {"v": [], "e": [], "f": []}
 
         self.is_active = False
         self.is_synced = True
@@ -66,8 +60,9 @@ class ODoor:
             return False
 
         dir = self.get_dir()
-        self.new["v"][0].xy, self.new["v"][1].xy \
-            = self.__cut_at_position(new_center)
+        self.new["v"][0].xy, self.new["v"][1].xy = self.__cut_at_position(
+            new_center
+        )
         self.ratio = p
 
     # actions
@@ -87,12 +82,10 @@ class ODoor:
         # Reconstruct mesh and add new v e f
         cut_p0, cut_p1 = self.__cut_at_position(center)
         self.new["v"], self.new["e"], self.new["f"] = add_vertex(
-            self.bind_edge, cut_p0, Point=FPoint, Edge=FEdge, Face=FFace
+            self.bind_edge, cut_p0
         )
 
-        v, e, f = add_vertex(
-            self.bind_edge, cut_p1, Point=FPoint, Edge=FEdge, Face=FFace
-        )
+        v, e, f = add_vertex(self.bind_edge, cut_p1)
         self.new["v"] += v
         self.new["e"] += e
         self.new["f"] += f
@@ -124,17 +117,13 @@ class ODoor:
 
         self.is_active = False
         self.sync_floor_plan()
-        self.new = {
-            "v": [],
-            "e": [],
-            "f": []
-        }
+        self.new = {"v": [], "e": [], "f": []}
         # return v_del, e_del, f_del
 
     def step(self, delta=0):
         assert self.is_active, "Door is not active"
 
-        self.save_history() # current state
+        self.save_history()  # current state
 
         # randomize the delta if not provided
         if delta == 0:
@@ -182,8 +171,11 @@ class ODoor:
             random_order = np.random.permutation(len(vertex.half_edges))
             for i in random_order:
                 e = vertex.half_edges[i]
-                if (e.is_inner and e.is_active
-                        and not (self.bind_edge is e or e is self.bind_edge.twin)):
+                if (
+                    e.is_inner
+                    and e.is_active
+                    and not (self.bind_edge is e or e is self.bind_edge.twin)
+                ):
                     return e
             return None
 
@@ -251,7 +243,7 @@ class ODoor:
 
     # history
     def save_history(self):
-        self.__history["bind_edge"] = self.bind_edge    # or save eid
+        self.__history["bind_edge"] = self.bind_edge  # or save eid
         self.__history["center"] = self.center.copy()
 
     def load_history(self):
@@ -265,7 +257,7 @@ class ODoor:
             # print("=== load history (same) ===")
             # on the same edge
             self.set_door_center(self.__history["center"])
-        else:   # on the different edge
+        else:  # on the different edge
             # print("=== load history (diff) ===")
             self.deactivate()
             self.bind_edge = self.__history["bind_edge"]
@@ -276,7 +268,6 @@ class ODoor:
         self.deactivate()
         self.bind_edge = edge
         self.activate(center)
-
 
     # floor plan
     def sync_floor_plan(self):
@@ -328,7 +319,6 @@ if __name__ == "__main__":
     #           f"| verts: {[v.vid for v in f.verts]} "
     #           f"| adj: {[f.fid for f in f.adjs]}")
 
-
     for i in range(85):
         agent.step()
         print("+++")
@@ -340,7 +330,6 @@ if __name__ == "__main__":
     from u_visualization import Visualizer
 
     vis = Visualizer()
-
 
     # f37 = FFace.get_by_fid(37)
     # print([v.vid for v in f37.verts])

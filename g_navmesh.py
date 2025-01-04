@@ -1,7 +1,7 @@
 import numpy as np
 
-from g_primitives import Vertex, Point, Face
 from g_mesh import Mesh
+from g_primitives import Vertex, Point, Face
 from u_path_finding import a_star
 
 

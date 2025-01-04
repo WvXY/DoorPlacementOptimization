@@ -22,11 +22,21 @@ class Visualizer:
 
         if isinstance(path[0], np.ndarray):
             self.fig.plot(
-                [n[0] for n in path], [n[1] for n in path], linetype, c=c, lw=lw, alpha=a
+                [n[0] for n in path],
+                [n[1] for n in path],
+                linetype,
+                c=c,
+                lw=lw,
+                alpha=a,
             )
         else:
             self.fig.plot(
-                [n.x for n in path], [n.y for n in path], linetype, c=c, lw=lw, alpha=a
+                [n.x for n in path],
+                [n.y for n in path],
+                linetype,
+                c=c,
+                lw=lw,
+                alpha=a,
             )
 
     def draw_half_edges(self, half_edges, c="c", lw=0.01):
@@ -74,14 +84,15 @@ class Visualizer:
                     alpha=0.3,
                 )
 
-    def draw_mesh(self,
-                  mesh,
-                  show=True,
-                  draw_text="",
-                  fig_title=None,
-                  axis_show=True,
-                  axis_equal=True
-                  ):
+    def draw_mesh(
+        self,
+        mesh,
+        show=True,
+        draw_text="",
+        fig_title=None,
+        axis_show=True,
+        axis_equal=True,
+    ):
 
         for f in mesh.faces:
             if f is None:

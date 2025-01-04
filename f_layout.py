@@ -1,22 +1,11 @@
-from f_primitives import FPoint, FEdge, FFace
+from f_primitives import FVertex, FEdge, FFace, FRoom
 from g_navmesh import NavMesh
-
-
-class Room:
-    def __init__(self):
-        self.faces = set()
-        self.half_edges = []
-
-    def __repr__(self):
-        return f"Room({len(self.faces)})"
 
 
 class FLayout(NavMesh):
     def __init__(self):
         super().__init__()
-        self.Node = FPoint
-        self.Face = FFace
-        self.Edge = FEdge
+        self.set_default_types(FVertex, FEdge, FFace)
 
         self.clear()
         self.rooms = []
@@ -34,7 +23,7 @@ class FLayout(NavMesh):
         wall_edges = [e for e in self.edges if e.is_blocked]
         remains = [e for e in wall_edges if not e.is_visited]
         while remains:
-            room = Room()
+            room = FRoom()
             self.traverse_edges(remains[0])
             self.rooms.append(room)
             room.faces = set([e.face for e in remains if e.is_visited])
@@ -55,9 +44,9 @@ class FLayout(NavMesh):
         return None
 
     def clear(self):
-        self.Face.clear()
-        self.Edge.clear()
-        self.Node.clear()
+        FFace.clear()
+        FEdge.clear()
+        FVertex.clear()
 
     def get_by_eid(self, eid):
         for e in self.edges:
@@ -82,7 +71,6 @@ if __name__ == "__main__":
     ld.optimize()
 
     fp = NavMesh()
-    fp.set_default_types(Node=FPoint, Edge=FEdge, Face=FFace)
     fp.create_mesh(ld.vertices, ld.edges, 0)
     # fp.reconnect_closed_edges()
     # fp.create_rooms()

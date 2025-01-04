@@ -8,7 +8,11 @@ def loss_func(path):
 
 
 def flow_loss(path):
-    return sum(np.linalg.norm(path[i].xy - path[i + 1].xy) for i in range(len(path) - 1))
+    return sum(
+        np.linalg.norm(path[i].xy - path[i + 1].xy)
+        for i in range(len(path) - 1)
+    )
+
 
 def door_loss(doors, target_dist=0.1):
     """Prevent doors are too close to each other"""

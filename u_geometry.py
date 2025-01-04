@@ -3,10 +3,15 @@ import numpy as np
 from g_primitives import Vertex, Edge, Face
 
 
-def add_vertex(edge, position, Point=Vertex, Edge=Edge, Face=Face):
+def add_vertex(edge, position):
     """Split edge into two edges by a point"""
     if edge.is_outer:
         return [], [], []
+
+    # auto-detect types
+    Point = type(edge.ori)
+    Edge = type(edge)
+    Face = type(edge.face)
 
     p_cut = Point(position)
     e_new = Edge(p_cut, edge.to)
@@ -75,7 +80,7 @@ def del_vertex(vertex):
     for e in vertex.half_edges:
         if e.eid < e_keep.eid:
             e_keep = e
-    e_keep = e_keep if e_keep.ori == vertex else e_keep.twin # adjust direction
+    e_keep = e_keep if e_keep.ori == vertex else e_keep.twin  # adjust direction
     e_keep_t = e_keep.twin
 
     # 2. Set the twins and edges to delete

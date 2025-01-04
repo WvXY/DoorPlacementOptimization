@@ -1,12 +1,16 @@
 import concurrent.futures
+
 import numpy as np
+
+from f_layout import FLayout
 
 # Your project imports
 from f_primitives import FPoint, FEdge, FFace
-from f_layout import FLayout
-from u_visualization import Visualizer
 from u_data_loader import Loader
+from u_visualization import Visualizer
 
+
+# TODO: refactor to 'Sampler' class
 class Agent:
     def __init__(self, fp=None):
         self.prev_pos = None
@@ -42,7 +46,7 @@ def run_agent(agent, steps=100):
     all_paths = []
     for _ in range(steps):
         tripath = agent.fp.find_tripath(agent.prev_pos, agent.curr_pos)
-        path    = agent.fp.simplify(tripath, agent.prev_pos, agent.curr_pos)
+        path = agent.fp.simplify(tripath, agent.prev_pos, agent.curr_pos)
         all_paths.append(path)
         agent.next()
     return all_paths
@@ -95,7 +99,10 @@ if __name__ == "__main__":
     steps_per_agent = 100
     with concurrent.futures.ThreadPoolExecutor(max_workers=12) as executor:
         # Submit each agent to the thread pool
-        futures = [executor.submit(run_agent, agent, steps_per_agent) for agent in agents]
+        futures = [
+            executor.submit(run_agent, agent, steps_per_agent)
+            for agent in agents
+        ]
         # Gather the results (list of lists of paths)
         results = [f.result() for f in futures]
 

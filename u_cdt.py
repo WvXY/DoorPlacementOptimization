@@ -2,9 +2,9 @@
 # use CDT python binding
 # https://github.com/artem-ogre/PythonCDT
 
-import PythonCDT as cdt
-
 import numpy as np
+
+import PythonCDT as cdt
 
 
 class CDT:

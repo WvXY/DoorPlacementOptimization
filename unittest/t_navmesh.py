@@ -1,15 +1,14 @@
 import unittest
+
 import numpy as np
 
-from g_primitives import Point
-from u_visualization import Visualizer
 from g_navmesh import NavMesh
-from u_data_loader import Loader
-from u_logging import DbgLogger
-
+from g_primitives import Point
 from g_primitives import _GeoBase
+from u_data_loader import Loader
+from u_visualization import Visualizer
 
-should_draw = True
+should_draw = False
 
 # logger = DbgLogger()
 

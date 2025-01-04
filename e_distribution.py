@@ -1,13 +1,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from copy import deepcopy
 
+from f_layout import FLayout
+from f_primitives import FVertex, FEdge, FFace
 from g_primitives import Point
-from f_primitives import FPoint, FEdge, FFace
+from o_door import ODoor
 from u_data_loader import Loader
 from u_visualization import Visualizer
-from f_layout import FLayout
-from o_door import ODoor
 
 # Settings
 case_id = "0a"
@@ -34,8 +33,13 @@ sp = [Point(p) for p in sp]
 # Visualization
 vis = Visualizer()
 
+
 def score_func(path):
-    return sum(np.linalg.norm(path[i].xy - path[i + 1].xy) for i in range(len(path) - 1))
+    return sum(
+        np.linalg.norm(path[i].xy - path[i + 1].xy)
+        for i in range(len(path) - 1)
+    )
+
 
 def f():
     score = 0
@@ -48,13 +52,14 @@ def f():
         if path:
             valid_paths += 1
             score += score_func(path)
-    return score / valid_paths if valid_paths > 0 else float('inf')
+    return score / valid_paths if valid_paths > 0 else float("inf")
+
 
 # Plot samples
 # plt.hist(samples, bins=100, density=True, alpha=0.5, label="Samples")
 yy = np.linspace(0.4, 1, 35)
 for y in yy:
     agent.set_pos(np.array([0.46875, y]))
-    plt.plot(y, f(), 'ro')
+    plt.plot(y, f(), "ro")
 # plt.legend()
 plt.show()

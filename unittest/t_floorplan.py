@@ -28,7 +28,8 @@ class FloorPlanTest(unittest.TestCase):
         self.assertIn([0, 6, 7, 13, 14, 15, 18, 19], room_faces)
 
     def test_split_edge(self):
-        from f_layout import FLayout, FPoint, FFace, FEdge
+        from f_layout import FLayout
+        from f_primitives import FVertex, FFace, FEdge
         from u_geometry import add_vertex
 
         self.ld.load_w_walls_case(0)
@@ -41,16 +42,14 @@ class FloorPlanTest(unittest.TestCase):
 
         # modify the mesh
         e0 = FEdge.get_by_eid(2)
-        v, e, f = add_vertex(
-            e0, [0.65, 0.55], Point=FPoint, Edge=FEdge, Face=FFace
-        )
+        v, e, f = add_vertex(e0, [0.65, 0.55])
         fp.append(v=v, e=e, f=f)
 
-        v3 = FPoint.get_by_vid(3)
+        v3 = FVertex.get_by_vid(3)
         v3.pos = [0.6, 0.8]
 
-        start = FPoint([0.5, 0.55])
-        end = FPoint([0.55, 0.45])
+        start = FVertex([0.5, 0.55])
+        end = FVertex([0.55, 0.45])
 
         tripath = fp.find_tripath(start, end)
         path = fp.simplify(tripath, start, end)

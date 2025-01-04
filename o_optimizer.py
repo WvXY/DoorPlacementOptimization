@@ -1,5 +1,5 @@
 import numpy as np
-from o_door import ODoor
+
 
 class Optimizer:
     def __init__(self):

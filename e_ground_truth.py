@@ -4,7 +4,6 @@ import numpy as np
 from tqdm import tqdm
 
 from f_layout import FLayout
-from f_primitives import FPoint, FEdge, FFace
 from g_primitives import Point
 from o_door import ODoor
 from o_loss_func import loss_func
@@ -22,7 +21,6 @@ def init(case_id, np_seed=0):
     ld.optimize()
 
     fp = FLayout()
-    fp.set_default_types(FPoint, FEdge, FFace)
     fp.create_mesh(ld.vertices, ld.edges, 0)
 
     # Visualization
@@ -136,7 +134,7 @@ if __name__ == "__main__":
             c = "r"
             vis.draw_point(start, c=c, s=8)
             vis.draw_point(end, c=c, s=8)
-            vis.draw_linepath([start, end],"--", c=c, lw=2, a=1)
+            vis.draw_linepath([start, end], "--", c=c, lw=2, a=1)
 
     # # ======manual test for one path=======
     # # start = Point(np.array([0.2, 0.9]))
@@ -151,7 +149,7 @@ if __name__ == "__main__":
     #     vis.draw_point(end, c=c, s=5)
     #     vis.draw_linepath(path, c=c, lw=2, a=1)
 
-    vis.draw_mesh(fp, show=False, draw_text="")
+    vis.draw_mesh(fp, show=True, draw_text="")
 
     # vis.show(f"Result {case_id} | Lowest Cost at: {best_x}")
     #

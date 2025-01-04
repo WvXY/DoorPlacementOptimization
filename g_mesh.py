@@ -2,7 +2,7 @@ from g_primitives import Vertex, Edge, Face, _GeoBase
 from u_cdt import CDT
 
 
-class Mesh(_GeoBase):
+class Mesh:
     """Half-edge data structure"""
 
     def __init__(self):
@@ -43,8 +43,8 @@ class Mesh(_GeoBase):
     def fixed_edges(self):
         return self.border_edges + self.inner_fixed_edges
 
-    def set_default_types(self, Node=Vertex, Edge=Edge, Face=Face):
-        self.Vertex = Node
+    def set_default_types(self, Vertex=Vertex, Edge=Edge, Face=Face):
+        self.Vertex = Vertex
         self.Edge = Edge
         self.Face = Face
 

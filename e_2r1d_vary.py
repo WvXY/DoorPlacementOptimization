@@ -1,16 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
-from copy import deepcopy, copy
 
-from g_primitives import Point
-from f_primitives import FPoint, FEdge, FFace
-from u_data_loader import Loader
-from u_visualization import Visualizer
 from f_layout import FLayout
+from f_primitives import FVertex, FEdge, FFace
+from g_primitives import Point
 from o_door import ODoor
 from o_loss_func import loss_func
-from o_agent import Agent
+from u_data_loader import Loader
+from u_visualization import Visualizer
 
 
 def init(case_id, np_seed=0):
@@ -23,7 +21,7 @@ def init(case_id, np_seed=0):
     ld.optimize()
 
     fp = FLayout()
-    fp.set_default_types(FPoint, FEdge, FFace)
+    # fp.set_default_types(FPoint, FEdge, FFace)
     fp.create_mesh(ld.vertices, ld.edges, 0)
 
     # Visualization
@@ -44,7 +42,7 @@ def f(fp, sp, batch_size=50):
     valid_paths = 0
     # agents = [Agent(fp) for _ in range(batch_size)]
     # agent.init()
-    for i in range(0, len(sp)-1):
+    for i in range(0, len(sp) - 1):
         start = sp[i]
         end = sp[i + 1]
         # start = agent.prev_pos
@@ -99,7 +97,7 @@ if __name__ == "__main__":
         else:
             door.load_history()
 
-        print(f"edge: {door.bind_edge.eid} | center: {door.center}")
+        # print(f"edge: {door.bind_edge.eid} | center: {door.center}")
         samples.append(door.center)
         T *= 0.99  # Annealing
 
@@ -118,12 +116,11 @@ if __name__ == "__main__":
     #     path = fp.simplify(tripath, start, end)
     #     if path:
     #         c = "g"#np.random.rand(3)
-    #         vis.draw_point(start, c=c, s=50)
-    #         vis.draw_point(end, c=c, s=50)
+    #         vis.draw_point(start, c=c, s=50)    #         vis.draw_point(end, c=c, s=50)
     #         vis.draw_linepath(path, c=c, lw=1, a=1)
     #     agent.next()
 
-    # vis.show(f"Result {case_id} | Best Center: {best_x} | Final T: {T:.3f}")
+    vis.show(f"Result {case_id} | Best Center: {best_x} | Final T: {T:.3f}")
 
     # #
     # # # # Plot histogram

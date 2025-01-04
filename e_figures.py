@@ -1,15 +1,11 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
+from g_navmesh import NavMesh
 from g_primitives import Point
 from u_data_loader import Loader
-from g_navmesh import NavMesh
 from u_visualization import Visualizer
 
 # from time import time
-
-from o_optimizer import Optimizer
-from o_door import ODoor
 
 # settings
 case_id = "5"
@@ -51,7 +47,6 @@ for t in nm.faces:
                 lw=3,
             )
 
-
 # vis.draw_tripath(tripath)
 # vis.draw_point(start, c="g", s=50, m="s")
 # vis.draw_point(end, c="r", s=50)
@@ -65,7 +60,6 @@ for e in outer_walls:
 
 for v in nm.vertices:
     vis.draw_point(v, c="k", s=40)
-
 
 # portals = track[0]
 # for i, p in enumerate(portals):
