@@ -184,6 +184,34 @@ class Visualizer:
                     c="m",
                 )
 
+    # for floor plan layout
+    def draw_room(self, room, c="k", lw=0.01):
+        for f in room.faces:
+            if f is None:
+                continue
+            self.fig.fill(
+                [n.x for n in f.verts],
+                [n.y for n in f.verts],
+                c,
+                alpha=0.1,
+            )
+
+        center = room.get_center()
+        self.fig.text(center[0], center[1], str(room.rid), fontsize=16, c="b")
+        walls = room.get_wall_edges()
+        for e in walls:
+            self.fig.plot(
+                [e.ori.x, e.to.x],
+                [e.ori.y, e.to.y],
+                c="k",
+                lw=2,
+            )
+
+    def draw_door(self, door, c="k", lw=0.01):
+        a = door.new["v"][0].xy
+        b = door.new["v"][1].xy
+        self.fig.plot([a[0], b[0]], [a[1], b[1]], c="w", lw=2)
+
     def show(self, title=None, axis="equal", axis_off=False):
         self.fig.set_title(title)
         plt.axis(axis)

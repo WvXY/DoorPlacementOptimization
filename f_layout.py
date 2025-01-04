@@ -1,6 +1,8 @@
 from f_primitives import FVertex, FEdge, FFace, FRoom
 from g_navmesh import NavMesh
 
+import numpy as np
+
 
 class FLayout(NavMesh):
     def __init__(self):
@@ -9,8 +11,8 @@ class FLayout(NavMesh):
 
         self.clear()
         self.rooms = set()
-        self.outer_walls = set()
-        self.inner_walls = set()
+        # self.outer_walls = set()
+        # self.inner_walls = set()
 
     def init_rooms(self):
         """Create rooms from faces blocked by edges"""
@@ -27,21 +29,35 @@ class FLayout(NavMesh):
 
         self.reset_all_visited(self.faces)
         self.rooms = set()
-        not_visited = self.faces
+        not_visited = self.faces.copy()
         while not_visited:
             room = FRoom()
-            visit_face(not_visited[0], room)
+            visit_face(not_visited.pop(), room)
             self.rooms.add(room)
             not_visited = [f for f in self.faces if not f.is_visited]
         return True
 
-    def __find_room_connections(self, room):
-        for f in room.faces:
-            w_edges = f.get_wall_edges()
-            for e in w_edges:
-                if not e.is_outer:
-                    room.adjs.add(e.twin.face)
-        return room.adjs
+    # def set_room_connections(self, adj_m):
+    #     for i in range(len(adj_m)):
+    #         for j in range(i + 1, len(adj_m)):
+    #             if adj_m[i, j] == 1:
+    #                 self.rooms[i].adjs.add(self.rooms[j])
+    #                 self.rooms[j].adjs.add(self.rooms[i])
+
+    def set_room_connections(self):
+        adj_m = np.zeros((len(self.rooms), len(self.rooms)))
+        for wall in self.get_inner_walls():
+            f1, f2 = wall.face, wall.twin.face
+            r1 = self.__find_room_from_face(f1)
+            r2 = self.__find_room_from_face(f2)
+            r1.add_adj(r2)
+            r2.add_adj(r1)
+
+    def __find_room_from_face(self, f):
+        for room in self.rooms:
+            if f in room.faces:
+                return room
+        return None
 
     # utils
     def clear(self):
@@ -55,6 +71,15 @@ class FLayout(NavMesh):
             if e.eid == eid:
                 return e
         return None
+
+    def get_inner_walls(self):
+        return [e for e in self.edges if e.is_blocked and e.twin]
+
+    def get_outer_walls(self):
+        return [e for e in self.edges if e.is_blocked and not e.twin]
+
+    def get_by_rid(self, rid):
+        return next((r for r in self.rooms if r.rid == rid), None)
 
     # unused
     def clean(self):
@@ -84,14 +109,20 @@ if __name__ == "__main__":
     for r in rooms:
         print(f"Room: {r} | {[f.fid for f in r.faces]}")
 
-    r0 = rooms[0]
+    fp.set_room_connections()
+
+    r0 = fp.get_by_rid(0)
+    r3 = fp.get_by_rid(2)
     walls0 = r0.get_wall_edges()
-    for w in walls0:
-        print(f"Wall: {w.eid}")
+    print(f"Room {r0.rid} adjs: {[r.rid for r in r0.adjs]}")
+
+    e03 = r0.get_shared_edge(r3)
+    print(f"e03: {[e.eid for e in e03]}")
 
     for room in rooms:
         center = room.get_center()
         vis.draw_point(center, c="r")
+        vis.draw_room(room)
 
     # fp.reconnect_closed_edges()
     # fp.create_rooms()

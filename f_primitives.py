@@ -58,13 +58,19 @@ class FFace(Face, _FInfo):
 
 class FRoom(_FInfo):
     __room_list = []
+    __rid = 0
 
     def __init__(self):
         _FInfo.__init__(self)
         FRoom.__room_list.append(self)
+        self.rid = FRoom.__rid
+        FRoom.__rid += 1
 
         self.faces = set()
         self.adjs = set()
+
+    def add_adj(self, room):
+        self.adjs.add(room)
 
     def get_all_edges(self):
         all_edges = set()
@@ -90,6 +96,17 @@ class FRoom(_FInfo):
         x = sum([c[0] * a for c, a in zip(centers, areas)]) / area_sum
         y = sum([c[1] * a for c, a in zip(centers, areas)]) / area_sum
         return (x, y)
+
+    def get_shared_edge(self, other: "FRoom"):
+        other_wall_edges = other.get_wall_edges()
+        shared_edges = []
+        for e in self.get_wall_edges():
+            if e.twin in other_wall_edges:
+                shared_edges += [e, e.twin]
+        return shared_edges
+
+    def get_by_rid(rid):
+        return next((r for r in FRoom.__room_list if r.rid == rid), None)
 
 
 # Alias

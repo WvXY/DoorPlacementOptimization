@@ -282,8 +282,6 @@ class ODoor:
             # print("FDoor::sync floor plan - Remove")
             self.floor_plan.remove(self.new["v"], self.new["e"], self.new["f"])
 
-        print(f"vertex: {[v.vid for v in self.floor_plan.verts]}")
-
 
 if __name__ == "__main__":
     import numpy as np

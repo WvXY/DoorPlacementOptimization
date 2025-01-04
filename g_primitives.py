@@ -157,10 +157,7 @@ class Vertex(_GeoBase, _GInfo):
 
     @staticmethod
     def get_by_vid(nid):
-        for n in Vertex.node_list:
-            if n.vid == nid:
-                return n
-        return None
+        return next((n for n in Vertex.node_list if n.vid == nid), None)
 
     @staticmethod
     def clear():
@@ -237,10 +234,7 @@ class Edge(_GeoBase, _GInfo):
 
     @staticmethod
     def get_by_eid(eid):
-        for e in Edge.edge_list:
-            if e.eid == eid:
-                return e
-        return None
+        return next((e for e in Edge.edge_list if e.eid == eid), None)
 
     # geometry utils
     def disconnect(self):
@@ -346,10 +340,7 @@ class Face(_GeoBase, _GInfo):
 
     @staticmethod
     def get_by_fid(fid):
-        for f in Face.face_list:
-            if f.fid == fid:
-                return f
-        return None
+        return next((f for f in Face.face_list if f.fid == fid), None)
 
     def __gt__(self, other):
         return self.fid > other.fid

@@ -90,7 +90,7 @@ if __name__ == "__main__":
     best_x = door.center.copy()
 
     for iteration in tqdm(range(100)):
-        door.step(-0.05)
+        door.step(-0.1)
         score = f(fp, sp)
         xys.append(door.center)
         scores.append(score)

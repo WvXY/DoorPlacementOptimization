@@ -10,9 +10,9 @@ class NavMesh(Mesh):
         super().__init__()
 
     def find_tripath(self, start, end, dist_func=None):
-        fstart = self.get_point_inside_face(start)
-        fend = self.get_point_inside_face(end)
-        path = a_star(fstart, fend, dist_func)[0]
+        f_start = self.get_point_inside_face(start)
+        f_end = self.get_point_inside_face(end)
+        path = a_star(f_start, f_end, dist_func)[0]
         return path
 
     def simplify(self, tripath, start: Point, end: Point):

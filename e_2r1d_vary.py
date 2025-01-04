@@ -41,8 +41,8 @@ def f(fp, sp, batch_size=50):
     valid_paths = 0
     # agents = [Agent(fp) for _ in range(batch_size)]
     # agent.init()
-    # for i in range(0, len(sp) - 1):
-    for i in range(0, len(sp), 2):
+    for i in range(0, len(sp) - 1):
+        # for i in range(0, len(sp), 2):
         start = sp[i]
         end = sp[i + 1]
         # start = agent.prev_pos
@@ -58,10 +58,10 @@ def f(fp, sp, batch_size=50):
 
 if __name__ == "__main__":
     # Initialize
-    case_id = 0
-    n_sp = 300
+    case_id = 2
+    n_sp = 200
     iters = 100
-    T = 0.01
+    T = 0.1
 
     fp, vis = init(case_id)
 
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     best_score = old_score
     best_x = door.center.copy()
 
-    for iteration in range(iters):
+    for iteration in tqdm(range(iters)):
 
         door.step()
         new_score = f(fp, sp)
@@ -94,37 +94,37 @@ if __name__ == "__main__":
                 best_e = door.bind_edge
                 best_score = new_score
         else:
-            # print(f"Rejected.
             door.load_history()
 
-        print(
-            f"edge: {door.bind_edge.eid} | df: {df:.3f}  | center: {door.center}"
-            f"| score: {new_score:.3f} | alpha: {alpha:.3f}"
-        )
+        # print(
+        #     f"edge: {door.bind_edge.eid} | df: {df:.3f}  | center: {door.center}"
+        #     f"| score: {new_score:.3f} | alpha: {alpha:.3f}"
+        # )
         samples.append([door.center, new_score])
         T *= 0.99  # Annealing
 
     door.load_manually(best_e, best_x)
     # # Visualize results
-    vis.draw_mesh(fp, show=False, draw_text="e")
-    for v, s in samples:
-        plt.scatter(v[0], v[1], c=s, s=30, alpha=1, marker="s")
+    vis.draw_door(door)
+    vis.draw_mesh(fp, show=False, draw_text="")
+    # for v, s in samples:
+    #     plt.scatter(v[0], v[1], c=s, s=30, alpha=1, marker="s")
 
-    plt.colorbar()
+    # plt.colorbar()
 
-    # agent = Agent(fp)
-    # agent.init()
-    for i in range(0, 50, 2):
-        start = sp[i]
-        end = sp[i + 1]
-        tripath = fp.find_tripath(start, end)
-        path = fp.simplify(tripath, start, end)
-        # if path:
-        c = np.random.rand(3)
-        vis.draw_point(start, c=c, s=50)
-        vis.draw_point(end, c=c, s=50)
-        vis.draw_linepath(path, c=c, lw=1, a=1)
-        # agent.next()
+    # # agent = Agent(fp)
+    # # agent.init()
+    # for i in range(0, 50, 2):
+    #     start = sp[i]
+    #     end = sp[i + 1]
+    #     tripath = fp.find_tripath(start, end)
+    #     path = fp.simplify(tripath, start, end)
+    #     # if path:
+    #     c = np.random.rand(3)
+    #     vis.draw_point(start, c=c, s=50)
+    #     vis.draw_point(end, c=c, s=50)
+    #     vis.draw_linepath(path, c=c, lw=1, a=1)
+    #     # agent.next()
 
     vis.show(f"Result {case_id} | Best Center: {best_x}")
 
