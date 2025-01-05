@@ -18,7 +18,6 @@ ld.load_w_walls_case(case_id)
 ld.optimize()
 
 nm = FLayout()
-nm.set_default_types(FPoint, FEdge, FFace)
 nm.create_mesh(ld.vertices, ld.edges, 0)
 
 # Initialize agent

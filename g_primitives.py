@@ -211,6 +211,9 @@ class Edge(_GeoBase, _GInfo):
         return np.array([self.get_dir()[1], -self.get_dir()[0]])
 
     def get_mid(self):
+        return self.get_center()
+
+    def get_center(self):
         return (self.ori.xy + self.to.xy) / 2
 
     def get_length(self):

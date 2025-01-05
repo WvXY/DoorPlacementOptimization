@@ -95,8 +95,8 @@ def metropolis_hasting(fp, door, T=0.01, iters=200):
 
 if __name__ == "__main__":
     # Initialize
-    case_id = 3
-    n_sp = 400
+    case_id = 4
+    n_sp = 100
     iters = 200
     T = 0.1
 
@@ -105,39 +105,46 @@ if __name__ == "__main__":
     # vis.draw_mesh(fp, show=True, draw_text="vef", axis_show=False, axis_equal=True)
 
     e0 = fp.get_by_eid(0)
-    door = ODoor(e0, fp)
-    door.set_rooms(*fp.rooms)
-    door.activate(np.array([0.6, 0.7]))
+    door = ODoor(fp=fp)
+    # door.set_rooms(*())
+    # door.activate(np.array([0.6, 0.7]))
+
+    r0 = fp.get_by_rid(0)
+    r1 = fp.get_by_rid(1)
+    r2 = fp.get_by_rid(2)
+
+    door.auto_activate([r1, r0])
+    print(door.get_room_rids())
 
     sp = make_sample_points(n_sp)
 
     best_x, best_s, samples = metropolis_hasting(fp, door, T=T, iters=iters)
 
     # # Visualize results
-    # vis.draw_door(door)
     vis.draw_mesh(fp, show=False, draw_text="f")
     for room in fp.rooms:
         print(f"Room {room.rid}: {[f.fid for f in room.faces]}")
 
-    vis.draw_floor_plan(fp, door=door, draw_connection=True)
+    vis.draw_floor_plan(fp, door, show=False, draw_connection=True)
+
     # for v, s in samples:
     #     plt.scatter(v[0], v[1], c=s, s=30, alpha=1, marker="s")
 
     # plt.colorbar()
 
-    # # agent = Agent(fp)
-    # # agent.init()
-    # for i in range(0, 50, 2):
-    #     start = sp[i]
-    #     end = sp[i + 1]
-    #     tripath = fp.find_tripath(start, end)
-    #     path = fp.simplify(tripath, start, end)
-    #     # if path:
-    #     c = np.random.rand(3)
-    #     vis.draw_point(start, c=c, s=50)
-    #     vis.draw_point(end, c=c, s=50)
-    #     vis.draw_linepath(path, c=c, lw=1, a=1)
-    #     # agent.next()
+    # agent = Agent(fp)
+    # agent.init()
+    for i in range(0, 50, 2):
+        start = sp[i]
+        end = sp[i + 1]
+        tripath = fp.find_tripath(start, end)
+        path = fp.simplify(tripath, start, end)
+        if path:
+            c = np.random.rand(3)
+            vis.draw_point(start, c=c, s=50)
+            vis.draw_point(end, c=c, s=50)
+            vis.draw_linepath(path, c=c, lw=1, a=1)
+        # agent.next()
 
     vis.show(f"Result {case_id} | Best Center: {best_x}")
 

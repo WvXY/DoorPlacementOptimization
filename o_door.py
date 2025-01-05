@@ -8,11 +8,20 @@ import numpy as np
 
 # Door object for optimization
 class ODoor:
-    def __init__(self, edge, fp=None):
+    __did = 0
+    __door_list = []
+
+
+    def __init__(self, edge=None, fp=None):
+        self.did = ODoor.__did
+        ODoor.__did += 1
+        ODoor.__door_list.append(self)
+
         self.bind_edge: FEdge = edge
         self.bind_rooms: List[FRoom] = [None, None]
         self.floor_plan = fp
 
+        # door length
         self.d_len = 0.07
 
         self.e_len = None
@@ -51,6 +60,9 @@ class ODoor:
     def get_edge_len(self):
         return self.bind_edge.get_length()
 
+    def get_room_rids(self):
+        return [r.rid for r in self.bind_rooms]
+
     # setters
     def set_floor_plan(self, fp):
         self.floor_plan = fp
@@ -81,8 +93,16 @@ class ODoor:
         assert center is not None, "Center is not defined"
 
         def add_two_face_to_rooms(self, faces):
-            """A dirty way to add two new faces to the rooms"""
+            """A dirty way to add two new faces to the existing rooms"""
             for f_adj in faces[0].adjs:
+                if f_adj is faces[1]:
+                    continue
+
+                # must be directly connected, not blocked
+                e = faces[0].get_shared_edge(f_adj)
+                if e.is_blocked:
+                    continue
+
                 if f_adj in self.bind_rooms[0].faces:
                     self.bind_rooms[0].add_face(faces[0])
                     self.bind_rooms[1].add_face(faces[1])
@@ -90,6 +110,8 @@ class ODoor:
             else:
                 self.bind_rooms[0].add_face(faces[1])
                 self.bind_rooms[1].add_face(faces[0])
+
+        self.bind_edge.reset_all_visited()  # reset visited flag for edges.
 
         if need_correction:
             center = self.__correct_location(center)
@@ -124,8 +146,12 @@ class ODoor:
         # set properties
         self.sync_floor_plan()
 
-    def auto_activate(self):
-        self.activate(self.center)
+    def auto_activate(self, rooms):
+        self.set_rooms(rooms[0], rooms[1])
+        self.bind_edge = self.shared_edges[0]
+        assert self.bind_edge is not None, "No shared edge found"
+        # start from the center of the edge
+        self.activate(self.bind_edge.get_center(), need_correction=False)
 
     def deactivate(self):
         if not self.is_active:
@@ -200,8 +226,8 @@ class ODoor:
         return self.move_limit[0] <= ratio <= self.move_limit[1]
 
     def __find_next_edge(self, ratio):
-        def search_next_edge(vertex):
-            # print(f"search_next_edge: {vertex.vid} | {[e.eid for e in vertex.half_edges]}")
+        def search_next_edge_random(vertex):
+
             random_order = np.random.permutation(len(vertex.half_edges))
             edges = list(vertex.half_edges)
             for i in random_order:
@@ -214,16 +240,24 @@ class ODoor:
                     return e
             return None
 
-            # for e in vertex.half_edges:
-            #     if (e.is_inner and e.is_active and
-            #             not (self.bind_edge is e or
-            #                  e is self.bind_edge.twin)):
-            #         return e
-            # return None
+        def search_next_shared_edge(vertex):
+            for e in self.shared_edges:
+                if e is self.bind_edge or e is self.bind_edge.twin:
+                    continue
 
+                if e.ori is vertex or e.to is vertex:
+                    return e
+
+            for e in self.shared_edges:
+                if e.is_visited is False:
+                    return e
+
+            return None
+
+        # search next edge
         if ratio >= self.move_limit[1]:
             v = self.bind_edge.to
-            e = search_next_edge(v)
+            e = search_next_shared_edge(v)
             if e is None:
                 self.bind_edge = self.bind_edge.twin
                 # return False
@@ -232,12 +266,13 @@ class ODoor:
 
         elif ratio <= self.move_limit[0]:
             v = self.bind_edge.ori
-            e = search_next_edge(v)
+            e = search_next_shared_edge(v)
             if e is None:
                 self.bind_edge = self.bind_edge.twin
             else:
                 self.bind_edge = e if e.to is v else e.twin
 
+        self.bind_edge.is_visited = True
         return True
 
     def __find_next_center(self, ratio):

@@ -1,4 +1,4 @@
-from g_primitives import Vertex, Edge, Face
+from g_primitives import Vertex, Edge, Face, _GeoBase
 
 
 class _FInfo:
@@ -56,11 +56,12 @@ class FFace(Face, _FInfo):
         return True
 
 
-class FRoom(_FInfo):
+class FRoom(_FInfo, _GeoBase):
     __room_list = []
     __rid = 0
 
     def __init__(self):
+        _GeoBase.__init__(self)
         _FInfo.__init__(self)
         FRoom.__room_list.append(self)
         self.rid = FRoom.__rid
