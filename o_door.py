@@ -11,7 +11,6 @@ class ODoor:
     __did = 0
     __door_list = []
 
-
     def __init__(self, edge=None, fp=None):
         self.did = ODoor.__did
         ODoor.__did += 1

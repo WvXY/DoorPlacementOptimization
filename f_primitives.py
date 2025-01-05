@@ -10,10 +10,8 @@ class _FInfo:
 
 class FVertex(Vertex, _FInfo):
     def __init__(self, xy):
-        # Vertex.__init__(self, xy)
-        # super()._FInfo.__init__(self)
-        # _FInfo.__init__(self)
-        super().__init__(xy)
+        Vertex.__init__(self, xy)
+        _FInfo.__init__(self)
 
     def __hash__(self):
         # for not hashable error
