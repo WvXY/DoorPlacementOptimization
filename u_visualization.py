@@ -212,6 +212,36 @@ class Visualizer:
         b = door.new["v"][1].xy
         self.fig.plot([a[0], b[0]], [a[1], b[1]], c="w", lw=2)
 
+    def draw_connection(self, fp, c="g", lw=2):
+        for i in range(len(fp.adj_m)):
+            r0 = fp.get_by_rid(i)
+            c0 = r0.get_center()
+            for j in range(i + 1, len(fp.adj_m)):
+                if fp.adj_m[i, j] == 1:
+                    r1 = fp.get_by_rid(j)
+                    c1 = r1.get_center()
+                    self.fig.plot(
+                        [c0[0], c1[0]],
+                        [c0[1], c1[1]],
+                        c=c,
+                        lw=lw,
+                    )
+                    self.fig.scatter(*c0, c="b", s=40)
+                    self.fig.scatter(*c1, c="b", s=40)
+
+    def draw_floor_plan(self, fp, door=None, draw_connection=False, show=True):
+        for room in fp.rooms:
+            self.draw_room(room)
+
+        if draw_connection:
+            self.draw_connection(fp)
+
+        if door:
+            self.draw_door(door)
+
+        if show:
+            plt.show()
+
     def show(self, title=None, axis="equal", axis_off=False):
         self.fig.set_title(title)
         plt.axis(axis)

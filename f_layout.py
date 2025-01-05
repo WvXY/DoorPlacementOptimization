@@ -11,6 +11,7 @@ class FLayout(NavMesh):
 
         self.clear()
         self.rooms = set()
+        self.adj_m = None
         # self.outer_walls = set()
         # self.inner_walls = set()
 
@@ -52,6 +53,9 @@ class FLayout(NavMesh):
             r2 = self.__find_room_from_face(f2)
             r1.add_adj(r2)
             r2.add_adj(r1)
+            adj_m[r1.rid, r2.rid] = 1
+            adj_m[r2.rid, r1.rid] = 1
+        self.adj_m = adj_m
 
     def __find_room_from_face(self, f):
         for room in self.rooms:
@@ -119,21 +123,7 @@ if __name__ == "__main__":
     e03 = r0.get_shared_edge(r3)
     print(f"e03: {[e.eid for e in e03]}")
 
-    for room in rooms:
-        center = room.get_center()
-        vis.draw_point(center, c="r")
-        vis.draw_room(room)
-
-    # fp.reconnect_closed_edges()
-    # fp.create_rooms()
-
-    # e17 = FEdge.get_by_eid(17)
-    # v, e, f = add_vertex(e17, [0.2, 0.1])
-    # fp.append(v=v, e=e, f=f)
-
-    # e6 = Edge.get_by_eid(6)
-    # v, e, f = split_edge(e6, [0.7, 0.5], Point=RPoint, Edge=REdge, Face=RFace)
-    # fp.append(v=v, e=e, f=f)
+    vis.draw_floor_plan(fp, show=False)
 
     # ===debug===
     # f10 = FFace.get_by_fid(10)
