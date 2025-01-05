@@ -22,6 +22,8 @@ def init(case_id, np_seed=0):
     fp = FLayout()
     # fp.set_default_types(FPoint, FEdge, FFace)
     fp.create_mesh(ld.vertices, ld.edges, 0)
+    fp.init_rooms()
+    fp.set_room_connections()
 
     # Visualization
     vis = Visualizer()
@@ -56,23 +58,7 @@ def f(fp, sp, batch_size=50):
     return loss / valid_paths if valid_paths > 0 else float("inf")
 
 
-if __name__ == "__main__":
-    # Initialize
-    case_id = 2
-    n_sp = 200
-    iters = 100
-    T = 0.1
-
-    fp, vis = init(case_id)
-
-    # vis.draw_mesh(fp, show=True, draw_text="vef", axis_show=False, axis_equal=True)
-
-    e0 = fp.get_by_eid(0)
-    door = ODoor(e0, fp)
-    door.activate(np.array([0.6, 0.7]))
-
-    sp = make_sample_points(n_sp)
-
+def metropolis_hasting(fp, door, T=0.01, iters=200):
     # Metropolis-Hastings settings
     old_score = f(fp, sp)
     samples = []
@@ -104,9 +90,36 @@ if __name__ == "__main__":
         T *= 0.99  # Annealing
 
     door.load_manually(best_e, best_x)
+    return best_x, best_score, samples
+
+
+if __name__ == "__main__":
+    # Initialize
+    case_id = 3
+    n_sp = 400
+    iters = 200
+    T = 0.1
+
+    fp, vis = init(case_id)
+
+    # vis.draw_mesh(fp, show=True, draw_text="vef", axis_show=False, axis_equal=True)
+
+    e0 = fp.get_by_eid(0)
+    door = ODoor(e0, fp)
+    door.set_rooms(*fp.rooms)
+    door.activate(np.array([0.6, 0.7]))
+
+    sp = make_sample_points(n_sp)
+
+    best_x, best_s, samples = metropolis_hasting(fp, door, T=T, iters=iters)
+
     # # Visualize results
-    vis.draw_door(door)
-    vis.draw_mesh(fp, show=False, draw_text="")
+    # vis.draw_door(door)
+    vis.draw_mesh(fp, show=False, draw_text="f")
+    for room in fp.rooms:
+        print(f"Room {room.rid}: {[f.fid for f in room.faces]}")
+
+    vis.draw_floor_plan(fp, door=door, draw_connection=True)
     # for v, s in samples:
     #     plt.scatter(v[0], v[1], c=s, s=30, alpha=1, marker="s")
 

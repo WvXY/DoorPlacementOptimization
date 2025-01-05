@@ -4,7 +4,7 @@ from matplotlib import patches
 
 
 class Visualizer:
-    def __init__(self, dpi=300):
+    def __init__(self, dpi=120):
         self.ax, self.fig = plt.subplots(dpi=dpi)
 
     def get_fig(self):
@@ -144,10 +144,9 @@ class Visualizer:
                     f.y,
                     str(f.fid),
                     fontsize=12,
-                    horizontalalignment="right",
-                    verticalalignment="top",
                     c="k",
                 )
+                # self.fig.scatter(f.x, f.y, c="k", s=16, marker="o")
 
         if e:
             mesh.reset_all_visited(mesh.edges)
@@ -189,12 +188,15 @@ class Visualizer:
         for f in room.faces:
             if f is None:
                 continue
+            vxs = [n.x for n in f.verts]
+            vys = [n.y for n in f.verts]
             self.fig.fill(
-                [n.x for n in f.verts],
-                [n.y for n in f.verts],
+                vxs,
+                vys,
                 c,
                 alpha=0.1,
             )
+            self.fig.scatter(vxs, vys, c="k", s=16, marker="o")
 
         center = room.get_center()
         self.fig.text(center[0], center[1], str(room.rid), fontsize=16, c="b")
@@ -204,15 +206,20 @@ class Visualizer:
                 [e.ori.x, e.to.x],
                 [e.ori.y, e.to.y],
                 c="k",
-                lw=2,
+                lw=1.6,
             )
 
     def draw_door(self, door, c="k", lw=0.01):
         a = door.new["v"][0].xy
         b = door.new["v"][1].xy
-        self.fig.plot([a[0], b[0]], [a[1], b[1]], c="w", lw=2)
+        self.fig.plot([a[0], b[0]], [a[1], b[1]], c="c", lw=2)
+        self.fig.scatter(a[0], a[1], c="c", s=40, marker="h")
+        self.fig.scatter(b[0], b[1], c="c", s=40, marker="h")
 
     def draw_connection(self, fp, c="g", lw=2):
+        if fp.adj_m is None:
+            fp.set_room_connections()
+
         for i in range(len(fp.adj_m)):
             r0 = fp.get_by_rid(i)
             c0 = r0.get_center()
@@ -223,13 +230,14 @@ class Visualizer:
                     self.fig.plot(
                         [c0[0], c1[0]],
                         [c0[1], c1[1]],
+                        "-.",
                         c=c,
                         lw=lw,
                     )
-                    self.fig.scatter(*c0, c="b", s=40)
-                    self.fig.scatter(*c1, c="b", s=40)
+                    self.fig.scatter(*c0, c="b", s=40, marker="s")
+                    self.fig.scatter(*c1, c="b", s=40, marker="s")
 
-    def draw_floor_plan(self, fp, door=None, draw_connection=False, show=True):
+    def draw_floor_plan(self, fp, door=None, draw_connection=False, show=False):
         for room in fp.rooms:
             self.draw_room(room)
 
@@ -240,6 +248,7 @@ class Visualizer:
             self.draw_door(door)
 
         if show:
+            plt.axis("equal")
             plt.show()
 
     def show(self, title=None, axis="equal", axis_off=False):
@@ -247,4 +256,7 @@ class Visualizer:
         plt.axis(axis)
         if axis_off:
             plt.axis("off")
+        plt.show()
+
+    def __del__(self):
         plt.show()

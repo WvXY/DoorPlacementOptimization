@@ -38,14 +38,9 @@ class FLayout(NavMesh):
             not_visited = [f for f in self.faces if not f.is_visited]
         return True
 
-    # def set_room_connections(self, adj_m):
-    #     for i in range(len(adj_m)):
-    #         for j in range(i + 1, len(adj_m)):
-    #             if adj_m[i, j] == 1:
-    #                 self.rooms[i].adjs.add(self.rooms[j])
-    #                 self.rooms[j].adjs.add(self.rooms[i])
-
     def set_room_connections(self):
+        assert len(self.rooms) > 0, "No rooms found"
+
         adj_m = np.zeros((len(self.rooms), len(self.rooms)))
         for wall in self.get_inner_walls():
             f1, f2 = wall.face, wall.twin.face
@@ -56,6 +51,7 @@ class FLayout(NavMesh):
             adj_m[r1.rid, r2.rid] = 1
             adj_m[r2.rid, r1.rid] = 1
         self.adj_m = adj_m
+        return True
 
     def __find_room_from_face(self, f):
         for room in self.rooms:
@@ -123,7 +119,7 @@ if __name__ == "__main__":
     e03 = r0.get_shared_edge(r3)
     print(f"e03: {[e.eid for e in e03]}")
 
-    vis.draw_floor_plan(fp, show=False)
+    vis.draw_floor_plan(fp, show=False, draw_connection=True)
 
     # ===debug===
     # f10 = FFace.get_by_fid(10)

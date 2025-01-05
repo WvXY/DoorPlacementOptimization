@@ -72,6 +72,17 @@ class FRoom(_FInfo):
     def add_adj(self, room):
         self.adjs.add(room)
 
+    def add_face(self, face):
+        self.faces.add(face)
+
+    def replace_face(self, old_face, new_face):
+        self.faces.remove(old_face)
+        self.faces.add(new_face)
+
+    def remove_faces(self, faces):
+        """Remove faces from room: no warning if face not in room"""
+        self.faces.difference_update(faces)
+
     def get_all_edges(self):
         all_edges = set()
         for f in self.faces:

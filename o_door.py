@@ -1,20 +1,24 @@
 from u_geometry import closet_position_on_edge, del_vertex, add_vertex
+from f_primitives import FRoom, FEdge
+
+from typing import List
+
 import numpy as np
 
 
 # Door object for optimization
 class ODoor:
     def __init__(self, edge, fp=None):
-        self.bind_edge = edge
+        self.bind_edge: FEdge = edge
+        self.bind_rooms: List[FRoom] = [None, None]
         self.floor_plan = fp
-
-        # self.dir = self.get_dir()
 
         self.d_len = 0.07
 
         self.e_len = None
         self.move_limit = None
         self.ratio = None
+        self.shared_edges = None
 
         self.new = {"v": [], "e": [], "f": []}
 
@@ -51,6 +55,11 @@ class ODoor:
     def set_floor_plan(self, fp):
         self.floor_plan = fp
 
+    def set_rooms(self, room1, room2):
+        assert room1 is not room2, "Rooms should be different"
+        self.bind_rooms = [room1, room2]
+        self.shared_edges = room1.get_shared_edge(room2)
+
     def set_door_center(self, center):
         assert self.is_active, "Door need to be activate first"
 
@@ -71,6 +80,17 @@ class ODoor:
         assert self.bind_edge is not None, "Door is not binded to any edge"
         assert center is not None, "Center is not defined"
 
+        def add_two_face_to_rooms(self, faces):
+            """A dirty way to add two new faces to the rooms"""
+            for f_adj in faces[0].adjs:
+                if f_adj in self.bind_rooms[0].faces:
+                    self.bind_rooms[0].add_face(faces[0])
+                    self.bind_rooms[1].add_face(faces[1])
+                    break
+            else:
+                self.bind_rooms[0].add_face(faces[1])
+                self.bind_rooms[1].add_face(faces[0])
+
         if need_correction:
             center = self.__correct_location(center)
 
@@ -85,11 +105,18 @@ class ODoor:
             self.bind_edge, cut_p0
         )
 
+        # manually set the rooms
+        add_two_face_to_rooms(self, self.new["f"])
+
         v, e, f = add_vertex(self.bind_edge, cut_p1)
         self.new["v"] += v
         self.new["e"] += e
         self.new["f"] += f
 
+        # manually set the rooms
+        add_two_face_to_rooms(self, f)
+
+        # set the door edges for traversing
         e[0].is_blocked = False
         e[1].is_blocked = False  # twin of e[0]
         self.is_active = True
@@ -106,10 +133,14 @@ class ODoor:
 
         # 1 -> 0 is working, but 0 -> 1 is not working
         v_del, e_del, f_del = del_vertex(self.new["v"][1])
+
         v, e, f = del_vertex(self.new["v"][0])
         v_del.extend(v)
         e_del.extend(e)
         f_del.extend(f)
+
+        self.bind_rooms[0].remove_faces(f_del)
+        self.bind_rooms[1].remove_faces(f_del)
 
         # for v in v_del:
         #     v.is_active = False
