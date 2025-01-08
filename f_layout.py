@@ -21,7 +21,7 @@ class FLayout(NavMesh):
         def visit_face(f, room):
             if f.is_visited:
                 return
-            f.is_visited = True
+            f.visit()
             room.faces.add(f)
             for fa in f.adjs:
                 if f.get_shared_edge(fa).is_blocked:
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from u_data_loader import Loader
     from u_visualization import Visualizer
-    from u_geometry import add_vertex
+    from u_geometry import split_half_edge
 
     ld = Loader(".")
     ld.load_w_walls_case(3)

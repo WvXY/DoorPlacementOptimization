@@ -24,7 +24,7 @@ nm.create_mesh(ld.vertices, ld.edges, 0)
 e0 = nm.get_by_eid(0)
 agent = ODoor(e0)
 agent.activate(np.array([0.5, 0.4]))
-nm.append(agent.new_verts, agent.new_edges, agent.new_faces)
+# nm.append(agent.new["v"], agent.new_edges, agent.new_faces)
 
 sp = np.random.rand(500, 2)
 sp = [Point(p) for p in sp]

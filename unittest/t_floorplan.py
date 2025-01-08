@@ -30,7 +30,7 @@ class FloorPlanTest(unittest.TestCase):
     def test_split_edge(self):
         from f_layout import FLayout
         from f_primitives import FVertex, FFace, FEdge
-        from u_geometry import add_vertex
+        from u_geometry import split_half_edge
 
         self.ld.load_w_walls_case(0)
         self.ld.optimize()
@@ -42,7 +42,7 @@ class FloorPlanTest(unittest.TestCase):
 
         # modify the mesh
         e0 = FEdge.get_by_eid(2)
-        v, e, f = add_vertex(e0, [0.65, 0.55])
+        v, e, f = split_half_edge(e0, [0.65, 0.55])
         fp.append(v=v, e=e, f=f)
 
         v3 = FVertex.get_by_vid(3)

@@ -89,12 +89,11 @@ class Mesh:
     def __init_nodes(self, nodes):
         for i, xy in enumerate(nodes):
             vertex = self.Vertex(xy[:2])
+            vertex.is_fixed = True
             self.verts.append(vertex)
 
     def __init_faces(self, faces: list):
-        for i, f in enumerate(faces):
-            face = self.Face()
-            self.faces.append(face)
+        self.faces = [self.Face() for _ in range(len(faces))]
 
     def __init_half_edges(self, faces):
         for i, (fi, fj, fk) in enumerate(faces):
@@ -110,11 +109,6 @@ class Mesh:
                 self.faces[i],
                 self.faces[i],
             )
-
-            # Set diagonal vertex
-            eij.set_diagonal_vertex(self.verts[fk])
-            ejk.set_diagonal_vertex(self.verts[fi])
-            eki.set_diagonal_vertex(self.verts[fj])
 
             self.edges += [eij, ejk, eki]
             self.faces[i].set_edges([eij, ejk, eki])

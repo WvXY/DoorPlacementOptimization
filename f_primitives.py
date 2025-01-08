@@ -4,7 +4,6 @@ from g_primitives import Vertex, Edge, Face, _GeoBase
 class _FInfo:
     def __init__(self):
         self.room = None
-        self.is_visited = False
         self.is_active = True
 
 

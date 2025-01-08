@@ -1,4 +1,4 @@
-from u_geometry import closet_position_on_edge, del_vertex, add_vertex
+from u_geometry import closet_position_on_edge, del_vertex, split_half_edge
 from f_primitives import FRoom, FEdge
 
 from typing import List
@@ -122,20 +122,20 @@ class ODoor:
 
         # Reconstruct mesh and add new v e f
         cut_p0, cut_p1 = self.__cut_at_position(center)
-        self.new["v"], self.new["e"], self.new["f"] = add_vertex(
+        self.new["v"], self.new["e"], self.new["f"] = split_half_edge(
             self.bind_edge, cut_p0
         )
 
         # manually set the rooms
-        add_two_face_to_rooms(self, self.new["f"])
+        # add_two_face_to_rooms(self, self.new["f"])
 
-        v, e, f = add_vertex(self.bind_edge, cut_p1)
+        v, e, f = split_half_edge(self.bind_edge, cut_p1)
         self.new["v"] += v
         self.new["e"] += e
         self.new["f"] += f
 
         # manually set the rooms
-        add_two_face_to_rooms(self, f)
+        # add_two_face_to_rooms(self, f)
 
         # set the door edges for traversing
         e[0].is_blocked = False
@@ -354,7 +354,7 @@ if __name__ == "__main__":
     from f_primitives import FPoint, FEdge, FFace
     from u_data_loader import Loader
     from f_layout import FLayout
-    from u_geometry import add_vertex
+    from u_geometry import split_half_edge
 
     # settings
     case_id = 1

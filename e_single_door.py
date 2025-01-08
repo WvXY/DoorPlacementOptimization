@@ -22,6 +22,8 @@ def init(case_id, np_seed=0):
     fp = FLayout()
     # fp.set_default_types(FPoint, FEdge, FFace)
     fp.create_mesh(ld.vertices, ld.edges, 0)
+    fp.init_rooms()
+    fp.set_room_connections()
 
     # Visualization
     vis = Visualizer()
@@ -42,6 +44,7 @@ def f(fp, sp, batch_size=50):
     # agents = [Agent(fp) for _ in range(batch_size)]
     # agent.init()
     for i in range(0, len(sp) - 1):
+        # for i in range(0, len(sp), 2):
         start = sp[i]
         end = sp[i + 1]
         # start = agent.prev_pos
@@ -50,28 +53,12 @@ def f(fp, sp, batch_size=50):
         path = fp.simplify(tripath, start, end)
         if path:
             valid_paths += 1
-            loss += loss_func(path) * (len(path) - 1)
+            loss += loss_func(path)
         # agent.next()
-    return loss
+    return loss / valid_paths if valid_paths > 0 else float("inf")
 
 
-if __name__ == "__main__":
-    # Initialize
-    case_id = 4
-    n_sp = 300
-    iters = 100
-    T = 1
-
-    fp, vis = init(case_id)
-
-    # vis.draw_mesh(fp, show=True, draw_text="vef", axis_show=False, axis_equal=True)
-
-    e0 = fp.get_by_eid(0)
-    door = ODoor(e0, fp)
-    door.activate(np.array([0.1, 0.2]))
-
-    sp = make_sample_points(n_sp)
-
+def metropolis_hasting(fp, door, T=0.01, iters=200):
     # Metropolis-Hastings settings
     old_score = f(fp, sp)
     samples = []
@@ -79,9 +66,9 @@ if __name__ == "__main__":
     best_x = door.center.copy()
 
     for iteration in tqdm(range(iters)):
-        old_pos = door.center.copy()
 
         door.step()
+
         new_score = f(fp, sp)
         df = new_score - old_score
 
@@ -94,57 +81,62 @@ if __name__ == "__main__":
                 best_e = door.bind_edge
                 best_score = new_score
         else:
-            door.load_history()
+            for door in doors:
+                door.load_history()
 
-        # print(f"edge: {door.bind_edge.eid} | center: {door.center}")
-        samples.append(door.center)
+        samples.append([door.center, new_score])
         T *= 0.99  # Annealing
 
     door.load_manually(best_e, best_x)
-    # # Visualize results
-    vis.draw_mesh(fp, show=False, draw_text="")
-    for v in samples:
-        plt.scatter(v[0], v[1], c="r", s=30, alpha=0.5, marker="s")
+
+    return best_x, best_score, samples
+
+
+if __name__ == "__main__":
+    # Initialize
+    case_id = 4
+    n_sp = 200
+    iters = 200
+    T = 0.01
+
+    fp, vis = init(case_id)
+
+    # vis.draw_mesh(fp, show=True, draw_text="vef", axis_show=False, axis_equal=True)
+
+    door = ODoor(fp)
+    door.activate(np.array([0.5, 0.5]))
+
+    # vis.draw_mesh(fp, show=True, draw_text="vef")
+
+    sp = make_sample_points(n_sp)
+
+    best_x, best_s = metropolis_hasting(fp, door, T=T, iters=16)
+
+    # # # Visualize results
+    # vis.draw_mesh(fp, show=False, draw_text="f")
+    # for room in fp.rooms:
+    #     print(f"Room {room.rid}: {[f.fid for f in room.faces]}")
+    #
+    # vis.draw_floor_plan(fp, doors, show=False, draw_connection=True)
+    vis.draw_mesh(fp, show=True, draw_text="ve")
+
+    # for v, s in samples:
+    #     plt.scatter(v[0], v[1], c=s, s=30, alpha=1, marker="s")
+
+    # plt.colorbar()
 
     # agent = Agent(fp)
     # agent.init()
     # for i in range(0, 50, 2):
-    #     start = agent.prev_pos
-    #     end = agent.curr_pos
+    #     start = sp[i]
+    #     end = sp[i + 1]
     #     tripath = fp.find_tripath(start, end)
     #     path = fp.simplify(tripath, start, end)
     #     if path:
-    #         c = "g"#np.random.rand(3)
-    #         vis.draw_point(start, c=c, s=50)    #         vis.draw_point(end, c=c, s=50)
+    #         c = np.random.rand(3)
+    #         vis.draw_point(start, c=c, s=50)
+    #         vis.draw_point(end, c=c, s=50)
     #         vis.draw_linepath(path, c=c, lw=1, a=1)
-    #     agent.next()
+    # agent.next()
 
-    vis.show(f"Result {case_id} | Best Center: {best_x} | Final T: {T:.3f}")
-
-    # #
-    # # # # Plot histogram
-    # fig, ax1 = plt.subplots()
-    # ax1.hist(samples, bins=36, density=True, alpha=0.6, label="Samples")
-    # ax1.set_ylabel("Number of Samples")
-    #
-    # ndiv = 100
-    # door.deactivate()
-    # door.activate(np.array([0.5, 0.05]))
-    #
-    # ax2 = ax1.twinx()
-    # gt_scores = []
-    # xx = []
-    # for i in tqdm(range(ndiv)):
-    #     door.step(-1/ndiv)
-    #     gt_scores.append(f(fp, sp))
-    #     xx.append(door.center[1])
-    #
-    # ax2.plot(xx, gt_scores, label="Ground Truth", color="red")
-    # ax2.set_ylabel("Traffic Flow Cost")
-    # ax2.tick_params(axis="y", labelcolor="red")
-    #
-    # ax1.set_title("Metropolis-Hastings Sampling")
-    # ax1.set_xlabel("y-coordinate")
-    #
-    # plt.legend()
-    # plt.show()
+    # vis.show(f"Result {case_id} | Best Center: {best_x}")

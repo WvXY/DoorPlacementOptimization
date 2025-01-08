@@ -106,7 +106,7 @@ class Visualizer:
                 continue
 
             tri = [n.xy for n in f.verts]
-            self.fig.add_patch(patches.Polygon(tri, color="k", alpha=0.1))
+            self.fig.add_patch(patches.Polygon(tri, color="k", alpha=0.2))
 
         for fe in mesh.get_block_edges():
             ori, to = fe.ori, fe.to
@@ -194,7 +194,7 @@ class Visualizer:
                 vxs,
                 vys,
                 c,
-                alpha=0.1,
+                alpha=0.2,
             )
             self.fig.scatter(vxs, vys, c="k", s=16, marker="o")
 
@@ -237,15 +237,18 @@ class Visualizer:
                     self.fig.scatter(*c0, c="b", s=40, marker="s")
                     self.fig.scatter(*c1, c="b", s=40, marker="s")
 
-    def draw_floor_plan(self, fp, door=None, draw_connection=False, show=False):
+    def draw_floor_plan(
+        self, fp, doors=None, draw_connection=False, show=False
+    ):
         for room in fp.rooms:
             self.draw_room(room)
 
         if draw_connection:
             self.draw_connection(fp)
 
-        if door:
-            self.draw_door(door)
+        if doors:
+            for door in doors:
+                self.draw_door(door)
 
         if show:
             plt.axis("equal")
