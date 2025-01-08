@@ -245,6 +245,7 @@ class Edge(_GeoBase, _GInfo):
         if self.next.to == self.prev.ori:
             return self.next.to
         print(f"Edge{self.eid} info is not correct (diagonal_vertex)")
+        print(f"Edge{self.eid} next: {self.next.eid} prev: {self.prev.eid}")
         return None
 
     @property

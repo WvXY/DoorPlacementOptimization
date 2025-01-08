@@ -58,7 +58,7 @@ def f(fp, sp, batch_size=50):
     return loss / valid_paths if valid_paths > 0 else float("inf")
 
 
-def metropolis_hasting(fp, doors, T=0.01, iters=200):
+def metropolis_hasting(fp, doors, T=0.01, iters=200, vis=None):
     # Metropolis-Hastings settings
     old_score = f(fp, sp)
     samples = []
@@ -69,6 +69,7 @@ def metropolis_hasting(fp, doors, T=0.01, iters=200):
 
         for door in doors:
             door.step()
+        # doors[0].step()
 
         new_score = f(fp, sp)
         df = new_score - old_score
@@ -84,6 +85,10 @@ def metropolis_hasting(fp, doors, T=0.01, iters=200):
         else:
             for door in doors:
                 door.load_history()
+            # doors[0].load_history()
+
+        if vis:
+            vis.draw_mesh(fp, show=True, draw_text="vef", clear=True)
 
         # print(
         #     f"edge: {door.bind_edge.eid} | df: {df:.3f}  | center: {door.center}"
@@ -140,7 +145,7 @@ if __name__ == "__main__":
 
     sp = make_sample_points(n_sp)
     #
-    best_x, best_s = metropolis_hasting(fp, doors, T=T, iters=16)
+    best_x, best_s = metropolis_hasting(fp, doors, T=T, iters=12, vis=vis)
     #
     # # # Visualize results
     # vis.draw_mesh(fp, show=False, draw_text="f")

@@ -14,13 +14,13 @@ def split_half_edge(edge, position):
     Edge = type(edge)
     Face = type(edge.face)
 
-    p_cut = Point(position)
-    e_new = Edge(p_cut, edge.to)
-    e_new_t = Edge(edge.to, p_cut)
-    diag, diag_t = edge.diagonal_vertex, edge.twin.diagonal_vertex
-    print(diag, diag_t)
-    e0, e0_t = Edge(p_cut, diag), Edge(diag, p_cut)
-    e1, e1_t = Edge(diag_t, p_cut), Edge(p_cut, diag_t)
+    v_cut = Point(position)
+    e_new = Edge(v_cut, edge.to)
+    e_new_t = Edge(edge.to, v_cut)
+    v_diag, v_diag_t = edge.diagonal_vertex, edge.twin.diagonal_vertex
+
+    e0, e0_t = Edge(v_cut, v_diag), Edge(v_diag, v_cut)
+    e1, e1_t = Edge(v_diag_t, v_cut), Edge(v_cut, v_diag_t)
     f0, f1 = Face(), Face()
 
     # set properties[face, twin, prev, next]
@@ -45,11 +45,11 @@ def split_half_edge(edge, position):
     e_new_t.is_blocked = edge.twin.is_blocked
 
     # set vertices
-    p_cut.set_edges([edge, edge.twin, e_new, e_new_t, e0, e0_t, e1, e1_t])
+    v_cut.set_edges([edge, edge.twin, e_new, e_new_t, e0, e0_t, e1, e1_t])
     edge.to.replace_edge(edge, e_new)
     edge.to.replace_edge(edge.twin, e_new_t)
-    diag.edges.update([e0, e0_t])
-    diag_t.edges.update([e1, e1_t])
+    v_diag.edges.update([e0, e0_t])
+    v_diag_t.edges.update([e1, e1_t])
 
     # update faces
     f0.set_edges([e_new, e0_t, edge.next][::-1])
@@ -62,20 +62,16 @@ def split_half_edge(edge, position):
     edge.twin.prev.face = f1
 
     # update edge.next and edge.twin.prev
-    edge.twin.ori = p_cut
+    edge.twin.ori = v_cut
     edge.twin.prev = e1
-    edge.to = p_cut
+    edge.to = v_cut
     edge.next = e0
 
-    print(
-        f"edge{edge.eid} | diags {diag.vid} d.edges {[e.eid for e in diag.edges]}"
-    )
-
     # newly added Points, Edges, Faces
-    return [p_cut], [e_new, e_new_t, e0, e0_t, e1, e1_t], [f0, f1]
+    return [v_cut], [e_new, e_new_t, e0, e0_t, e1, e1_t], [f0, f1]
 
 
-def del_vertex(vertex):
+def remove_vertex(vertex):
     n_edges = len(vertex.half_edges)
     if n_edges != 8:
         print(

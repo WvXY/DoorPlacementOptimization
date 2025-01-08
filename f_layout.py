@@ -93,7 +93,6 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from u_data_loader import Loader
     from u_visualization import Visualizer
-    from u_geometry import split_half_edge
 
     ld = Loader(".")
     ld.load_w_walls_case(3)

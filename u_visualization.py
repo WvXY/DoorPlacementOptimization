@@ -95,11 +95,14 @@ class Visualizer:
         self,
         mesh,
         show=True,
+        clear=False,
         draw_text="",
         fig_title=None,
         axis_show=True,
         axis_equal=True,
     ):
+        if clear:
+            self.ax, self.fig = plt.subplots()
 
         for f in mesh.faces:
             if f is None:

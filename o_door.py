@@ -1,4 +1,4 @@
-from u_geometry import closet_position_on_edge, del_vertex, split_half_edge
+from u_geometry import closet_position_on_edge, remove_vertex, split_half_edge
 from f_primitives import FRoom, FEdge
 
 from typing import List
@@ -86,10 +86,9 @@ class ODoor:
         self.ratio = p
 
     # actions
-    def activate(self, center, need_correction=True):
+    def activate(self, center=None, need_correction=True):
         assert self.is_active is False, "Door is already active"
         assert self.bind_edge is not None, "Door is not binded to any edge"
-        assert center is not None, "Center is not defined"
 
         def add_two_face_to_rooms(self, faces):
             """A dirty way to add two new faces to the existing rooms"""
@@ -111,6 +110,9 @@ class ODoor:
                 self.bind_rooms[1].add_face(faces[0])
 
         self.bind_edge.reset_all_visited()  # reset visited flag for edges.
+
+        if center is None:
+            center = self.bind_edge.get_center()
 
         if need_correction:
             center = self.__correct_location(center)
@@ -157,15 +159,15 @@ class ODoor:
             return
 
         # 1 -> 0 is working, but 0 -> 1 is not working
-        v_del, e_del, f_del = del_vertex(self.new["v"][1])
+        v_del, e_del, f_del = remove_vertex(self.new["v"][1])
 
-        v, e, f = del_vertex(self.new["v"][0])
+        v, e, f = remove_vertex(self.new["v"][0])
         v_del.extend(v)
         e_del.extend(e)
         f_del.extend(f)
 
-        self.bind_rooms[0].remove_faces(f_del)
-        self.bind_rooms[1].remove_faces(f_del)
+        # self.bind_rooms[0].remove_faces(f_del)
+        # self.bind_rooms[1].remove_faces(f_del)
 
         # for v in v_del:
         #     v.is_active = False
