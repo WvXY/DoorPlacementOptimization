@@ -68,36 +68,35 @@ class CDT:
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from u_data_loader import Loader
+    from u_visualization import Visualizer
 
+    # Load data
     ld = Loader(".")
-    ld.load_w_walls_case(3)
-    ld.remove_duplicates()
-    vertices = np.delete(ld.vertices, 1, 1)
-    edges = ld.edges
-    print(vertices)
+    # ld.load_closed_rooms_case(case_id)
+    ld.load_final_case(0)
+    ld.optimize()
 
-    t = CDT()
-    t.insert_vertices(vertices)
-    t.insert_edges(edges)
-    t.erase_outer_triangles_and_holes()
+    print(ld.vertices)
 
-    plt.figure()
+    e_raw = ld.edges
+    v_raw = ld.vertices
 
-    # plot vv
-    vv = t.get_vertices()
-    for v in vv:
-        plt.plot(v.x, v.y, "ro", lw=2)
+    i_cdt = CDT()
+    i_cdt.insert_vertices(ld.vertices)
+    i_cdt.insert_edges(ld.edges)
+    i_cdt.erase_outer_triangles()
 
-    for tri in t.get_triangles():
-        v0 = vv[tri.vertices[0]]
-        v1 = vv[tri.vertices[1]]
-        v2 = vv[tri.vertices[2]]
-        plt.plot([v0.x, v1.x, v2.x, v0.x], [v0.y, v1.y, v2.y, v0.y], "k-")
+    v = i_cdt.get_vertices(to_numpy=True)
+    e = i_cdt.get_fixed_edges(to_numpy=True)
+    t = i_cdt.get_triangles(to_numpy=True)
 
-    for e in edges:
-        v1 = vertices[e[0]]
-        v2 = vertices[e[1]]
-        plt.plot([v1[0], v2[0]], [v1[1], v2[1]], lw=4, c="k")
+    for ee in e_raw:
+        plt.plot(v_raw[ee, 0], v_raw[ee, 1], "b-", lw=2)
 
-    plt.axis("equal")
+    for tri in t:
+        plt.fill(v[tri, 0], v[tri, 1], edgecolor="black", fill=False)
+
+    # for ee in e:
+    #     plt.plot(v[ee, 0], v[ee, 1], "r-", lw=8)
+
     plt.show()

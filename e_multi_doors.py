@@ -16,7 +16,8 @@ def init(case_id, np_seed=0):
 
     # Load data
     ld = Loader(".")
-    ld.load_closed_rooms_case(case_id)
+    # ld.load_closed_rooms_case(case_id)
+    ld.load_final_case(case_id)
     ld.optimize()
 
     fp = FLayout()
@@ -111,7 +112,7 @@ def metropolis_hasting(fp, doors, T=0.01, iters=200, vis=None):
 
 if __name__ == "__main__":
     # Initialize
-    case_id = 6
+    case_id = 0
     n_sp = 200
     iters = 200
     T = 0.01
@@ -119,20 +120,18 @@ if __name__ == "__main__":
     fp, vis = init(case_id)
 
     vis.draw_mesh(
-        fp, show=True, draw_text="vef", axis_show=False, axis_equal=True
+        fp, show=True, draw_text="ve", axis_show=False, axis_equal=True
     )
     vis.draw_floor_plan(fp, show=True, draw_connection=True)
 
-    e0 = fp.get_by_eid(0)
-    door1 = ODoor(fp=fp)
-    door2 = ODoor(fp=fp)
-    door3 = ODoor(fp=fp)
     # door.set_rooms(*())
     # door.activate(np.array([0.6, 0.7]))
 
     r0 = fp.get_by_rid(0)
     r1 = fp.get_by_rid(1)
     r2 = fp.get_by_rid(2)
+    r3 = fp.get_by_rid(3)
+    r4 = fp.get_by_rid(4)
 
     e1 = fp.get_by_eid(1)
     e9 = fp.get_by_eid(9)
@@ -141,15 +140,22 @@ if __name__ == "__main__":
     # door2.bind_edge = e1
     # door1.activate(np.array([0.8, 0.5]))
     # door2.activate(np.array([0.5, 0.4]))
-    doors = [
-        door1,
-        door2,
-        door3,
-    ]
 
-    door1.auto_activate([r1, r0])
-    door2.auto_activate([r0, r2])
-    door3.auto_activate([r1, r2])
+    door04 = ODoor(fp)
+    door03 = ODoor(fp)
+    door01 = ODoor(fp)
+    door02 = ODoor(fp)
+
+    doors = [door04, door03, door01, door02]
+
+    door04.auto_activate(r0, r4)
+    print(f"f04.bind_edge: {door04.bind_edge.eid}")
+    door03.auto_activate(r0, r3)
+    print(f"f03.bind_edge: {door03.bind_edge.eid}")
+    door01.auto_activate(r0, r1)
+    print(f"f01.bind_edge: {door01.bind_edge.eid}")
+    door02.auto_activate(r0, r2)
+    print(f"f02.bind_edge: {door02.bind_edge.eid}")
 
     # vis.draw_mesh(fp, show=True, draw_text="e", clear=True)
 

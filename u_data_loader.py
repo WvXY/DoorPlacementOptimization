@@ -18,10 +18,17 @@ class Loader:
     def load_closed_rooms_case(self, idx):
         self.success = self._load("/assets/fp_closed_rooms_{}.obj".format(idx))
 
+    def load_final_case(self, idx):
+        self.success = self._load("/assets/fp_final_{}.obj".format(idx))
+
     def _load(self, obj_file):
         self.clear()
         self._load_obj(self.__root_dir + obj_file)
+        self._flip_z()  # flip y in 2D
         return True
+
+    def _flip_z(self):
+        self.vertices[:, 2] = 1 - self.vertices[:, 2]
 
     def clear(self):
         self.faces = None

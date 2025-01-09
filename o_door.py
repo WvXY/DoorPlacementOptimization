@@ -11,7 +11,7 @@ class ODoor:
     __did = 0
     __door_list = []
 
-    def __init__(self, edge=None, fp=None):
+    def __init__(self, fp=None, edge=None):
         self.did = ODoor.__did
         ODoor.__did += 1
         ODoor.__door_list.append(self)
@@ -27,6 +27,8 @@ class ODoor:
         self.move_limit = None
         self.ratio = None
         self.shared_edges = None
+
+        self.need_optimization = True
 
         self.new = {"v": [], "e": [], "f": []}
 
@@ -63,14 +65,23 @@ class ODoor:
         return [r.rid for r in self.bind_rooms]
 
     # setters
+    def set_bind_edge(self, edge):
+        self.bind_edge = edge
+
     def set_floor_plan(self, fp):
         self.floor_plan = fp
+
+    def set_door_length(self, length):
+        self.d_len = length
 
     def set_rooms(self, room1, room2):
         assert room1 is not room2, "Rooms should be different"
         self.bind_rooms = [room1, room2]
         self.shared_edges = room1.get_shared_edge(room2)
-        print(f"shared edges: {[e.eid for e in self.shared_edges]}")
+        if self.shared_edges is None:
+            print(
+                f"WARNING: No shared edge between {room1.rid} and {room2.rid}"
+            )
 
     def set_door_center(self, center):
         assert self.is_active, "Door need to be activate first"
@@ -148,8 +159,8 @@ class ODoor:
         # set properties
         self.sync_floor_plan()
 
-    def auto_activate(self, rooms):
-        self.set_rooms(rooms[0], rooms[1])
+    def auto_activate(self, room1, room2):
+        self.set_rooms(room1, room2)
         self.bind_edge = self.shared_edges[0]
         assert self.bind_edge is not None, "No shared edge found"
 
@@ -187,6 +198,10 @@ class ODoor:
 
     def step(self, delta=0):
         assert self.is_active, "Door is not active"
+
+        # skip no need for optimization doors
+        if not self.need_optimization:
+            return
 
         self.save_history()  # current state
 
@@ -250,11 +265,15 @@ class ODoor:
                 if e is self.bind_edge or e is self.bind_edge.twin:
                     continue
 
+                # long enough to place a door
+                if e.get_length() < self.d_len:
+                    continue
+
                 if e.ori is vertex or e.to is vertex:
                     return e
 
             for e in self.shared_edges:
-                if e.is_visited is False:
+                if e.is_visited is False and e.get_length() >= self.d_len:
                     return e
 
             return None
@@ -278,7 +297,7 @@ class ODoor:
             else:
                 self.bind_edge = e if e.to is v else e.twin
 
-        self.bind_edge.is_visited = True
+        self.bind_edge.visit()
         return True
 
     def __find_next_center(self, ratio):
