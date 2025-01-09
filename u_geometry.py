@@ -75,7 +75,7 @@ def remove_vertex(vertex):
     n_edges = len(vertex.half_edges)
     if n_edges != 8:
         print(
-            f"ERROR: vertex {vertex.vid} has {n_edges} half edges(not 2 or 4)"
+            f"ERROR: vertex {vertex.vid} has {n_edges} half edges(8 expected)"
         )
         return
 

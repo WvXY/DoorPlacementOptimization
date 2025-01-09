@@ -243,6 +243,8 @@ class Visualizer:
     def draw_floor_plan(
         self, fp, doors=None, draw_connection=False, show=False
     ):
+        self.ax, self.fig = plt.subplots()
+
         for room in fp.rooms:
             self.draw_room(room)
 

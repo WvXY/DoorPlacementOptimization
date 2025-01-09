@@ -70,6 +70,7 @@ class ODoor:
         assert room1 is not room2, "Rooms should be different"
         self.bind_rooms = [room1, room2]
         self.shared_edges = room1.get_shared_edge(room2)
+        print(f"shared edges: {[e.eid for e in self.shared_edges]}")
 
     def set_door_center(self, center):
         assert self.is_active, "Door need to be activate first"
@@ -151,8 +152,11 @@ class ODoor:
         self.set_rooms(rooms[0], rooms[1])
         self.bind_edge = self.shared_edges[0]
         assert self.bind_edge is not None, "No shared edge found"
+
         # start from the center of the edge
         self.activate(self.bind_edge.get_center(), need_correction=False)
+
+        # TODO: integrate Room support in Door: face add, remove, etc.
 
     def deactivate(self):
         if not self.is_active:
@@ -260,8 +264,8 @@ class ODoor:
             v = self.bind_edge.to
             e = search_next_shared_edge(v)
             if e is None:
-                self.bind_edge = self.bind_edge.twin
-                # return False
+                # self.bind_edge = self.bind_edge.twin
+                return False
             else:
                 self.bind_edge = e if e.ori is v else e.twin
 
@@ -269,7 +273,8 @@ class ODoor:
             v = self.bind_edge.ori
             e = search_next_shared_edge(v)
             if e is None:
-                self.bind_edge = self.bind_edge.twin
+                # self.bind_edge = self.bind_edge.twin
+                return False
             else:
                 self.bind_edge = e if e.to is v else e.twin
 

@@ -87,8 +87,14 @@ def metropolis_hasting(fp, doors, T=0.01, iters=200, vis=None):
                 door.load_history()
             # doors[0].load_history()
 
-        if vis:
-            vis.draw_mesh(fp, show=True, draw_text="vef", clear=True)
+        if vis and iteration % 10 == 0:
+            vis.draw_mesh(
+                fp,
+                show=True,
+                draw_text="",
+                clear=True,
+                fig_title=f"Loss: {new_score:.3f} | Best Loss: {best_score:.3f}",
+            )
 
         # print(
         #     f"edge: {door.bind_edge.eid} | df: {df:.3f}  | center: {door.center}"
@@ -105,14 +111,17 @@ def metropolis_hasting(fp, doors, T=0.01, iters=200, vis=None):
 
 if __name__ == "__main__":
     # Initialize
-    case_id = 4
+    case_id = 6
     n_sp = 200
     iters = 200
     T = 0.01
 
     fp, vis = init(case_id)
 
-    # vis.draw_mesh(fp, show=True, draw_text="vef", axis_show=False, axis_equal=True)
+    vis.draw_mesh(
+        fp, show=True, draw_text="vef", axis_show=False, axis_equal=True
+    )
+    vis.draw_floor_plan(fp, show=True, draw_connection=True)
 
     e0 = fp.get_by_eid(0)
     door1 = ODoor(fp=fp)
@@ -128,50 +137,55 @@ if __name__ == "__main__":
     e1 = fp.get_by_eid(1)
     e9 = fp.get_by_eid(9)
 
-    door1.bind_edge = e9
-    door2.bind_edge = e1
+    # door1.bind_edge = e9
+    # door2.bind_edge = e1
     # door1.activate(np.array([0.8, 0.5]))
     # door2.activate(np.array([0.5, 0.4]))
+    doors = [
+        door1,
+        door2,
+        door3,
+    ]
 
     door1.auto_activate([r1, r0])
-    # door2.auto_activate([r0, r2])
+    door2.auto_activate([r0, r2])
     door3.auto_activate([r1, r2])
-    doors = [door1, door3]
-    #
-    # for door in doors:
-    #     print(f"Door {door.did}: {[e.eid for e in door.shared_edges]}")
 
+    # vis.draw_mesh(fp, show=True, draw_text="e", clear=True)
+
+    #
+    for door in doors:
+        print(f"Door {door.did}: {[e.eid for e in door.shared_edges]}")
     # vis.draw_mesh(fp, show=True, draw_text="vef")
 
     sp = make_sample_points(n_sp)
     #
-    best_x, best_s = metropolis_hasting(fp, doors, T=T, iters=12, vis=vis)
+    best_x, best_s = metropolis_hasting(fp, doors, T=T, iters=iters, vis=vis)
     #
     # # # Visualize results
     # vis.draw_mesh(fp, show=False, draw_text="f")
     # for room in fp.rooms:
     #     print(f"Room {room.rid}: {[f.fid for f in room.faces]}")
     #
-    # vis.draw_floor_plan(fp, doors, show=False, draw_connection=True)
-    vis.draw_mesh(fp, show=True, draw_text="ve")
+    vis.draw_floor_plan(fp, doors, show=False, draw_connection=True)
+    # vis.draw_mesh(
+    #     fp, show=True, draw_text="", clear=True, fig_title="Final Result"
+    # )
 
     # for v, s in samples:
     #     plt.scatter(v[0], v[1], c=s, s=30, alpha=1, marker="s")
 
     # plt.colorbar()
 
-    # agent = Agent(fp)
-    # agent.init()
-    # for i in range(0, 50, 2):
-    #     start = sp[i]
-    #     end = sp[i + 1]
-    #     tripath = fp.find_tripath(start, end)
-    #     path = fp.simplify(tripath, start, end)
-    #     if path:
-    #         c = np.random.rand(3)
-    #         vis.draw_point(start, c=c, s=50)
-    #         vis.draw_point(end, c=c, s=50)
-    #         vis.draw_linepath(path, c=c, lw=1, a=1)
-    # agent.next()
+    for i in range(0, 50, 2):
+        start = sp[i]
+        end = sp[i + 1]
+        tripath = fp.find_tripath(start, end)
+        path = fp.simplify(tripath, start, end)
+        if path:
+            c = np.random.rand(3)
+            vis.draw_point(start, c=c, s=50)
+            vis.draw_point(end, c=c, s=50)
+            vis.draw_linepath(path, c=c, lw=1, a=1)
 
-    # vis.show(f"Result {case_id} | Best Center: {best_x}")
+    vis.show(f"Result {case_id} | Loss: {best_s:.3f}")

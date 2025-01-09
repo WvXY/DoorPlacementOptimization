@@ -71,7 +71,7 @@ class FRoom(_FInfo, _GeoBase):
         self.adjs.add(room)
 
     def add_face(self, face):
-        self.faces.add(face)
+        self.faces.update(face)
 
     def replace_face(self, old_face, new_face):
         self.faces.remove(old_face)
@@ -108,6 +108,8 @@ class FRoom(_FInfo, _GeoBase):
 
     def get_shared_edge(self, other: "FRoom"):
         other_wall_edges = other.get_wall_edges()
+        print(f"other_wall_edges: {[e.eid for e in other_wall_edges]}")
+        print(f"this_wall_edges: {[e.eid for e in self.get_wall_edges()]}")
         shared_edges = []
         for e in self.get_wall_edges():
             if e.twin in other_wall_edges:
