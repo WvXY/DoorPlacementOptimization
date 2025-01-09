@@ -18,17 +18,15 @@ def init(case_id, np_seed=0):
     ld = Loader(".")
     # ld.load_closed_rooms_case(case_id)
     ld.load_final_case(case_id)
-    ld.optimize()
 
     fp = FLayout()
-    # fp.set_default_types(FPoint, FEdge, FFace)
     fp.create_mesh(ld.vertices, ld.edges, 0)
     fp.init_rooms()
     fp.set_room_connections()
 
     # Visualization
     vis = Visualizer()
-    # vis.draw_mesh(fp, show=False, draw_text="e")
+    vis.draw_mesh(fp, show=False, draw_text="e")
 
     return fp, vis
 
@@ -63,14 +61,15 @@ def metropolis_hasting(fp, doors, T=0.01, iters=200, vis=None):
     # Metropolis-Hastings settings
     old_score = f(fp, sp)
     samples = []
+    losses = []
     best_score = old_score
+    best_e = []
     best_x = [door.center.copy() for door in doors]
 
     for iteration in tqdm(range(iters)):
 
         for door in doors:
             door.step()
-        # doors[0].step()
 
         new_score = f(fp, sp)
         df = new_score - old_score
@@ -86,7 +85,6 @@ def metropolis_hasting(fp, doors, T=0.01, iters=200, vis=None):
         else:
             for door in doors:
                 door.load_history()
-            # doors[0].load_history()
 
         if vis and iteration % 10 == 0:
             vis.draw_mesh(
@@ -97,25 +95,21 @@ def metropolis_hasting(fp, doors, T=0.01, iters=200, vis=None):
                 fig_title=f"Loss: {new_score:.3f} | Best Loss: {best_score:.3f}",
             )
 
-        # print(
-        #     f"edge: {door.bind_edge.eid} | df: {df:.3f}  | center: {door.center}"
-        #     f"| score: {new_score:.3f} | alpha: {alpha:.3f}"
-        # )
-        # samples.append([door.center, new_score])
         T *= 0.99  # Annealing
+        losses.append(new_score)
 
-    # for door, e, x in zip(doors, best_e, best_x):
-    #     door.load_manually(e, x)
+    for door, e, x in zip(doors, best_e, best_x):
+        door.load_manually(e, x)
 
-    return best_x, best_score
+    return best_x, best_score, losses
 
 
 if __name__ == "__main__":
     # Initialize
-    case_id = 0
-    n_sp = 200
-    iters = 200
-    T = 0.01
+    case_id = 1
+    n_sp = 100
+    iters = 100
+    T = 0.001
 
     fp, vis = init(case_id)
 
@@ -133,29 +127,21 @@ if __name__ == "__main__":
     r3 = fp.get_by_rid(3)
     r4 = fp.get_by_rid(4)
 
-    e1 = fp.get_by_eid(1)
-    e9 = fp.get_by_eid(9)
+    # e1 = fp.get_by_eid(1)
+    # e9 = fp.get_by_eid(9)
 
     # door1.bind_edge = e9
     # door2.bind_edge = e1
     # door1.activate(np.array([0.8, 0.5]))
     # door2.activate(np.array([0.5, 0.4]))
 
-    door04 = ODoor(fp)
+    door13 = ODoor(fp)
     door03 = ODoor(fp)
-    door01 = ODoor(fp)
-    door02 = ODoor(fp)
 
-    doors = [door04, door03, door01, door02]
+    doors = [door13, door03]
 
-    door04.auto_activate(r0, r4)
-    print(f"f04.bind_edge: {door04.bind_edge.eid}")
+    door13.auto_activate(r1, r3)
     door03.auto_activate(r0, r3)
-    print(f"f03.bind_edge: {door03.bind_edge.eid}")
-    door01.auto_activate(r0, r1)
-    print(f"f01.bind_edge: {door01.bind_edge.eid}")
-    door02.auto_activate(r0, r2)
-    print(f"f02.bind_edge: {door02.bind_edge.eid}")
 
     # vis.draw_mesh(fp, show=True, draw_text="e", clear=True)
 
@@ -166,14 +152,19 @@ if __name__ == "__main__":
 
     sp = make_sample_points(n_sp)
     #
-    best_x, best_s = metropolis_hasting(fp, doors, T=T, iters=iters, vis=vis)
+    best_x, best_s, losses = metropolis_hasting(
+        fp, doors, T=T, iters=iters, vis=vis
+    )
     #
     # # # Visualize results
     # vis.draw_mesh(fp, show=False, draw_text="f")
     # for room in fp.rooms:
     #     print(f"Room {room.rid}: {[f.fid for f in room.faces]}")
     #
-    vis.draw_floor_plan(fp, doors, show=False, draw_connection=True)
+    vis.draw_mesh(fp, show=False, draw_text="", clear=True)
+    for door in doors:
+        vis.draw_door(door)
+
     # vis.draw_mesh(
     #     fp, show=True, draw_text="", clear=True, fig_title="Final Result"
     # )
@@ -195,3 +186,6 @@ if __name__ == "__main__":
             vis.draw_linepath(path, c=c, lw=1, a=1)
 
     vis.show(f"Result {case_id} | Loss: {best_s:.3f}")
+
+    plt.plot(losses)
+    plt.show()

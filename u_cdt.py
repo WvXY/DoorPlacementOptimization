@@ -21,7 +21,7 @@ class CDT:
 
     def insert_edges(self, indices: list | np.ndarray = None):
         if indices is not None:
-            ee = [cdt.Edge(e[0], e[1]) for e in indices]
+            ee = [cdt.Edge(ie[0], ie[1]) for ie in indices]
         else:
             n = len(self.t.vertices)
             ee = [cdt.Edge(i, i + 1) for i in range(n - 1)]

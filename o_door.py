@@ -207,7 +207,7 @@ class ODoor:
 
         # randomize the delta if not provided
         if delta == 0:
-            delta = np.random.normal(0, 0.1)
+            delta = np.random.normal(0, 0.05)
 
         ratio = self.ratio + delta / self.e_len
 
