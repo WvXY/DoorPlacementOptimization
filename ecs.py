@@ -212,7 +212,6 @@ class DoorSystem:
             door_comp.bind_edge = door_comp._history["bind_edge"]
             self.activate(door_comp)
 
-
     def manually_load_history(self, door_comp, edge, ratio):
         door_comp.bind_edge = edge
         door_comp.ratio = ratio
