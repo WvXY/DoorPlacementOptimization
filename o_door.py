@@ -10,11 +10,13 @@ class DoorComponent:
         # Door geometry properties
         self.d_len = door_length
         self.e_len = None
-        self.ratio = None
+        self.ratio = None  # equivalent to "current position" of the door
         self.move_limit = None
 
         # Cached new geometry (vertices, edges, faces) after splitting
-        self.new = {"v": [], "e": [], "f": []}
+        self.verts = []
+        self.edges = []
+        self.faces = []
 
         # Status / flags
         self.is_active = False
@@ -24,7 +26,7 @@ class DoorComponent:
         # For storing some last-known states (history)
         self._history = {
             "bind_edge": None,
-            "center": None,
+            "ratio": None,
         }
 
     def __repr__(self):
