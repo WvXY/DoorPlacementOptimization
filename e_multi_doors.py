@@ -4,7 +4,7 @@ from tqdm import tqdm
 
 from f_layout import FLayout
 from g_primitives import Point
-from o_door import ODoor
+from ecs import ECS, DoorSystem, DoorComponent
 from o_loss_func import loss_func
 from u_data_loader import Loader
 from u_visualization import Visualizer
@@ -127,8 +127,10 @@ if __name__ == "__main__":
     r3 = fp.get_by_rid(3)
     r4 = fp.get_by_rid(4)
 
-    # e1 = fp.get_by_eid(1)
-    # e9 = fp.get_by_eid(9)
+    ecs_fp = ECS()
+    d_system = DoorSystem(ecs_fp, fp)
+    d_cmp = DoorComponent(r0, r1, fp)
+    ecs_fp.add_door_component(d_cmp)
 
     # door1.bind_edge = e9
     # door2.bind_edge = e1
@@ -137,11 +139,19 @@ if __name__ == "__main__":
 
     door13 = ODoor(fp)
     door03 = ODoor(fp)
+    # door23 = ODoor(fp)
+    # door34 = ODoor(fp)
 
-    doors = [door13, door03]
+    doors = [
+        door13,
+        door03,
+        # door23, door34
+    ]
 
     door13.auto_activate(r1, r3)
     door03.auto_activate(r0, r3)
+    # door23.auto_activate(r2, r3)
+    # door34.auto_activate(r3, r4)
 
     # vis.draw_mesh(fp, show=True, draw_text="e", clear=True)
 
