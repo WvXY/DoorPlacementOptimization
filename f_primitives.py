@@ -4,7 +4,6 @@ from g_primitives import Vertex, Edge, Face, _GeoBase
 class _FInfo:
     def __init__(self):
         self.room = None
-        self.is_visited = False
         self.is_active = True
 
 
@@ -17,12 +16,16 @@ class FVertex(Vertex, _FInfo):
         # for not hashable error
         return hash(self.guid)
 
+    def __repr__(self):
+        return f"FVertex {self.vid} ({self.xy[0]:.2f}, {self.xy[1]:.2f})"
+
 
 class FEdge(Edge, _FInfo):
     def __init__(self, origin, to):
         Edge.__init__(self, origin, to)
         _FInfo.__init__(self)
 
+    # not used, delete in the future
     def disconnect(self):
         if self.is_visited:
             return False
@@ -34,12 +37,16 @@ class FEdge(Edge, _FInfo):
         self.twin.is_visited = True
         return True
 
+    def __repr__(self):
+        return f"FEdge {self.eid} (: {self.ori.vid} -> {self.to.vid})"
+
 
 class FFace(Face, _FInfo):
     def __init__(self):
         Face.__init__(self)
         _FInfo.__init__(self)
 
+    # not used, delete in the future
     def merge(self, other: "FFace"):
         e = self.get_shared_edge(other)
         if e is None or e.is_visited:
@@ -52,6 +59,9 @@ class FFace(Face, _FInfo):
         e.is_visited = True
         e.twin.is_visited = True
         return True
+
+    def __repr__(self):
+        return f"FFace {self.fid} (Verts {[v.vid for v in self.verts]})"
 
 
 class FRoom(_FInfo, _GeoBase):
@@ -107,7 +117,7 @@ class FRoom(_FInfo, _GeoBase):
         y = sum([c[1] * a for c, a in zip(centers, areas)]) / area_sum
         return (x, y)
 
-    def get_shared_edge(self, other: "FRoom"):
+    def get_shared_edges(self, other: "FRoom"):
         other_wall_edges = other.get_wall_edges()
         shared_edges = []
         for e in self.get_wall_edges():

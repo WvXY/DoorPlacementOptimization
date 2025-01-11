@@ -3,7 +3,8 @@ import numpy as np
 from g_primitives import Vertex, Edge, Face
 
 
-def add_vertex(edge, position):
+# TODO: rename to cut_edge(edge, pos=None) or split_edge(edge, pos=None)
+def split_half_edge(edge, position):
     """Split edge into two edges by a point"""
     if edge.is_outer:
         return [], [], []
@@ -13,21 +14,27 @@ def add_vertex(edge, position):
     Edge = type(edge)
     Face = type(edge.face)
 
-    p_cut = Point(position)
-    e_new = Edge(p_cut, edge.to)
-    e_new_t = Edge(edge.to, p_cut)
-    diag, diag_t = edge.diagonal_vertex, edge.twin.diagonal_vertex
-    e0, e0_t = Edge(p_cut, diag), Edge(diag, p_cut)
-    e1, e1_t = Edge(diag_t, p_cut), Edge(p_cut, diag_t)
+    v_cut = Point(position)
+    e_new = Edge(v_cut, edge.to)
+    e_new_t = Edge(edge.to, v_cut)
+    v_diag, v_diag_t = edge.diagonal_vertex, edge.twin.diagonal_vertex
+
+    e0, e0_t = Edge(v_cut, v_diag), Edge(v_diag, v_cut)
+    e1, e1_t = Edge(v_diag_t, v_cut), Edge(v_cut, v_diag_t)
     f0, f1 = Face(), Face()
 
-    # set properties[face, twin, prev, next, diag]
-    e_new.set_properties(f0, e_new_t, e0_t, edge.next, diag)
-    e_new_t.set_properties(f1, e_new, edge.twin.prev, e1_t, diag_t)
-    e0.set_properties(edge.face, e0_t, edge, edge.prev, edge.ori)
-    e0_t.set_properties(f0, e0, edge.next, e_new, edge.to)
-    e1.set_properties(edge.twin.face, e1_t, edge.twin.next, edge.twin, edge.ori)
-    e1_t.set_properties(f1, e1, e_new_t, edge.twin.prev, edge.to)
+    # set properties[face, twin, prev, next]
+    e_new.set_properties(f0, e_new_t, e0_t, edge.next)
+    e_new_t.set_properties(f1, e_new, edge.twin.prev, e1_t)
+    e0.set_properties(edge.face, e0_t, edge, edge.prev)
+    e0_t.set_properties(f0, e0, edge.next, e_new)
+    e1.set_properties(edge.twin.face, e1_t, edge.twin.next, edge.twin)
+    e1_t.set_properties(
+        f1,
+        e1,
+        e_new_t,
+        edge.twin.prev,
+    )
     # update existing edges
     edge.next.prev = e_new
     edge.next.next = e0_t
@@ -38,11 +45,11 @@ def add_vertex(edge, position):
     e_new_t.is_blocked = edge.twin.is_blocked
 
     # set vertices
-    p_cut.set_edges([edge, edge.twin, e_new, e_new_t, e0, e0_t, e1, e1_t])
+    v_cut.set_edges([edge, edge.twin, e_new, e_new_t, e0, e0_t, e1, e1_t])
     edge.to.replace_edge(edge, e_new)
     edge.to.replace_edge(edge.twin, e_new_t)
-    edge.diagonal_vertex.edges.update([e0, e0_t])
-    edge.twin.diagonal_vertex.edges.update([e1, e1_t])
+    v_diag.edges.update([e0, e0_t])
+    v_diag_t.edges.update([e1, e1_t])
 
     # update faces
     f0.set_edges([e_new, e0_t, edge.next][::-1])
@@ -55,20 +62,20 @@ def add_vertex(edge, position):
     edge.twin.prev.face = f1
 
     # update edge.next and edge.twin.prev
-    edge.twin.ori = p_cut
+    edge.twin.ori = v_cut
     edge.twin.prev = e1
-    edge.to = p_cut
+    edge.to = v_cut
     edge.next = e0
 
     # newly added Points, Edges, Faces
-    return [p_cut], [e_new, e_new_t, e0, e0_t, e1, e1_t], [f0, f1]
+    return [v_cut], [e_new, e_new_t, e0, e0_t, e1, e1_t], [f0, f1]
 
 
-def del_vertex(vertex):
+def remove_vertex(vertex):
     n_edges = len(vertex.half_edges)
     if n_edges != 8:
         print(
-            f"ERROR: vertex {vertex.vid} has {n_edges} half edges(not 2 or 4)"
+            f"ERROR: vertex {vertex.vid} has {n_edges} half edges(8 expected)"
         )
         return
 
@@ -124,7 +131,13 @@ def del_vertex(vertex):
     return [vertex], [e_del, e_del_t, e0, e0_t, e1, e1_t], [f0_t, f1_t]
 
 
-def closet_position_on_edge(edge, point):
+def del_edge(edge):
+    v_fixed = edge.ori if edge.ori.is_fixed else edge.to
+    v_moving = edge.to if edge.ori.is_fixed else edge.ori
+    assert v_fixed != v_moving, f"Edge{edge.eid} cannot be deleted"
+
+
+def projection_on_edge(edge, point):
     """Find the closest position on edge from point"""
     if edge.is_outer:
         return None

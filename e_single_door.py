@@ -1,6 +1,6 @@
-import matplotlib.pyplot as plt
-import numpy as np
 from tqdm import tqdm
+import numpy as np
+import matplotlib.pyplot as plt
 
 # Basic Primitives
 from f_layout import FLayout
@@ -62,8 +62,8 @@ def f(fp, sp, batch_size=50):
     valid_paths = 0
     # agents = [Agent(fp) for _ in range(batch_size)]
     # agent.init()
-    for i in range(0, len(sp) - 1):
-        # for i in range(0, len(sp), 2):
+    # for i in range(0, len(sp) - 1):
+    for i in range(0, len(sp), 2):
         start = sp[i]
         end = sp[i + 1]
         # start = agent.prev_pos
@@ -77,49 +77,58 @@ def f(fp, sp, batch_size=50):
     return loss / valid_paths if valid_paths > 0 else float("inf")
 
 
-def metropolis_hasting(fp, door_system, iters=200):
+def metropolis_hasting(fp, door_system, T=0.1, iters=200):
     # Metropolis-Hastings settings
     old_score = f(fp, sp)
     losses = []
 
     best_score = old_score
-    best_e, best_r = door_system.get_states()
-
+    best_x, best_r = door_system.get_states()
     door_comp = door_system.ecs.get_door_component(0)
 
-    for iteration in range(iters):
+    for i in range(iters):
 
-        door_system.move_all_by(0.02)
-        print(door_comp)
+        door_system.propose(0.05)
 
         new_score = f(fp, sp)
+        df = new_score - old_score
 
-        center = door_system._ratio_to_pos(door_comp, door_comp.ratio)
-        losses.append([center, new_score])
+        # Accept or reject proposal
+        alpha = np.exp(-df / T)
+        if np.random.rand() < alpha:
+            old_score = new_score
+            if new_score < best_score:
+                best_x, best_r = door_system.get_states()
+                best_score = new_score
+        else:
+            door_system.reject()
 
-    door_system.deactivate(door_comp)
+        # print(f"History {door_comp.history}")
 
-    return best_e, best_r, losses
+    door_system.load_manually(best_x, best_r)
+
+    return best_score, losses
 
 
 if __name__ == "__main__":
     # Initialize
     case_id = 1
-    n_sp = 100
+    n_sp = 200
     iters = 100
+    T = 0.01
 
     fp, vis = init_fp_vis(case_id)
 
     vis.draw_mesh(
         fp, show=True, draw_text="ve", axis_show=False, axis_equal=True
     )
-    vis.draw_floor_plan(fp, show=True, draw_connection=True)
+    # vis.draw_floor_plan(fp, show=True, draw_connection=True)
 
     door_system = create_door_system(fp)
 
     sp = make_sample_points(n_sp)
 
-    best_e, best_r, losses = metropolis_hasting(fp, door_system, iters=iters)
+    best_scores, losses = metropolis_hasting(fp, door_system, T=T, iters=iters)
 
     # visualize
     vis.draw_mesh(
@@ -131,11 +140,21 @@ if __name__ == "__main__":
         clear=True,
     )
     # vis.draw_floor_plan(fp, show=True, draw_connection=True)
+    #
+    # xx = [x[0][0] for x in losses]
+    # yy = [x[0][1] for x in losses]
+    # ss = [x[1] for x in losses]
 
-    xx = [x[0][0] for x in losses]
-    yy = [x[0][1] for x in losses]
-    ss = [x[1] for x in losses]
+    for i in range(0, len(sp), 10):
+        start = sp[i]
+        end = sp[i + 1]
+        tripath = fp.find_tripath(start, end)
+        if tripath:
+            path = fp.simplify(tripath, start, end)
+            vis.draw_linepath(path, c="g", lw=1)
+        else:
+            plt.plot([start.x, end.x], [start.y, end.y], "r--", lw=1)
 
-    plt.scatter(xx, yy, c=ss, cmap="viridis")
+    # plt.scatter(xx, yy, c=ss, cmap="viridis")
     plt.colorbar()
     plt.show()

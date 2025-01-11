@@ -50,23 +50,46 @@ class _GeoBase:
 
 class _GInfo:
     def __init__(self):
-        self.is_visited = False
-        self.is_blocked = False
+        self.__is_visited = False
+        self.__is_blocked = False
 
+    # visit actions
     def reset_all_visited(self):
         for obj in _GeoBase.obj_list:
-            obj.is_visited = False
+            obj.__is_visited = False
 
     def reset_visited(self):
-        self.is_visited = False
+        self.__is_visited = False
 
     @property
-    def is_wall(self):
-        return self.is_blocked
+    def is_visited(self):
+        return self.__is_visited
+
+    @is_visited.setter
+    def is_visited(self, value):
+        if not isinstance(value, bool):
+            raise ValueError("Value must be boolean")
+        self.__is_visited = value
+
+    def visit(self):
+        self.__is_visited = True
+
+    # block/fixed actions
+    @property
+    def is_blocked(self):
+        return self.__is_blocked
 
     @property
-    def can_pass(self):
-        return not self.is_blocked
+    def is_fixed(self):
+        return self.__is_blocked
+
+    @is_blocked.setter
+    def is_blocked(self, value):
+        self.__is_blocked = value
+
+    @is_fixed.setter
+    def is_fixed(self, value):
+        self.is_blocked = value
 
 
 class Vertex(_GeoBase, _GInfo):
@@ -90,6 +113,9 @@ class Vertex(_GeoBase, _GInfo):
     # edge actions
     def set_edges(self, edges):
         self.edges = set(edges)
+
+    def set_is_fixed(self, is_fixed):
+        self.is_fixed = is_fixed
 
     def remove_edges(self, *half_edges):
         for half_edge in half_edges:
@@ -184,7 +210,6 @@ class Edge(_GeoBase, _GInfo):
         self.is_blocked = is_blocked
 
         # Private
-        self.__diagonal_vertex = None  # for triangulation (Const)
         self.__eid = Edge.__eid
         Edge.__eid += 1
 
@@ -193,14 +218,6 @@ class Edge(_GeoBase, _GInfo):
         self.twin = twin
         self.next = next
         self.prev = prev
-        if diag_vertex:
-            self.set_diagonal_vertex(diag_vertex)
-
-    def set_diagonal_vertex(self, vertex):
-        if self.__diagonal_vertex is None:
-            self.__diagonal_vertex = vertex
-        else:
-            raise ValueError("Diagonal vertex is already set")
 
     def get_dir(self):
         return (self.to.xy - self.ori.xy) / np.linalg.norm(
@@ -225,7 +242,11 @@ class Edge(_GeoBase, _GInfo):
 
     @property
     def diagonal_vertex(self):
-        return self.__diagonal_vertex
+        if self.next.to == self.prev.ori:
+            return self.next.to
+        print(f"Edge{self.eid} info is not correct (diagonal_vertex)")
+        print(f"Edge{self.eid} next: {self.next.eid} prev: {self.prev.eid}")
+        return None
 
     @property
     def is_outer(self):

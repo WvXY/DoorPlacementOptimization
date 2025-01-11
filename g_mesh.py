@@ -1,5 +1,4 @@
 from g_primitives import Vertex, Edge, Face, _GeoBase
-from f_primitives import FVertex, FEdge, FFace, FRoom
 from u_cdt import CDT
 
 
@@ -15,6 +14,7 @@ class Mesh:
         self.faces = None
         self.edges = None
         self.verts = None
+        self.fixed_edges = None
 
         self.border_edges = []
         self.inner_fixed_edges = []
@@ -40,9 +40,6 @@ class Mesh:
     def vertices(self):
         return self.verts
 
-    @property
-    def fixed_edges(self):
-        return self.border_edges + self.inner_fixed_edges
 
     def set_default_types(self, Vertex, Edge, Face):
         self.Vertex = Vertex
@@ -68,10 +65,13 @@ class Mesh:
         self.cdt = CDT(min_dist_to_constraint_edge)
         self.cdt.insert_vertices(vertices)
         self.cdt.insert_edges(edges)
-        # self.cdt.erase_outer_triangles_and_holes()    # hole is also needed
         self.cdt.erase_outer_triangles()
+        # self.cdt.erase_outer_triangles_and_holes()  # hole is also needed
+
+        self.fixed_edges = self.cdt.get_fixed_edges(to_numpy=True)
         triangles = self.cdt.get_triangles(to_numpy=True)
         vertices = self.cdt.get_vertices(to_numpy=True)
+
         self.from_mesh(vertices, triangles)
         del self.cdt
 
@@ -89,12 +89,11 @@ class Mesh:
     def __init_nodes(self, nodes):
         for i, xy in enumerate(nodes):
             vertex = self.Vertex(xy[:2])
+            vertex.is_fixed = True
             self.verts.append(vertex)
 
     def __init_faces(self, faces: list):
-        for i, f in enumerate(faces):
-            face = self.Face()
-            self.faces.append(face)
+        self.faces = [self.Face() for _ in range(len(faces))]
 
     def __init_half_edges(self, faces):
         for i, (fi, fj, fk) in enumerate(faces):
@@ -110,11 +109,6 @@ class Mesh:
                 self.faces[i],
                 self.faces[i],
             )
-
-            # Set diagonal vertex
-            eij.set_diagonal_vertex(self.verts[fk])
-            ejk.set_diagonal_vertex(self.verts[fi])
-            eki.set_diagonal_vertex(self.verts[fj])
 
             self.edges += [eij, ejk, eki]
             self.faces[i].set_edges([eij, ejk, eki])
@@ -151,7 +145,7 @@ class Mesh:
     #             e.is_blocked = True
 
     def __set_fixed_edges(self):
-        for fe in self.cdt.get_fixed_edges(to_numpy=True):
+        for fe in self.fixed_edges:
             v0, v1 = self.verts[fe[0]], self.verts[fe[1]]
             v0.is_blocked = True
             v1.is_blocked = True

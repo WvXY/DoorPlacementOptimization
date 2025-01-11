@@ -18,24 +18,23 @@ class Loader:
     def load_closed_rooms_case(self, idx):
         self.success = self._load("/assets/fp_closed_rooms_{}.obj".format(idx))
 
+    def load_final_case(self, idx):
+        self.success = self._load("/assets/fp_final_{}.obj".format(idx))
+
+    def set_root_dir(self, root_dir):
+        self.__root_dir = root_dir
+
     def _load(self, obj_file):
-        self.clear()
+        self._clear()
         self._load_obj(self.__root_dir + obj_file)
+        self._optimize()
+        self._flip_z()  # flip y in 2D
         return True
 
-    def clear(self):
+    def _clear(self):
         self.faces = None
         self.edges = None
         self.vertices = None
-
-    def optimize(self):
-        """remove duplicates and normalize"""
-        self.remove_duplicates()
-
-        normalize = lambda x: (x - np.min(x)) / (np.max(x) - np.min(x))
-        # delete y-axis because its zero in our 2D case and normalize
-        self.vertices = normalize(np.delete(self.vertices, 1, 1))
-        return True
 
     def _load_obj(self, obj_file):
         with open(obj_file, "r") as f:
@@ -51,23 +50,29 @@ class Loader:
                 _process_faces(faces, l)
 
         if vertices:
-            self.vertices = np.array(vertices)
+            self.vertices = np.array(vertices, dtype=np.float64)
         if edges:
-            self.edges = np.array(edges)
+            self.edges = np.array(edges, dtype=np.int64)
         if faces:
-            self.faces = np.array(faces)
+            self.faces = np.array(faces, dtype=np.int64)
 
-    def set_root_dir(self, root_dir):
-        self.__root_dir = root_dir
+    def _optimize(self):
+        """remove duplicates and normalize"""
+        self._remove_duplicates()
+        self._normalize()
 
-    def remove_duplicates(self):
+    def _remove_duplicates(self):
         vertex_map = {}
         unique_vertices = []
         new_index = 0
 
+        def hash_vertex(vertex):
+            return "".join([str(round(x, 6)) for x in vertex])
+            # return tuple(vertex)
+
         for i, vertex in enumerate(self.vertices):
-            if vertex.tobytes() not in vertex_map:
-                vertex_map[vertex.tobytes()] = new_index
+            if hash_vertex(vertex) not in vertex_map:
+                vertex_map[hash_vertex(vertex)] = new_index
                 unique_vertices.append(vertex)
                 new_index += 1
 
@@ -75,21 +80,29 @@ class Loader:
         if self.edges is not None:
             self.edges = [
                 (
-                    vertex_map[self.vertices[start].tobytes()],
-                    vertex_map[self.vertices[end].tobytes()],
+                    vertex_map[hash_vertex(self.vertices[start])],
+                    vertex_map[hash_vertex(self.vertices[end])],
                 )
                 for start, end in self.edges
             ]
         if self.faces is not None:
             self.faces = [
                 (
-                    vertex_map[self.vertices[face[0]].tobytes()],
-                    vertex_map[self.vertices[face[1]].tobytes()],
-                    vertex_map[self.vertices[face[2]].tobytes()],
+                    vertex_map[hash_vertex(self.vertices[face[0]])],
+                    vertex_map[hash_vertex(self.vertices[face[1]])],
+                    vertex_map[hash_vertex(self.vertices[face[2]])],
                 )
                 for face in self.faces
             ]
         self.vertices = np.array(unique_vertices)
+
+    def _normalize(self):
+        normalize = lambda x: (x - np.min(x)) / (np.max(x) - np.min(x))
+        # delete y-axis because its zero in our 2D case and normalize
+        self.vertices = normalize(np.delete(self.vertices, 1, 1))
+
+    def _flip_z(self):
+        self.vertices[:, 1] = 1 - self.vertices[:, 1]
 
 
 # ----------------- Utility functions -----------------
