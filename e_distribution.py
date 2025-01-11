@@ -4,7 +4,7 @@ import numpy as np
 from f_layout import FLayout
 from f_primitives import FVertex, FEdge, FFace
 from g_primitives import Point
-from o_door import ODoor
+from s_door_component import ODoor
 from u_data_loader import Loader
 from u_visualization import Visualizer
 

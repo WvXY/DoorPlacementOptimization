@@ -2,10 +2,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
+# Basic Primitives
 from f_layout import FLayout
 from g_primitives import Point
-from ecs import ECS, DoorSystem
-from o_door import DoorComponent
+
+# DOOR SYSTEM
+from s_ecs import ECS
+from s_door_system import DoorSystem
+from s_door_component import DoorComponent
+
+# Optimization
 from o_loss_func import loss_func
 from u_data_loader import Loader
 from u_visualization import Visualizer

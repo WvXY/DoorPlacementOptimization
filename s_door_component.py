@@ -25,7 +25,7 @@ class DoorComponent:
         self.need_optimization = True
 
         # For storing some last-known states (history)
-        self._history = {
+        self.history = {
             "bind_edge": None,
             "ratio": None,
         }

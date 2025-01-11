@@ -3,33 +3,6 @@ import numpy as np
 from u_geometry import split_half_edge, projection_on_edge, remove_vertex
 
 
-class ECS:
-    def __init__(self):
-        self.next_entity_id = 0
-        # For demonstration, we'll just store DoorComponents
-        self.doors = {}  # entity_id -> DoorComponent
-
-    def create_entity(self):
-        """Generate and return a unique entity ID."""
-        entity_id = self.next_entity_id
-        self.next_entity_id += 1
-        return entity_id
-
-    def get_door_component(self, entity_id):
-        """Return the DoorComponent for a given entity ID."""
-        return self.doors.get(entity_id, None)
-
-    def add_door_component(self, door_comp):
-        """Attach a DoorComponent to a given entity ID."""
-        entity_id = self.create_entity()
-        self.doors[entity_id] = door_comp
-
-    def remove_door_component(self, entity_id):
-        """Remove the DoorComponent for a given entity."""
-        if entity_id in self.doors:
-            del self.doors[entity_id]
-
-
 class DoorSystem:
     def __init__(self, ecs, fp):
         self.ecs = ecs
@@ -43,15 +16,15 @@ class DoorSystem:
             door_comp.ratio = 0.5  # start from the middle
             self.activate(door_comp)
 
-    def propose(self):
+    def propose(self, sigma=0.1):
         for entity_id, door_comp in list(self.ecs.doors.items()):
             if door_comp.is_active:
-                self.step(door_comp)
+                self.step(door_comp, sigma=sigma)
             else:
                 print(f"WARNING: Door {entity_id} is not active")
 
     # debug method
-    def all_move_by(self, delta):
+    def move_all_by(self, delta):
         for door_comp in self.ecs.doors.values():
             self.step(door_comp, delta)
 
@@ -66,6 +39,7 @@ class DoorSystem:
         for door_comp, edge, ratio in zip(
             self.ecs.doors.values(), edges, ratios
         ):
+            # print(f"Manually load door {door_comp} to edge {edge.eid}")
             self.manually_load_history(door_comp, edge, ratio)
 
     def get_states(self):
@@ -153,13 +127,13 @@ class DoorSystem:
         # door_comp.bind_edge = None
         self.sync_floor_plan(door_comp)
 
-    def step(self, door_comp, delta=0.0):
+    def step(self, door_comp, delta=0.0, sigma=0.1):
         if not door_comp.is_active:
             return
 
         # Possibly do random motion or geometry updates
         if delta == 0.0:
-            delta = np.random.normal(0, 0.1)
+            delta = np.random.normal(delta, sigma)
 
         ratio = door_comp.ratio + delta / door_comp.e_len
 
@@ -169,7 +143,9 @@ class DoorSystem:
         # move the door
         if not self._within_limit(door_comp, ratio):
             self._to_next_edge(door_comp, ratio)
+            # print("next edge")
         else:  # slide door along the edge
+            # print("move by", delta)
             door_comp.ratio = ratio
             self._move_by(door_comp, delta)
 
@@ -204,6 +180,8 @@ class DoorSystem:
         return (cut_p0, cut_p1)
 
     def _calc_bedge_cache(self, door_comp):
+        assert door_comp.bind_edge is not None, "Edge is not set"
+        assert door_comp.is_active is False, "Door is already active"
         door_comp.e_len = door_comp.bind_edge.get_length()
         self._calc_limits(door_comp)
 
@@ -248,12 +226,15 @@ class DoorSystem:
         self.deactivate(door_comp)
         success = self._find_next_edge(door_comp, ratio)
         if not success:
+            print("Door cannot move to the next edge")
             self.activate(door_comp)  # revert
         else:
             # move to new edge
             self.activate(door_comp)
 
     def _find_next_edge(self, door_comp, ratio):
+        assert door_comp.is_active is False, "Door is already active"
+
         def search_next_shared_edge(vertex):
             for e in door_comp.shared_edges:
                 if e is door_comp.bind_edge or e is door_comp.bind_edge.twin:
@@ -296,25 +277,26 @@ class DoorSystem:
     # History
     def _store_current_state(self, door_comp):
         """Store the current state of the door component."""
-        door_comp._history["ratio"] = door_comp.ratio
-        door_comp._history["bine_edge"] = door_comp.bind_edge
+        door_comp.history["ratio"] = door_comp.ratio
+        door_comp.history["bind_edge"] = door_comp.bind_edge
 
     def _restore_last_state(self, door_comp):
-        if door_comp.bind_edge == door_comp._history["bind_edge"]:
+        if door_comp.bind_edge == door_comp.history["bind_edge"]:
             # didn't move to a new edge, just reset the ratio
-            self._move_to(door_comp, door_comp._history["ratio"])
+            # print("restore", door_comp.history["ratio"])
+            self._move_to(door_comp, door_comp.history["ratio"])
         else:
             # reset the door to the last state: different edges
+            # print("restore edge")
             self.deactivate(door_comp)
-            door_comp.ratio = door_comp._history["ratio"]
-            door_comp.bind_edge = door_comp._history["bind_edge"]
+            door_comp.ratio = door_comp.history["ratio"]
+            door_comp.bind_edge = door_comp.history["bind_edge"]
             self.activate(door_comp)
 
     def manually_load_history(self, door_comp, edge, ratio):
         door_comp.bind_edge = edge
         door_comp.ratio = ratio
-        if door_comp.is_active:
-            self.deactivate(door_comp)
+        self.deactivate(door_comp)
         self.activate(door_comp)
 
     def sync_floor_plan(self, door_comp):

@@ -1,18 +1,23 @@
 import matplotlib.pyplot as plt
-import matplotlib as mpl
 import numpy as np
 from tqdm import tqdm
 
+# Basic Primitives
 from f_layout import FLayout
 from g_primitives import Point
-from ecs import ECS, DoorSystem
-from o_door import DoorComponent
+
+# DOOR SYSTEM
+from s_ecs import ECS
+from s_door_system import DoorSystem
+from s_door_component import DoorComponent
+
+# Optimization
 from o_loss_func import loss_func
 from u_data_loader import Loader
 from u_visualization import Visualizer
 
 
-def init(case_id, np_seed=0):
+def init_fp_vis(case_id, np_seed=0):
     # Settings
     np.random.seed(np_seed)
 
@@ -80,19 +85,19 @@ def metropolis_hasting(fp, door_system, iters=200):
     best_score = old_score
     best_e, best_r = door_system.get_states()
 
-    door = door_system.ecs.get_door_component(0)
+    door_comp = door_system.ecs.get_door_component(0)
 
     for iteration in range(iters):
 
-        door_system.all_move_by(0.02)
-        print(door)
+        door_system.move_all_by(0.02)
+        print(door_comp)
 
         new_score = f(fp, sp)
 
-        center = door_system._ratio_to_pos(door, door.ratio)
+        center = door_system._ratio_to_pos(door_comp, door_comp.ratio)
         losses.append([center, new_score])
 
-    door_system.deactivate(door)
+    door_system.deactivate(door_comp)
 
     return best_e, best_r, losses
 
@@ -103,7 +108,7 @@ if __name__ == "__main__":
     n_sp = 100
     iters = 100
 
-    fp, vis = init(case_id)
+    fp, vis = init_fp_vis(case_id)
 
     vis.draw_mesh(
         fp, show=True, draw_text="ve", axis_show=False, axis_equal=True
