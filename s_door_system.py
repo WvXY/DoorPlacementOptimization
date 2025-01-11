@@ -127,7 +127,7 @@ class DoorSystem:
                     reactivate_list.append(d)
                     print(f"temporarily deactivate {d}")
                     break
-            else:   # can remove without broken geometry
+            else:  # can remove without broken geometry
                 break
 
         # deactivate this door component
