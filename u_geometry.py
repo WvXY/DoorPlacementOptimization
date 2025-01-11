@@ -1,7 +1,5 @@
 import numpy as np
 
-from g_primitives import Vertex, Edge, Face
-
 
 def split_half_edge(edge, position):
     """Split edge into two edges by a point"""
@@ -39,6 +37,7 @@ def split_half_edge(edge, position):
     edge.next.next = e0_t
     edge.twin.prev.next = e_new_t
     edge.twin.prev.prev = e1_t
+    edge.prev.prev = e0
 
     e_new.is_blocked = edge.is_blocked
     e_new_t.is_blocked = edge.twin.is_blocked
@@ -76,7 +75,7 @@ def remove_vertex(vertex):
         print(
             f"ERROR: vertex {vertex.vid} has {n_edges} half edges(8 expected)"
         )
-        return
+        return False
 
     # print(f"v{vertex.vid}.half: {[e.eid for e in vertex.half_edges]}")
 

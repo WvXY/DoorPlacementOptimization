@@ -48,9 +48,11 @@ def create_door_system(fp):
     ecs = ECS()
     door_system = DoorSystem(ecs, fp)
     door_cmp03 = DoorComponent(r0, r3)
-    door_cmp13 = DoorComponent(r1, r3)
+    door_cmp23 = DoorComponent(r2, r3)
+    door_cmp34 = DoorComponent(r3, r4)
     ecs.add_door_component(door_cmp03)
-    ecs.add_door_component(door_cmp13)
+    ecs.add_door_component(door_cmp23)
+    ecs.add_door_component(door_cmp34)
 
     door_system.activate_all()
 
@@ -112,9 +114,17 @@ def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
             vis.draw_mesh(
                 fp,
                 show=True,
-                draw_text="",
+                draw_text="e",
                 clear=True,
-                fig_title=f"Loss: {new_score:.3f} | Best Loss: {best_score:.3f}",
+                fig_title=f"Iteration: {iteration}",
+            )
+
+            vis.draw_mesh(
+                fp,
+                show=True,
+                draw_text="vf",
+                clear=True,
+                fig_title=f"Iteration: {iteration}",
             )
 
         T *= 0.99  # Annealing
@@ -141,7 +151,7 @@ if __name__ == "__main__":
 
     door_system = create_door_system(fp)
 
-    # vis.draw_mesh(fp, show=True, draw_text="e", clear=True)
+    vis.draw_mesh(fp, show=True, draw_text="e", clear=True)
 
     sp = make_sample_points(n_sp)
     #

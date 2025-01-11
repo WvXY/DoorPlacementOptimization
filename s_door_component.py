@@ -30,6 +30,10 @@ class DoorComponent:
             "ratio": None,
         }
 
+    @property
+    def rooms(self):
+        return self.bind_rooms
+
     def __repr__(self):
         return (
             f"DoorComponent("

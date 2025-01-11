@@ -84,7 +84,7 @@ class DoorSystem:
         # Find shared edges between the two rooms
         self._calc_brooms_cache(door_comp)
         if door_comp.bind_edge is None:
-            door_comp.bind_edge = door_comp.shared_edges[2]
+            door_comp.bind_edge = door_comp.shared_edges[0]
         self._calc_bedge_cache(door_comp)
 
         door_comp.bind_edge.reset_all_visited()
@@ -114,6 +114,23 @@ class DoorSystem:
         if not door_comp.is_active:
             return
 
+        reactivate_list = []
+        adj_door_comps = self.ecs.get_adjacent_doors(door_comp).copy()
+        # check
+        while True:
+            for v in door_comp.verts:
+                n_edges = len(v.half_edges)
+                if n_edges != 8:
+                    # deactivate one door at a time and try again
+                    d = adj_door_comps.pop()
+                    self.deactivate(d)
+                    reactivate_list.append(d)
+                    print(f"temporarily deactivate {d}")
+                    break
+            else:   # can remove without broken geometry
+                break
+
+        # deactivate this door component
         del_v0, del_e0, del_f0 = remove_vertex(door_comp.verts.pop())
         del_v1, del_e1, del_f1 = remove_vertex(door_comp.verts.pop())
         door_comp.verts = del_v0 + del_v1
@@ -126,6 +143,10 @@ class DoorSystem:
         door_comp.is_active = False
         # door_comp.bind_edge = None
         self.sync_floor_plan(door_comp)
+
+        # reactivate deactivated doors
+        while reactivate_list:
+            self.activate(reactivate_list.pop())
 
     def step(self, door_comp, delta=0.0, sigma=0.1):
         if not door_comp.is_active:
@@ -143,7 +164,6 @@ class DoorSystem:
         # move the door
         if not self._within_limit(door_comp, ratio):
             self._to_next_edge(door_comp, ratio)
-            # print("next edge")
         else:  # slide door along the edge
             # print("move by", delta)
             door_comp.ratio = ratio

@@ -38,7 +38,7 @@ class FEdge(Edge, _FInfo):
         return True
 
     def __repr__(self):
-        return f"FEdge {self.eid} (: {self.ori.vid} -> {self.to.vid})"
+        return f"FEdge {self.eid} ({self.ori.vid} -> {self.to.vid})"
 
 
 class FFace(Face, _FInfo):
@@ -127,6 +127,9 @@ class FRoom(_FInfo, _GeoBase):
 
     def get_by_rid(rid):
         return next((r for r in FRoom.__room_list if r.rid == rid), None)
+
+    def __repr__(self):
+        return f"FRoom {self.rid} (Faces {[f.fid for f in self.faces]}, Adjs {[r.rid for r in self.adjs]})"
 
 
 # Alias
