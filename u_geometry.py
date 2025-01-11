@@ -137,7 +137,7 @@ def del_edge(edge):
     assert v_fixed != v_moving, f"Edge{edge.eid} cannot be deleted"
 
 
-def closet_position_on_edge(edge, point):
+def projection_on_edge(edge, point):
     """Find the closest position on edge from point"""
     if edge.is_outer:
         return None

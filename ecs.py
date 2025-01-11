@@ -1,7 +1,6 @@
 import numpy as np
 
-from o_door import DoorComponent
-from u_geometry import split_half_edge, closet_position_on_edge, remove_vertex
+from u_geometry import split_half_edge, projection_on_edge, remove_vertex
 
 
 class ECS:
@@ -15,6 +14,10 @@ class ECS:
         entity_id = self.next_entity_id
         self.next_entity_id += 1
         return entity_id
+
+    def get_door_component(self, entity_id):
+        """Return the DoorComponent for a given entity ID."""
+        return self.doors.get(entity_id, None)
 
     def add_door_component(self, door_comp):
         """Attach a DoorComponent to a given entity ID."""
@@ -32,18 +35,58 @@ class DoorSystem:
         self.ecs = ecs
         self.fp = fp
 
-    def update_all(self):
-        for entity_id, door_comp in list(self.ecs.doors.items()):
-            if door_comp.is_active and door_comp.need_optimization:
-                self.step(door_comp)
+    # ----------------------------------------------------
+    # Metropolis-Hastings
+    # ----------------------------------------------------
+    def activate_all(self):
+        for door_comp in self.ecs.doors.values():
+            door_comp.ratio = 0.5  # start from the middle
+            self.activate(door_comp)
 
+    def propose(self):
+        for entity_id, door_comp in list(self.ecs.doors.items()):
+            if door_comp.is_active:
+                self.step(door_comp)
+            else:
+                print(f"WARNING: Door {entity_id} is not active")
+
+    # debug method
+    def all_move_by(self, delta):
+        for door_comp in self.ecs.doors.values():
+            self.step(door_comp, delta)
+
+    def reject(self):
+        for entity_id, door_comp in list(self.ecs.doors.items()):
+            if door_comp.is_active:
+                self._restore_last_state(door_comp)
+            else:
+                print(f"WARNING: Door {entity_id} is not active")
+
+    def load_manually(self, edges, ratios):
+        for door_comp, edge, ratio in zip(
+            self.ecs.doors.values(), edges, ratios
+        ):
+            self.manually_load_history(door_comp, edge, ratio)
+
+    def get_states(self):
+        edges = []
+        ratios = []
+        for door_comp in self.ecs.doors.values():
+            edges.append(door_comp.bind_edge)
+            ratios.append(door_comp.ratio)
+        return edges, ratios
+
+    # ----------------------------------------------------
+    # Basic operations on single door components
+    # ----------------------------------------------------
     def activate(self, door_comp):
         """
         Activate from bind_edge and ratio.
         Split the edge and add new geometry to the rooms.
         """
         assert door_comp.is_active is False, "Door is already active"
-        assert door_comp.bind_edge is not None, "Door is not binded to any edge"
+        assert door_comp.bind_rooms[0] is not None, "Room 0 is not set"
+        assert door_comp.bind_rooms[1] is not None, "Room 1 is not set"
 
         def add_two_face_to_rooms(door_comp, faces):
             """A dirty way to add two new faces to the existing rooms"""
@@ -64,12 +107,16 @@ class DoorSystem:
                 door_comp.bind_rooms[0].add_face(faces[1])
                 door_comp.bind_rooms[1].add_face(faces[0])
 
+        # Find shared edges between the two rooms
+        self._calc_brooms_cache(door_comp)
+        if door_comp.bind_edge is None:
+            door_comp.bind_edge = door_comp.shared_edges[2]
+        self._calc_bedge_cache(door_comp)
+
         door_comp.bind_edge.reset_all_visited()
 
-        # Find or set the cut center
-        self._calc_cache(door_comp)
-
-        cut_p0, cut_p1 = self._cut_at_position(door_comp, door_comp.ratio)
+        # cut the edge
+        cut_p0, cut_p1 = self._cut_at(door_comp, door_comp.ratio)
         # Replace with your real `split_half_edge` logic
         (new_v0, new_e0, new_f0) = split_half_edge(door_comp.bind_edge, cut_p0)
         (new_v1, new_e1, new_f1) = split_half_edge(door_comp.bind_edge, cut_p1)
@@ -82,8 +129,8 @@ class DoorSystem:
         add_two_face_to_rooms(door_comp, new_f1)
 
         # Mark door edges as unblocked, etc.
-        new_e0[0].is_blocked = False
-        new_e0[1].is_blocked = False
+        new_e1[0].is_blocked = False
+        new_e1[1].is_blocked = False
 
         door_comp.is_active = True
         self.sync_floor_plan(door_comp)
@@ -93,8 +140,8 @@ class DoorSystem:
         if not door_comp.is_active:
             return
 
-        del_v0, del_e0, del_f0 = remove_vertex(self.verts.pop())
-        del_v1, del_e1, del_f1 = remove_vertex(self.verts.pop())
+        del_v0, del_e0, del_f0 = remove_vertex(door_comp.verts.pop())
+        del_v1, del_e1, del_f1 = remove_vertex(door_comp.verts.pop())
         door_comp.verts = del_v0 + del_v1
         door_comp.edges = del_e0 + del_e1
         door_comp.faces = del_f0 + del_f1
@@ -103,18 +150,8 @@ class DoorSystem:
         door_comp.bind_rooms[1].remove_faces(door_comp.faces)
 
         door_comp.is_active = False
+        # door_comp.bind_edge = None
         self.sync_floor_plan(door_comp)
-
-    def slide_to(self, door_comp, ratio):
-        """Set the door to a specific ratio along the edge."""
-        if not door_comp.is_active:
-            return
-
-        assert 0 <= ratio <= 1, "Ratio must be between 0 and 1"
-        pos0, pos1 = self._cut_at_position(door_comp, ratio)
-        door_comp.ratio = ratio
-        for v, pos in zip(door_comp.verts, [pos0, pos1]):
-            v.xy = pos
 
     def step(self, door_comp, delta=0.0):
         if not door_comp.is_active:
@@ -122,36 +159,60 @@ class DoorSystem:
 
         # Possibly do random motion or geometry updates
         if delta == 0.0:
-            delta = np.random.normal(0, 0.05)
+            delta = np.random.normal(0, 0.1)
 
         ratio = door_comp.ratio + delta / door_comp.e_len
 
+        # save the current state
+        self._store_current_state(door_comp)
+
+        # move the door
         if not self._within_limit(door_comp, ratio):
             self._to_next_edge(door_comp, ratio)
         else:  # slide door along the edge
-            self._move_door(door_comp, delta, ratio)
+            door_comp.ratio = ratio
+            self._move_by(door_comp, delta)
 
     # ----------------------------------------------------
     # Helper methods: geometry, ratio, limiting, etc.
     # ----------------------------------------------------
-    def _correct_location(self, door_comp, loc):
-        return closet_position_on_edge(door_comp.bind_edge, loc)
 
-    def _calc_cache(self, door_comp):
-        door_comp.e_len = door_comp.bind_edge.get_length()
-        door_comp.ratio = 0.5 if door_comp.ratio is None else door_comp.ratio
-        self._calc_limits(door_comp)
+    # location
+    def _projection_to_edge(self, door_comp, loc):
+        return projection_on_edge(door_comp.bind_edge, loc)
 
     def _pos_to_ratio(self, door_comp, pos):
         edge = door_comp.bind_edge
         frac = np.linalg.norm(edge.ori.xy - pos) / edge.get_length()
         # Dot to check direction
         if (pos - edge.ori.xy) @ edge.get_dir() > 0:
-            door_comp.ratio = frac
+            return frac
         else:
-            door_comp.ratio = -frac
-        return door_comp.ratio
+            return -frac
 
+    def _ratio_to_pos(self, door_comp, ratio):
+        return (
+            door_comp.bind_edge.ori.xy
+            + door_comp.bind_edge.get_dir() * ratio * door_comp.e_len
+        )
+
+    def _cut_at(self, door_comp, ratio):
+        offset = door_comp.bind_edge.get_dir() * door_comp.d_len / 2 * 0.95
+        center = self._ratio_to_pos(door_comp, ratio)
+        cut_p0 = center + offset
+        cut_p1 = center - offset
+        return (cut_p0, cut_p1)
+
+    def _calc_bedge_cache(self, door_comp):
+        door_comp.e_len = door_comp.bind_edge.get_length()
+        self._calc_limits(door_comp)
+
+    def _calc_brooms_cache(self, door_comp):
+        door_comp.shared_edges = door_comp.bind_rooms[0].get_shared_edges(
+            door_comp.bind_rooms[1]
+        )
+
+    # constraints
     def _calc_limits(self, door_comp):
         d_len = door_comp.d_len
         e_len = door_comp.e_len
@@ -160,42 +221,77 @@ class DoorSystem:
             1 - d_len / 2.0 / e_len,
         ]  # lower  # upper
 
-    def _cut_at_position(self, door_comp, ratio):
-        offset = door_comp.bind_edge.get_dir() * door_comp.d_len / 2 * 0.95
-        center = self._ratio_to_pos(door_comp, ratio)
-        cut_p0 = center + offset
-        cut_p1 = center - offset
-        return (cut_p0, cut_p1)
-
-    def _ratio_to_pos(self, door_comp, ratio):
-        return (
-            door_comp.bind_edge.ori.xy
-            + door_comp.bind_edge.get_dir() * ratio * door_comp.e_len
-        )
-
     def _within_limit(self, door_comp, ratio):
         return door_comp.move_limit[0] <= ratio <= door_comp.move_limit[1]
 
-    def _move_door(self, door_comp, delta, ratio):
+    # movement
+    def _move_to(self, door_comp, ratio):
+        """Set the door to a specific ratio along the edge."""
+        if not door_comp.is_active:
+            return
+
+        assert 0 <= ratio <= 1, "Ratio must be between 0 and 1"
+
+        pos0, pos1 = self._cut_at(door_comp, ratio)
         door_comp.ratio = ratio
+        door_comp.verts[0].xy = pos0
+        door_comp.verts[1].xy = pos1
+
+    def _move_by(self, door_comp, delta):
+        # don't forget to update the door_comp.ratio
+        # door_comp.ratio += delta / door_comp.e_len
         direction = door_comp.bind_edge.get_dir() * delta
         for v in door_comp.verts:
             v.xy += direction
 
     def _to_next_edge(self, door_comp, ratio):
         self.deactivate(door_comp)
-        success, new_edge, center = self._find_next_edge(door_comp, ratio)
+        success = self._find_next_edge(door_comp, ratio)
         if not success:
-            # revert
-            self.activate(door_comp, door_comp._history["center"])
+            self.activate(door_comp)  # revert
         else:
             # move to new edge
-            door_comp.bind_edge = new_edge
-            self.activate(door_comp, center)
+            self.activate(door_comp)
 
     def _find_next_edge(self, door_comp, ratio):
+        def search_next_shared_edge(vertex):
+            for e in door_comp.shared_edges:
+                if e is door_comp.bind_edge or e is door_comp.bind_edge.twin:
+                    continue
 
-        return (False, None, None)  # e.g. fail by default
+                if e.ori is vertex or e.to is vertex:
+                    return e
+
+            for e in door_comp.shared_edges:
+                if e.is_visited is False:
+                    return e
+
+            return None
+
+        # search next edge
+        if ratio >= door_comp.move_limit[1]:
+            v = door_comp.bind_edge.to
+            e = search_next_shared_edge(v)
+            if e is None:
+                door_comp.bind_edge = door_comp.bind_edge.twin
+                # return False
+            else:
+                door_comp.bind_edge = e if e.ori is v else e.twin
+            self._calc_bedge_cache(door_comp)
+            door_comp.ratio = door_comp.move_limit[0]
+
+        elif ratio <= door_comp.move_limit[0]:
+            v = door_comp.bind_edge.ori
+            e = search_next_shared_edge(v)
+            if e is None:
+                door_comp.bind_edge = door_comp.bind_edge.twin
+            else:
+                door_comp.bind_edge = e if e.to is v else e.twin
+            self._calc_bedge_cache(door_comp)
+            door_comp.ratio = door_comp.move_limit[1]
+
+        door_comp.bind_edge.visit()
+        return True
 
     # History
     def _store_current_state(self, door_comp):
@@ -205,8 +301,10 @@ class DoorSystem:
 
     def _restore_last_state(self, door_comp):
         if door_comp.bind_edge == door_comp._history["bind_edge"]:
-            self.set_to(door_comp, door_comp._history["ratio"])
+            # didn't move to a new edge, just reset the ratio
+            self._move_to(door_comp, door_comp._history["ratio"])
         else:
+            # reset the door to the last state: different edges
             self.deactivate(door_comp)
             door_comp.ratio = door_comp._history["ratio"]
             door_comp.bind_edge = door_comp._history["bind_edge"]
@@ -215,6 +313,8 @@ class DoorSystem:
     def manually_load_history(self, door_comp, edge, ratio):
         door_comp.bind_edge = edge
         door_comp.ratio = ratio
+        if door_comp.is_active:
+            self.deactivate(door_comp)
         self.activate(door_comp)
 
     def sync_floor_plan(self, door_comp):
@@ -223,34 +323,3 @@ class DoorSystem:
             self.fp.append(door_comp.verts, door_comp.edges, door_comp.faces)
         else:
             self.fp.remove(door_comp.verts, door_comp.edges, door_comp.faces)
-
-
-if __name__ == "__main__":
-    # 1. Create our ECS world
-    ecs_world = ECS()
-
-    # 2. Create a door system
-    door_system = DoorSystem(ecs_world)
-
-    # 3. Create an entity for the door and attach a DoorComponent
-    door_entity = ecs_world.create_entity()
-    door_comp = DoorComponent(
-        room0=some_room0,
-        room1=some_room1,
-        floor_plan=some_floor_plan,
-        edge=some_edge,
-        door_length=0.07,
-    )
-    ecs_world.add_door_component(door_entity, door_comp)
-
-    # 4. Activate the door using the system
-    door_system.activate(door_comp, center=np.array([0.75, 0.75]))
-
-    # 5. Run your game loop or simulation loop
-    for frame in range(100):
-        # Possibly other systems would update here as well
-        door_system.update_all()
-
-    # 6. Deactivate or remove the door
-    door_system.deactivate(door_comp)
-    ecs_world.remove_door_component(door_entity)

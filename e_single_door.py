@@ -17,7 +17,6 @@ def init(case_id, np_seed=0):
     # Load data
     ld = Loader(".")
     ld.load_closed_rooms_case(case_id)
-    ld.optimize()
 
     fp = FLayout()
     # fp.set_default_types(FPoint, FEdge, FFace)

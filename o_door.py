@@ -17,6 +17,7 @@ class DoorComponent:
         self.verts = []
         self.edges = []
         self.faces = []
+        self.shared_edges = []
 
         # Status / flags
         self.is_active = False
@@ -34,5 +35,6 @@ class DoorComponent:
             f"DoorComponent("
             f"rooms={[r.rid for r in self.bind_rooms]}, "
             f"edge={self.bind_edge.eid}, "
+            f"ratio={self.ratio:.5f}, "
             f"is_active={self.is_active})"
         )
