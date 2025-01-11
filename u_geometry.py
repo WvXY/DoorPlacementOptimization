@@ -3,7 +3,6 @@ import numpy as np
 from g_primitives import Vertex, Edge, Face
 
 
-# TODO: rename to cut_edge(edge, pos=None) or split_edge(edge, pos=None)
 def split_half_edge(edge, position):
     """Split edge into two edges by a point"""
     if edge.is_outer:
