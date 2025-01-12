@@ -1,4 +1,9 @@
-# MasterProject: Door Placement Optimization
+# Door Placement Optimization
+
+## Introduction
+Door optimization for floor plan or map generation using Navmesh. 
+Place doors based on human traffic flow and shortest path.
+
 
 ## Dependencies
 
@@ -9,17 +14,17 @@
 ### Clone this repo
 
 ```bash
-git clone --recurse-submodules git@github.com:WvXY/MasterProject.git
+git clone --recurse-submodules https://github.com/WvXY/DoorPlacementOptimization.git
 ```
 
 ### PIP
 
 ```bash
-py -m venv .venv
+python -m venv .venv
 .venv\Scripts\activate 
 # source .venv/bin/activate # Linux/MacOS
 pip install numpy matplotlib
-pip install PythonCDT
+pip install PythonCDT/
 ```
 
 ### Conda Environment
@@ -27,28 +32,30 @@ pip install PythonCDT
 ```bash
 conda create -n mProj python=3.12 numpy matplotlib
 conda activate mProj 
-pip install PythonCDT
+pip install PythonCDT/
 ```
 
 ## Progress
 
 - [X] Fix navmesh
 - [X] Generate constraint mesh
-- [ ] Mesh tweaking functions
-- [ ] Door optimizer
+- [X] Mesh tweaking functions
+- [X] Door optimizer
 - [ ] Optimize and test
 
 ## Bugs
 
 - [ ] Logger is not working on windows
+- [ ] `PythonCDT` is not working on windows
 
 ## Notes
 
 ### Naming Conventions
 
 - `g_xxx`: Geometry
-- `f_xxx`: Floorplan
+- `f_xxx`: Floor plan related
+- `s_xxx`: ECS System and related
 - `o_xxx`: Optimization
-- `u_xxx`: Utility
-- `t_xxx`: Test/Unit Test
+- `u_xxx`: Utility functions
+- `t_xxx`: Test/unit test
 - `e_xxx`: Experiment
