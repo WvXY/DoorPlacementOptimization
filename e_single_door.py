@@ -86,7 +86,7 @@ def metropolis_hasting(fp, door_system, T=0.1, iters=200):
     best_x, best_r = door_system.get_states()
     door_comp = door_system.ecs.get_door_component(0)
 
-    for i in range(iters):
+    for i in tqdm(range(iters)):
 
         door_system.propose(0.05)
 

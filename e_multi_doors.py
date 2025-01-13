@@ -48,10 +48,10 @@ def create_door_system(fp):
     ecs = ECS()
     door_system = DoorSystem(ecs, fp)
     door_cmp03 = DoorComponent(r0, r3)
-    door_cmp23 = DoorComponent(r2, r3)
-    door_cmp34 = DoorComponent(r3, r4)
+    # door_cmp23 = DoorComponent(r2, r3)
+    door_cmp34 = DoorComponent(r3, r1)
     ecs.add_door_component(door_cmp03)
-    ecs.add_door_component(door_cmp23)
+    # ecs.add_door_component(door_cmp23)
     ecs.add_door_component(door_cmp34)
 
     door_system.activate_all()
@@ -110,13 +110,13 @@ def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
         else:
             door_system.reject()
 
-        if vis and iteration % 10 == 0:
+        if vis and iteration % 20 == 0:
             vis.draw_mesh(
                 fp,
                 show=True,
                 draw_text="e",
                 clear=True,
-                fig_title=f"Iteration: {iteration}",
+                fig_title=f"Iteration: {iteration} | Score: {new_score} | Best Score: {best_score}",
             )
 
             vis.draw_mesh(
@@ -124,7 +124,7 @@ def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
                 show=True,
                 draw_text="vf",
                 clear=True,
-                fig_title=f"Iteration: {iteration}",
+                fig_title=f"Iteration: {iteration} | Score: {new_score} | Best Score: {best_score}",
             )
 
         T *= 0.99  # Annealing
@@ -138,8 +138,8 @@ def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
 if __name__ == "__main__":
     # Initialize
     case_id = 1
-    n_sp = 100
-    iters = 20
+    n_sp = 500
+    iters = 100
     T = 0.01
 
     fp, vis = init(case_id)
@@ -176,7 +176,7 @@ if __name__ == "__main__":
     # plt.colorbar()
 
     # vis.draw_floor_plan(fp, show=False, draw_connection=True)
-    vis.draw_mesh(fp, show=False, draw_text="vef", clear=True)
+    vis.draw_mesh(fp, show=False, draw_text="", clear=True)
 
     start = Point(np.array([0.4, 0.6]))
     end = Point(np.array([0.3, 0.35]))
