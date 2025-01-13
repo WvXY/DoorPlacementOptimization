@@ -20,6 +20,7 @@ git clone --recurse-submodules https://github.com/WvXY/DoorPlacementOptimization
 ### PIP
 
 ```bash
+cd DoorPlacementOptimization
 python -m venv .venv
 .venv\Scripts\activate 
 # source .venv/bin/activate # Linux/MacOS
@@ -30,6 +31,7 @@ pip install PythonCDT/
 ### Conda Environment
 
 ```bash
+cd DoorPlacementOptimization
 conda create -n mProj python=3.12 numpy matplotlib
 conda activate mProj 
 pip install PythonCDT/
@@ -46,7 +48,7 @@ pip install PythonCDT/
 ## Bugs
 
 - [ ] Logger is not working on windows
-- [ ] `PythonCDT` is not working on windows
+- [ ] Cuts on 2 edges of the same triangle may broke the geometry.
 
 ## Notes
 
