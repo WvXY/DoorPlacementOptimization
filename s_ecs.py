@@ -4,9 +4,9 @@
 class ECS:
     def __init__(self):
         self.next_entity_id = 0
-        # For demonstration, we'll just store DoorComponents
+
         self.doors = {}  # entity_id -> DoorComponent
-        self.connections = {}  # entity_id -> entity_id and vice versa
+        self.connections = {}  # door: adj_doors
 
     def create_entity(self):
         """Generate and return a unique entity ID."""

@@ -20,6 +20,7 @@ class NavMesh(Mesh):
             return None
         return self.funnel_algorithm(tripath, start, end)
 
+    # TODO: this function costs about 38% of time. optimize it
     def get_point_inside_face(self, point):
         for f in self.faces:
             if f is None or f.flipped:
@@ -30,17 +31,28 @@ class NavMesh(Mesh):
 
     @staticmethod
     def is_inside_face(point: Point, face: Face):
-        for i in range(3):
-            j = (i + 1) % 3
-            if (
-                np.cross(
-                    face.verts[j] - face.verts[i],
-                    point - face.verts[i],
-                )
-                < 0
-            ):
-                return False
-        return True
+        # Compute barycentric coordinates using a single cross product
+        # This is more efficient than checking each edge separately
+
+        v0 = face.verts[1] - face.verts[0]
+        v1 = face.verts[2] - face.verts[0]
+        v2 = point - face.verts[0]
+
+        # Compute dot products for barycentric coordinates
+        d00 = np.dot(v0, v0)
+        d01 = np.dot(v0, v1)
+        d11 = np.dot(v1, v1)
+        d20 = np.dot(v2, v0)
+        d21 = np.dot(v2, v1)
+
+        # Compute barycentric coordinates
+        denom = d00 * d11 - d01 * d01
+        v = (d11 * d20 - d01 * d21) / denom
+        w = (d00 * d21 - d01 * d20) / denom
+        u = 1.0 - v - w
+
+        # Check if point is inside triangle
+        return v >= 0 and w >= 0 and u >= 0
 
     def get_portals(self, tripath):
         portals = []

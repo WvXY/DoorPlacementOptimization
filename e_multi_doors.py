@@ -110,25 +110,25 @@ def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
         else:
             door_system.reject()
 
-        if vis and iteration % 20 == 0:
-            vis.draw_mesh(
-                fp,
-                show=True,
-                draw_text="e",
-                clear=True,
-                fig_title=f"Iteration: {iteration} | Score: {new_score} | Best Score: {best_score}",
-            )
-
-            vis.draw_mesh(
-                fp,
-                show=True,
-                draw_text="vf",
-                clear=True,
-                fig_title=f"Iteration: {iteration} | Score: {new_score} | Best Score: {best_score}",
-            )
-
-        T *= 0.99  # Annealing
-        losses.append(new_score)
+        # if vis and iteration % 20 == 0:
+        #     vis.draw_mesh(
+        #         fp,
+        #         show=True,
+        #         draw_text="e",
+        #         clear=True,
+        #         fig_title=f"Iteration: {iteration} | Score: {new_score} | Best Score: {best_score}",
+        #     )
+        #
+        #     vis.draw_mesh(
+        #         fp,
+        #         show=True,
+        #         draw_text="vf",
+        #         clear=True,
+        #         fig_title=f"Iteration: {iteration} | Score: {new_score} | Best Score: {best_score}",
+        #     )
+        #
+        # T *= 0.99  # Annealing
+        # losses.append(new_score)
 
     door_system.load_manually(best_e, best_r)
 
@@ -138,20 +138,20 @@ def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
 if __name__ == "__main__":
     # Initialize
     case_id = 1
-    n_sp = 500
-    iters = 100
-    T = 0.01
+    n_sp = 100
+    iters = 30
+    T = 0.1
 
     fp, vis = init(case_id)
 
-    vis.draw_mesh(
-        fp, show=True, draw_text="ve", axis_show=False, axis_equal=True
-    )
-    vis.draw_floor_plan(fp, show=True, draw_connection=True)
+    # vis.draw_mesh(
+    #     fp, show=True, draw_text="ve", axis_show=False, axis_equal=True
+    # )
+    # vis.draw_floor_plan(fp, show=True, draw_connection=True)
 
     door_system = create_door_system(fp)
 
-    vis.draw_mesh(fp, show=True, draw_text="e", clear=True)
+    # vis.draw_mesh(fp, show=True, draw_text="e", clear=True)
 
     sp = make_sample_points(n_sp)
     #
@@ -176,16 +176,16 @@ if __name__ == "__main__":
     # plt.colorbar()
 
     # vis.draw_floor_plan(fp, show=False, draw_connection=True)
-    vis.draw_mesh(fp, show=False, draw_text="", clear=True)
+    # vis.draw_mesh(fp, show=False, draw_text="", clear=True)
 
-    start = Point(np.array([0.4, 0.6]))
-    end = Point(np.array([0.3, 0.35]))
-    tripath = fp.find_tripath(start, end)
-    path = fp.simplify(tripath, start, end)
-    c = np.random.rand(3)
-    vis.draw_point(start, c=c, s=50)
-    vis.draw_point(end, c=c, s=50)
-    vis.draw_linepath(path, c=c, lw=1, a=1)
+    # start = Point(np.array([0.4, 0.6]))
+    # end = Point(np.array([0.3, 0.35]))
+    # tripath = fp.find_tripath(start, end)
+    # path = fp.simplify(tripath, start, end)
+    # c = np.random.rand(3)
+    # vis.draw_point(start, c=c, s=50)
+    # vis.draw_point(end, c=c, s=50)
+    # vis.draw_linepath(path, c=c, lw=1, a=1)
 
     # for i in range(0, 50, 2):
     #     start = sp[i]
@@ -198,7 +198,7 @@ if __name__ == "__main__":
     #         vis.draw_point(end, c=c, s=50)
     #         vis.draw_linepath(path, c=c, lw=1, a=1)
 
-    vis.show(f"Result {case_id}")
-
-    plt.plot(losses)
-    plt.show()
+    # vis.show(f"Result {case_id}")
+    #
+    # plt.plot(losses)
+    # plt.show()
