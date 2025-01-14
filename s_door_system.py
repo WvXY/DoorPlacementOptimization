@@ -12,9 +12,13 @@ class DoorSystem:
     # Metropolis-Hastings
     # ----------------------------------------------------
     def activate_all(self):
+        self.fp.reset_all_visited(self.fp.edges)
         for door_comp in self.ecs.doors.values():
-            door_comp.ratio = 0.5  # start from the middle
+            door_comp.ratio = (
+                0.5 if not door_comp.ratio else door_comp.ratio
+            )  # start from the middle
             self.activate(door_comp)
+            door_comp.bind_edge.visit()
 
     def propose(self, sigma=0.1):
         for entity_id, door_comp in list(self.ecs.doors.items()):
@@ -86,8 +90,6 @@ class DoorSystem:
         if door_comp.bind_edge is None:
             door_comp.bind_edge = door_comp.shared_edges[0]
         self._calc_bedge_cache(door_comp)
-
-        door_comp.bind_edge.reset_all_visited()
 
         # cut the edge
         cut_p0, cut_p1 = self._cut_at(door_comp, door_comp.ratio)
@@ -260,14 +262,16 @@ class DoorSystem:
                 if e is door_comp.bind_edge or e is door_comp.bind_edge.twin:
                     continue
 
+                if e.is_visited:
+                    continue
+
                 if e.ori is vertex or e.to is vertex:
                     return e
 
-            for e in door_comp.shared_edges:
-                if e.is_visited is False:
-                    return e
+            e = np.random.choice(door_comp.shared_edges)
+            return e
 
-            return None
+            # return None
 
         # search next edge
         if ratio >= door_comp.move_limit[1]:

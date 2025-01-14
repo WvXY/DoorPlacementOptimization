@@ -40,11 +40,15 @@ def init_fp_vis(case_id, np_seed=0):
 def create_door_system(fp):
     r0 = fp.get_by_rid(0)
     r1 = fp.get_by_rid(1)
+    e2 = fp.get_by_eid(2)
 
     ecs = ECS()
     door_system = DoorSystem(ecs, fp)
     door_cmp = DoorComponent(r0, r1)
     ecs.add_door_component(door_cmp)
+    # manually set the ratio
+    door_cmp.ratio = 0.1
+    door_cmp.bind_edge = e2
 
     door_system.activate_all()
 
@@ -62,8 +66,8 @@ def f(fp, sp, batch_size=50):
     valid_paths = 0
     # agents = [Agent(fp) for _ in range(batch_size)]
     # agent.init()
-    for i in range(0, len(sp) - 1):
-        # for i in range(0, len(sp), 2):
+    # for i in range(0, len(sp) - 1):
+    for i in range(0, len(sp), 2):
         start = sp[i]
         end = sp[i + 1]
         # start = agent.prev_pos
@@ -90,7 +94,7 @@ def metropolis_hasting(fp, door_system, iters=200):
     for iteration in range(iters):
 
         door_system.move_all_by(0.02)
-        print(door_comp)
+        print(iteration, door_comp)
 
         new_score = f(fp, sp)
 
@@ -104,9 +108,9 @@ def metropolis_hasting(fp, door_system, iters=200):
 
 if __name__ == "__main__":
     # Initialize
-    case_id = 1
-    n_sp = 100
-    iters = 100
+    case_id = 3
+    n_sp = 1000
+    iters = 80
 
     fp, vis = init_fp_vis(case_id)
 
@@ -138,4 +142,7 @@ if __name__ == "__main__":
 
     plt.scatter(xx, yy, c=ss, cmap="viridis")
     plt.colorbar()
+    plt.show()
+
+    plt.plot(ss)
     plt.show()
