@@ -23,7 +23,8 @@ def init_fp_vis(case_id, np_seed=0):
 
     # Load data
     ld = Loader(".")
-    ld.load_closed_rooms_case(case_id)
+    # ld.load_closed_rooms_case(case_id)
+    ld.load_custom("/assets/2r1d_loss.obj")
 
     fp = FLayout()
     fp.create_mesh(ld.vertices, ld.edges, 0)
@@ -40,15 +41,15 @@ def init_fp_vis(case_id, np_seed=0):
 def create_door_system(fp):
     r0 = fp.get_by_rid(0)
     r1 = fp.get_by_rid(1)
-    e2 = fp.get_by_eid(2)
+    e12 = fp.get_by_eid(35)
 
     ecs = ECS()
     door_system = DoorSystem(ecs, fp)
     door_cmp = DoorComponent(r0, r1)
     ecs.add_door_component(door_cmp)
     # manually set the ratio
-    door_cmp.ratio = 0.1
-    door_cmp.bind_edge = e2
+    door_cmp.ratio = 0.16
+    door_cmp.bind_edge = e12
 
     door_system.activate_all()
 
@@ -109,7 +110,7 @@ def metropolis_hasting(fp, door_system, iters=200):
 if __name__ == "__main__":
     # Initialize
     case_id = 3
-    n_sp = 1000
+    n_sp = 400
     iters = 80
 
     fp, vis = init_fp_vis(case_id)
@@ -129,7 +130,7 @@ if __name__ == "__main__":
     vis.draw_mesh(
         fp,
         show=False,
-        draw_text="e",
+        draw_text="",
         axis_show=False,
         axis_equal=True,
         clear=True,
@@ -142,7 +143,9 @@ if __name__ == "__main__":
 
     plt.scatter(xx, yy, c=ss, cmap="viridis")
     plt.colorbar()
+    plt.savefig("./2r1d_loss.svg")
     plt.show()
 
     plt.plot(ss)
+    plt.savefig("./loss_func_plot.svg")
     plt.show()

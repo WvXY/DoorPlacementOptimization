@@ -257,7 +257,7 @@ class DoorSystem:
     def _find_next_edge(self, door_comp, ratio):
         assert door_comp.is_active is False, "Door is already active"
 
-        def search_next_shared_edge(vertex):
+        def search_next_shared_edge(vertex) -> "Edge":
             for e in door_comp.shared_edges:
                 if e is door_comp.bind_edge or e is door_comp.bind_edge.twin:
                     continue
@@ -268,7 +268,9 @@ class DoorSystem:
                 if e.ori is vertex or e.to is vertex:
                     return e
 
-            e = np.random.choice(door_comp.shared_edges)
+            e = np.random.choice(
+                [e for e in door_comp.shared_edges if e.is_blocked]
+            )
             return e
 
             # return None

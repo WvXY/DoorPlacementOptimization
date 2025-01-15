@@ -23,8 +23,8 @@ def init(case_id, np_seed=0):
 
     # Load data
     ld = Loader(".")
-    # ld.load_closed_rooms_case(case_id)
-    ld.load_final_case(case_id)
+    ld.load_closed_rooms_case(case_id)
+    # ld.load_final_case(case_id)
 
     fp = FLayout()
     fp.create_mesh(ld.vertices, ld.edges, 0)
@@ -33,7 +33,8 @@ def init(case_id, np_seed=0):
 
     # Visualization
     vis = Visualizer()
-    vis.draw_mesh(fp, show=False, draw_text="e")
+    vis.draw_mesh(fp, show=False, draw_text="")
+    plt.savefig("./case_2doors_mesh.svg")
 
     return fp, vis
 
@@ -41,18 +42,14 @@ def init(case_id, np_seed=0):
 def create_door_system(fp):
     r0 = fp.get_by_rid(0)
     r1 = fp.get_by_rid(1)
-    r2 = fp.get_by_rid(2)
-    r3 = fp.get_by_rid(3)
-    r4 = fp.get_by_rid(4)
+    # r2 = fp.get_by_rid(2)
+    # r3 = fp.get_by_rid(3)
+    # r4 = fp.get_by_rid(4)
 
     ecs = ECS()
     door_system = DoorSystem(ecs, fp)
-    door_cmp03 = DoorComponent(r0, r3)
-    # door_cmp23 = DoorComponent(r2, r3)
-    door_cmp34 = DoorComponent(r3, r1)
-    ecs.add_door_component(door_cmp03)
-    # ecs.add_door_component(door_cmp23)
-    ecs.add_door_component(door_cmp34)
+    door_cmp = DoorComponent(r0, r1)
+    ecs.add_door_component(door_cmp)
 
     door_system.activate_all()
 
@@ -137,9 +134,9 @@ def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
 
 if __name__ == "__main__":
     # Initialize
-    case_id = 1
+    case_id = 5
     n_sp = 100
-    iters = 30
+    iters = 100
     T = 0.1
 
     fp, vis = init(case_id)
@@ -151,7 +148,9 @@ if __name__ == "__main__":
 
     door_system = create_door_system(fp)
 
-    # vis.draw_mesh(fp, show=True, draw_text="e", clear=True)
+    vis.draw_mesh(fp, show=False, draw_text="", clear=True)
+    # plt.savefig("./case_2doors_init.svg")
+    plt.show()
 
     sp = make_sample_points(n_sp)
     #
@@ -176,7 +175,7 @@ if __name__ == "__main__":
     # plt.colorbar()
 
     # vis.draw_floor_plan(fp, show=False, draw_connection=True)
-    # vis.draw_mesh(fp, show=False, draw_text="", clear=True)
+    vis.draw_mesh(fp, show=False, draw_text="", clear=True)
 
     # start = Point(np.array([0.4, 0.6]))
     # end = Point(np.array([0.3, 0.35]))
@@ -201,4 +200,5 @@ if __name__ == "__main__":
     # vis.show(f"Result {case_id}")
     #
     # plt.plot(losses)
-    # plt.show()
+    # plt.savefig("./case_2doors_res.svg")
+    plt.show()

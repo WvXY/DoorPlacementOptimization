@@ -21,6 +21,9 @@ class Loader:
     def load_final_case(self, idx):
         self.success = self._load("/assets/fp_final_{}.obj".format(idx))
 
+    def load_custom(self, obj_file):
+        self.success = self._load(obj_file)
+
     def set_root_dir(self, root_dir):
         self.__root_dir = root_dir
 
