@@ -35,9 +35,10 @@ def split_half_edge(edge, position):
     # update existing edges
     edge.next.prev = e_new
     edge.next.next = e0_t
+    edge.prev.prev = e0
     edge.twin.prev.next = e_new_t
     edge.twin.prev.prev = e1_t
-    edge.prev.prev = e0
+    edge.twin.next.next = e1
 
     e_new.is_blocked = edge.is_blocked
     e_new_t.is_blocked = edge.twin.is_blocked

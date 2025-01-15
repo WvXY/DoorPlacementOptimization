@@ -9,8 +9,9 @@ class _FInfo:
 
 class FVertex(Vertex, _FInfo):
     def __init__(self, xy):
-        Vertex.__init__(self, xy)
-        _FInfo.__init__(self)
+        # Vertex.__init__(self, xy)
+        # _FInfo.__init__(self)
+        super().__init__(xy)
 
     def __hash__(self):
         # for not hashable error
@@ -22,20 +23,21 @@ class FVertex(Vertex, _FInfo):
 
 class FEdge(Edge, _FInfo):
     def __init__(self, origin, to):
-        Edge.__init__(self, origin, to)
-        _FInfo.__init__(self)
+        # Edge.__init__(self, origin, to)
+        # _FInfo.__init__(self)
+        super().__init__(origin, to)
 
-    # not used, delete in the future
-    def disconnect(self):
-        if self.is_visited:
-            return False
-        if self.is_blocked:
-            return False
-
-        super().disconnect()
-        self.is_visited = True
-        self.twin.is_visited = True
-        return True
+    # # not used, delete in the future
+    # def disconnect(self):
+    #     if self.is_visited:
+    #         return False
+    #     if self.is_blocked:
+    #         return False
+    #
+    #     super().disconnect()
+    #     self.is_visited = True
+    #     self.twin.is_visited = True
+    #     return True
 
     def __repr__(self):
         return f"FEdge {self.eid} ({self.ori.vid} -> {self.to.vid})"
@@ -43,8 +45,7 @@ class FEdge(Edge, _FInfo):
 
 class FFace(Face, _FInfo):
     def __init__(self):
-        Face.__init__(self)
-        _FInfo.__init__(self)
+        super().__init__()
 
     # not used, delete in the future
     def merge(self, other: "FFace"):

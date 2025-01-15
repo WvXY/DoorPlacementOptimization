@@ -32,8 +32,9 @@ class _GeoBase:
             target.add(new)
         return False
 
-    def remove_duplicate(self):
-        _GeoBase.obj_list = set(_GeoBase.obj_list)
+    @classmethod
+    def remove_duplicate(cls):
+        _GeoBase.obj_list = set(cls.obj_list)
 
     @staticmethod
     def clear():
@@ -50,42 +51,42 @@ class _GeoBase:
 
 class _GInfo:
     def __init__(self):
-        self.__is_visited = False
-        self.__is_blocked = False
+        self._is_visited = False
+        self._is_blocked = False
 
     # visit actions
     def reset_all_visited(self):
         for obj in _GeoBase.obj_list:
-            obj.__is_visited = False
+            obj._is_visited = False
 
     def reset_visited(self):
-        self.__is_visited = False
+        self._is_visited = False
 
     @property
     def is_visited(self):
-        return self.__is_visited
+        return self._is_visited
 
     @is_visited.setter
     def is_visited(self, value):
         if not isinstance(value, bool):
             raise ValueError("Value must be boolean")
-        self.__is_visited = value
+        self._is_visited = value
 
     def visit(self):
-        self.__is_visited = True
+        self._is_visited = True
 
     # block/fixed actions
     @property
     def is_blocked(self):
-        return self.__is_blocked
+        return self._is_blocked
 
     @property
     def is_fixed(self):
-        return self.__is_blocked
+        return self._is_blocked
 
     @is_blocked.setter
     def is_blocked(self, value):
-        self.__is_blocked = value
+        self._is_blocked = value
 
     @is_fixed.setter
     def is_fixed(self, value):
@@ -208,6 +209,7 @@ class Edge(_GeoBase, _GInfo):
         self.prev = None
 
         self.is_blocked = is_blocked
+        self.is_visited = False
 
         # Private
         self.__eid = Edge.__eid

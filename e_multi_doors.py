@@ -4,7 +4,7 @@ from tqdm import tqdm
 
 # Basic Primitives
 from f_layout import FLayout
-from g_primitives import Point
+from g_primitives import Vertex as Point
 
 # DOOR SYSTEM
 from s_ecs import ECS
@@ -42,16 +42,25 @@ def init(case_id, np_seed=0):
 def create_door_system(fp):
     r0 = fp.get_by_rid(0)
     r1 = fp.get_by_rid(1)
-    # r2 = fp.get_by_rid(2)
+    r2 = fp.get_by_rid(2)
     # r3 = fp.get_by_rid(3)
     # r4 = fp.get_by_rid(4)
 
     ecs = ECS()
     door_system = DoorSystem(ecs, fp)
-    door_cmp = DoorComponent(r0, r1)
-    ecs.add_door_component(door_cmp)
+    door01 = DoorComponent(r0, r1)
+    ecs.add_door_component(door01)
+    door_system.activate(door01)
 
-    door_system.activate_all()
+    vis.draw_mesh(fp, show=True, clear=True, draw_text="e")
+
+    door21 = DoorComponent(r2, r1)
+    ecs.add_door_component(door21)
+    door_system.activate(door21)
+
+    # ecs.add_door_component(DoorComponent(r1, r2))
+
+    # door_system.activate_all()
 
     return door_system
 
@@ -107,24 +116,24 @@ def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
         else:
             door_system.reject()
 
-        # if vis and iteration % 20 == 0:
-        #     vis.draw_mesh(
-        #         fp,
-        #         show=True,
-        #         draw_text="e",
-        #         clear=True,
-        #         fig_title=f"Iteration: {iteration} | Score: {new_score} | Best Score: {best_score}",
-        #     )
-        #
-        #     vis.draw_mesh(
-        #         fp,
-        #         show=True,
-        #         draw_text="vf",
-        #         clear=True,
-        #         fig_title=f"Iteration: {iteration} | Score: {new_score} | Best Score: {best_score}",
-        #     )
-        #
-        # T *= 0.99  # Annealing
+        if vis and iteration % 22 == 0:
+            vis.draw_mesh(
+                fp,
+                show=True,
+                draw_text="e",
+                clear=True,
+                fig_title=f"Iteration: {iteration} | Score: {new_score} | Best Score: {best_score}",
+            )
+
+            vis.draw_mesh(
+                fp,
+                show=True,
+                draw_text="vf",
+                clear=True,
+                fig_title=f"Iteration: {iteration} | Score: {new_score} | Best Score: {best_score}",
+            )
+
+        T *= 0.99  # Annealing
         # losses.append(new_score)
 
     door_system.load_manually(best_e, best_r)
@@ -175,7 +184,7 @@ if __name__ == "__main__":
     # plt.colorbar()
 
     # vis.draw_floor_plan(fp, show=False, draw_connection=True)
-    vis.draw_mesh(fp, show=False, draw_text="", clear=True)
+    vis.draw_mesh(fp, show=False, draw_text="ve", clear=True)
 
     # start = Point(np.array([0.4, 0.6]))
     # end = Point(np.array([0.3, 0.35]))

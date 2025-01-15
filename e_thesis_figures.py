@@ -13,7 +13,6 @@ case_id = "5"
 np.random.seed(0)
 ld = Loader(".")
 ld.load_w_walls_case(case_id)
-ld.optimize()
 
 nm = NavMesh()
 nm.create_mesh(ld.vertices, ld.edges, 0)

@@ -14,11 +14,8 @@ class DoorSystem:
     def activate_all(self):
         self.fp.reset_all_visited(self.fp.edges)
         for door_comp in self.ecs.doors.values():
-            door_comp.ratio = (
-                0.5 if not door_comp.ratio else door_comp.ratio
-            )  # start from the middle
             self.activate(door_comp)
-            door_comp.bind_edge.visit()
+            # door_comp.bind_edge.visit()
 
     def propose(self, sigma=0.1):
         for entity_id, door_comp in list(self.ecs.doors.items()):
@@ -86,6 +83,7 @@ class DoorSystem:
                 door_comp.bind_rooms[1].add_face(faces[0])
 
         # Find shared edges between the two rooms
+        door_comp.ratio = 0.5 if not door_comp.ratio else door_comp.ratio
         self._calc_brooms_cache(door_comp)
         if door_comp.bind_edge is None:
             door_comp.bind_edge = door_comp.shared_edges[0]
@@ -257,7 +255,7 @@ class DoorSystem:
     def _find_next_edge(self, door_comp, ratio):
         assert door_comp.is_active is False, "Door is already active"
 
-        def search_next_shared_edge(vertex) -> "Edge":
+        def search_next_shared_edge(vertex):
             for e in door_comp.shared_edges:
                 if e is door_comp.bind_edge or e is door_comp.bind_edge.twin:
                     continue
@@ -268,10 +266,10 @@ class DoorSystem:
                 if e.ori is vertex or e.to is vertex:
                     return e
 
-            e = np.random.choice(
+            print(f"{[e.eid for e in door_comp.shared_edges]}")
+            return np.random.choice(
                 [e for e in door_comp.shared_edges if e.is_blocked]
             )
-            return e
 
             # return None
 
