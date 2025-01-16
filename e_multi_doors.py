@@ -40,6 +40,8 @@ def init(case_id, np_seed=0):
 
 
 def create_door_system(fp):
+    vis.draw_mesh(fp, show=True, draw_text="fe", clear=True)
+
     r0 = fp.get_by_rid(0)
     r1 = fp.get_by_rid(1)
     r2 = fp.get_by_rid(2)
@@ -50,17 +52,20 @@ def create_door_system(fp):
     door_system = DoorSystem(ecs, fp)
     door01 = DoorComponent(r0, r1)
     ecs.add_door_component(door01)
-    door_system.activate(door01)
+    # door_system.activate(door01)
 
-    vis.draw_mesh(fp, show=True, clear=True, draw_text="e")
+    # vis.draw_mesh(fp, show=True, clear=True, draw_text="e")
 
     door21 = DoorComponent(r2, r1)
     ecs.add_door_component(door21)
-    door_system.activate(door21)
+    # door_system.activate(door21)
+
+    door02 = DoorComponent(r0, r2)
+    ecs.add_door_component(door02)
 
     # ecs.add_door_component(DoorComponent(r1, r2))
 
-    # door_system.activate_all()
+    door_system.activate_all()
 
     return door_system
 
@@ -120,18 +125,18 @@ def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
             vis.draw_mesh(
                 fp,
                 show=True,
-                draw_text="e",
+                draw_text="",
                 clear=True,
-                fig_title=f"Iteration: {iteration} | Score: {new_score} | Best Score: {best_score}",
+                fig_title=f"Iteration: {iteration} | Score: {new_score:.3f} | Best Score: {best_score:.3f}",
             )
 
-            vis.draw_mesh(
-                fp,
-                show=True,
-                draw_text="vf",
-                clear=True,
-                fig_title=f"Iteration: {iteration} | Score: {new_score} | Best Score: {best_score}",
-            )
+            # vis.draw_mesh(
+            #     fp,
+            #     show=True,
+            #     draw_text="vf",
+            #     clear=True,
+            #     fig_title=f"Iteration: {iteration} | Score: {new_score} | Best Score: {best_score}",
+            # )
 
         T *= 0.99  # Annealing
         # losses.append(new_score)
@@ -146,7 +151,7 @@ if __name__ == "__main__":
     case_id = 5
     n_sp = 100
     iters = 100
-    T = 0.1
+    T = 0.01
 
     fp, vis = init(case_id)
 
