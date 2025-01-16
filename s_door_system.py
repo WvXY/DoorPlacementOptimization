@@ -13,6 +13,10 @@ class DoorSystem:
     # ----------------------------------------------------
     def activate_all(self):
         self.fp.reset_all_visited(self.fp.edges)
+        # All shared edges need to be calculated first
+        for door_comp in self.ecs.doors.values():
+            self._calc_brooms_cache(door_comp)
+
         for door_comp in self.ecs.doors.values():
             self.activate(door_comp)
             # door_comp.bind_edge.visit()
@@ -38,7 +42,7 @@ class DoorSystem:
 
     def load_manually(self, edges, ratios):
         for door_comp, edge, ratio in zip(
-                self.ecs.doors.values(), edges, ratios
+            self.ecs.doors.values(), edges, ratios
         ):
             # print(f"Manually load door {door_comp} to edge {edge.eid}")
             self.manually_load_history(door_comp, edge, ratio)
@@ -84,8 +88,6 @@ class DoorSystem:
 
         # Find shared edges between the two rooms
         door_comp.ratio = 0.5 if not door_comp.ratio else door_comp.ratio
-        self._calc_brooms_cache(door_comp)
-        # print(f"shared edges: {[e.eid for e in door_comp.shared_edges]}")
         if door_comp.bind_edge is None:
             door_comp.bind_edge = door_comp.shared_edges[0]
         self._calc_bedge_cache(door_comp)
@@ -188,8 +190,8 @@ class DoorSystem:
 
     def _ratio_to_pos(self, door_comp, ratio):
         return (
-                door_comp.bind_edge.ori.xy
-                + door_comp.bind_edge.get_dir() * ratio * door_comp.e_len
+            door_comp.bind_edge.ori.xy
+            + door_comp.bind_edge.get_dir() * ratio * door_comp.e_len
         )
 
     def _cut_at(self, door_comp, ratio):
@@ -256,9 +258,11 @@ class DoorSystem:
 
         def search_next_shared_edge(vertex):
             for e in door_comp.shared_edges:
-                if (e is door_comp.bind_edge
-                        or e is door_comp.bind_edge.twin
-                        or e.is_visited):
+                if (
+                    e is door_comp.bind_edge
+                    or e is door_comp.bind_edge.twin
+                    or e.is_visited
+                ):
                     continue
 
                 if e.ori is vertex or e.to is vertex:

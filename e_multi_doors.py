@@ -23,8 +23,8 @@ def init(case_id, np_seed=0):
 
     # Load data
     ld = Loader(".")
-    ld.load_closed_rooms_case(case_id)
-    # ld.load_final_case(case_id)
+    # ld.load_closed_rooms_case(case_id)
+    ld.load_final_case(case_id)
 
     fp = FLayout()
     fp.create_mesh(ld.vertices, ld.edges, 0)
@@ -34,34 +34,37 @@ def init(case_id, np_seed=0):
     # Visualization
     vis = Visualizer()
     vis.draw_mesh(fp, show=False, draw_text="")
-    plt.savefig("./case_2doors_mesh.svg")
+    # plt.savefig("./case_2doors_mesh.svg")
 
     return fp, vis
 
 
 def create_door_system(fp):
-    vis.draw_mesh(fp, show=True, draw_text="fe", clear=True)
+    vis.draw_floor_plan(fp, show=True, draw_connection=True)
 
     r0 = fp.get_by_rid(0)
     r1 = fp.get_by_rid(1)
     r2 = fp.get_by_rid(2)
-    # r3 = fp.get_by_rid(3)
-    # r4 = fp.get_by_rid(4)
+    r3 = fp.get_by_rid(3)
+    r4 = fp.get_by_rid(4)
 
     ecs = ECS()
     door_system = DoorSystem(ecs, fp)
-    door01 = DoorComponent(r0, r1)
-    ecs.add_door_component(door01)
+    door23 = DoorComponent(r2, r3)
+    ecs.add_door_component(door23)
     # door_system.activate(door01)
 
     # vis.draw_mesh(fp, show=True, clear=True, draw_text="e")
 
-    door21 = DoorComponent(r2, r1)
-    ecs.add_door_component(door21)
+    door31 = DoorComponent(r3, r1)
+    ecs.add_door_component(door31)
     # door_system.activate(door21)
 
-    door02 = DoorComponent(r0, r2)
-    ecs.add_door_component(door02)
+    door03 = DoorComponent(r0, r3)
+    ecs.add_door_component(door03)
+
+    door34 = DoorComponent(r3, r4)
+    ecs.add_door_component(door34)
 
     # ecs.add_door_component(DoorComponent(r1, r2))
 
@@ -70,8 +73,14 @@ def create_door_system(fp):
     return door_system
 
 
-def make_sample_points(n=300):
-    return [Point(np.random.rand(2)) for _ in range(n)]
+def make_sample_points(fp, n=300):
+    sp = []
+    while n > 0:
+        p = Point(np.random.rand(2))
+        if fp.is_inside(p):
+            sp.append(p)
+            n -= 1
+    return sp
 
 
 def f(fp, sp, batch_size=50):
@@ -148,8 +157,8 @@ def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
 
 if __name__ == "__main__":
     # Initialize
-    case_id = 5
-    n_sp = 100
+    case_id = 1
+    n_sp = 1000
     iters = 100
     T = 0.01
 
@@ -166,7 +175,7 @@ if __name__ == "__main__":
     # plt.savefig("./case_2doors_init.svg")
     plt.show()
 
-    sp = make_sample_points(n_sp)
+    sp = make_sample_points(fp, n_sp)
     #
     best_e, best_r, losses = metropolis_hasting(
         fp, door_system, T=T, iters=iters, vis=vis
@@ -189,7 +198,7 @@ if __name__ == "__main__":
     # plt.colorbar()
 
     # vis.draw_floor_plan(fp, show=False, draw_connection=True)
-    vis.draw_mesh(fp, show=False, draw_text="ve", clear=True)
+    vis.draw_mesh(fp, show=False, draw_text="", clear=True)
 
     # start = Point(np.array([0.4, 0.6]))
     # end = Point(np.array([0.3, 0.35]))
@@ -200,16 +209,18 @@ if __name__ == "__main__":
     # vis.draw_point(end, c=c, s=50)
     # vis.draw_linepath(path, c=c, lw=1, a=1)
 
-    # for i in range(0, 50, 2):
-    #     start = sp[i]
-    #     end = sp[i + 1]
-    #     tripath = fp.find_tripath(start, end)
-    #     path = fp.simplify(tripath, start, end)
-    #     if path:
-    #         c = np.random.rand(3)
-    #         vis.draw_point(start, c=c, s=50)
-    #         vis.draw_point(end, c=c, s=50)
-    #         vis.draw_linepath(path, c=c, lw=1, a=1)
+    for i in range(0, 50, 2):
+        start = sp[i]
+        end = sp[i + 1]
+        tripath = fp.find_tripath(start, end)
+        path = fp.simplify(tripath, start, end)
+        if path:
+            c = np.random.rand(3)
+            vis.draw_point(start, c=c, s=50)
+            vis.draw_point(end, c=c, s=50)
+            vis.draw_linepath(path, c=c, lw=1, a=1)
+        else:
+            plt.plot([start.x, end.x], [start.y, end.y], "r--", lw=1)
 
     # vis.show(f"Result {case_id}")
     #

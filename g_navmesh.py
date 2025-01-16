@@ -29,6 +29,9 @@ class NavMesh(Mesh):
                 return f
         return None
 
+    def is_inside(self, point):
+        return self.get_point_inside_face(point) is not None
+
     @staticmethod
     def is_inside_face(point: Point, face: Face):
         # Compute barycentric coordinates using a single cross product
