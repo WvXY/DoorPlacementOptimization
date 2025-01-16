@@ -72,9 +72,9 @@ if __name__ == "__main__":
 
     # Load data
     ld = Loader(".")
-    # ld.load_closed_rooms_case(case_id)
-    ld.load_final_case(0)
-    ld.optimize()
+    # ld.load_closed_rooms_case(7)
+    # ld.load_w_walls_case(1)
+    ld.load_final_case(1)
 
     print(ld.vertices)
 
@@ -91,12 +91,18 @@ if __name__ == "__main__":
     t = i_cdt.get_triangles(to_numpy=True)
 
     for ee in e_raw:
-        plt.plot(v_raw[ee, 0], v_raw[ee, 1], "b-", lw=2)
+        plt.plot(v_raw[ee, 0], v_raw[ee, 1], "k-", lw=3)
 
     for tri in t:
-        plt.fill(v[tri, 0], v[tri, 1], edgecolor="black", fill=False)
+        plt.fill(v[tri, 0], v[tri, 1], edgecolor="black", fill=True, alpha=0.3)
+
+    for v in v_raw:
+        plt.scatter(v[0], v[1], c="k", s=64)
 
     # for ee in e:
     #     plt.plot(v[ee, 0], v[ee, 1], "r-", lw=8)
 
+    plt.axis("equal")
+    plt.axis("off")
+    plt.savefig("cdt_demo_3.svg")
     plt.show()
