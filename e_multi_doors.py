@@ -23,8 +23,9 @@ def init(case_id, np_seed=0):
 
     # Load data
     ld = Loader(".")
-    # ld.load_closed_rooms_case(case_id)
-    ld.load_final_case(case_id)
+    # ld.load_closed_rooms_case(7)
+    # ld.load_w_walls_case(7)
+    ld.load_final_case(1)
 
     fp = FLayout()
     fp.create_mesh(ld.vertices, ld.edges, 0)
@@ -34,9 +35,9 @@ def init(case_id, np_seed=0):
     # Visualization
     vis = Visualizer()
     vis.draw_mesh(
-        fp, show=False, draw_text="", axis_show=False, axis_equal=True
+        fp, show=False, draw_text="e", axis_show=False, axis_equal=True
     )
-    plt.savefig("./abl_fp_init.svg")
+    plt.savefig("./case_fp_init.svg")
 
     return fp, vis
 
@@ -46,7 +47,7 @@ def create_door_system(fp):
     plt.axis("equal")
     plt.axis("off")
     plt.title("Room Initialization")
-    plt.savefig("./abl_room_init.svg")
+    plt.savefig("./case_room_init.svg")
     plt.show()
 
     r0 = fp.get_by_rid(0)
@@ -54,34 +55,33 @@ def create_door_system(fp):
     r2 = fp.get_by_rid(2)
     r3 = fp.get_by_rid(3)
     r4 = fp.get_by_rid(4)
-    r5 = fp.get_by_rid(5)
-
-    e14 = fp.get_by_eid(14)
+    # r5 = fp.get_by_rid(5)
 
     ecs = ECS()
     door_system = DoorSystem(ecs, fp)
 
-    door02 = DoorComponent(r0, r2)
-    ecs.add_door_component(door02)
-
-    door12 = DoorComponent(r1, r2)
-    ecs.add_door_component(door12)
-
-    door23 = DoorComponent(r2, r3)
+    door13 = DoorComponent(r1, r3, 0.2)
+    ecs.add_door_component(door13)
+    #
+    door03 = DoorComponent(r0, r3)
+    ecs.add_door_component(door03)
+    #
+    door23 = DoorComponent(r2, r3, 0.2)
     ecs.add_door_component(door23)
-
-    door24 = DoorComponent(r2, r4)
-    ecs.add_door_component(door24)
-
-    door25 = DoorComponent(r2, r5, door_length=0.2)
-    ecs.add_door_component(door25)
+    #
+    door34 = DoorComponent(r3, r4)
+    ecs.add_door_component(door34)
+    #
+    # door25 = DoorComponent(r2, r5, door_length=0.2)
+    # ecs.add_door_component(door25)
 
     # front door
+    e_d = fp.get_by_eid(6)
     front_door = DoorComponent(None, None)
     front_door.need_optimization = False
-    front_door.bind_edge = e14
-    front_door.e_len = e14.get_length()
-    front_door.ratio = 0.8
+    front_door.bind_edge = e_d
+    front_door.e_len = e_d.get_length()
+    front_door.ratio = 0.12
     ecs.add_door_component(front_door)
 
     door_system.activate_all()
@@ -129,7 +129,7 @@ def f(fp, sp, batch_size=50):
     for door in door_system.ecs.doors.values():
         pos = door_system._ratio_to_pos(door, door.ratio)
         if not door.need_optimization:
-            pos[1] = pos[1] - 0.01
+            pos[0] = pos[0] - 0.05
             # print(f"Front door pos: {pos}")
             st = Point(pos)
         else:
@@ -200,7 +200,7 @@ def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
 
 if __name__ == "__main__":
     # Initialize
-    case_id = 2
+    case_id = 1
     n_sp = 200
     iters = 100
     T = 0.1
