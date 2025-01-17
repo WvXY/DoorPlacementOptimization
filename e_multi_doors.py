@@ -25,7 +25,7 @@ def init(case_id, np_seed=0):
     ld = Loader(".")
     # ld.load_closed_rooms_case(7)
     # ld.load_w_walls_case(7)
-    ld.load_final_case(1)
+    ld.load_final_case(0)
 
     fp = FLayout()
     fp.create_mesh(ld.vertices, ld.edges, 0)
@@ -60,28 +60,28 @@ def create_door_system(fp):
     ecs = ECS()
     door_system = DoorSystem(ecs, fp)
 
-    door13 = DoorComponent(r1, r3, 0.2)
-    ecs.add_door_component(door13)
+    door01 = DoorComponent(r1, r0)
+    ecs.add_door_component(door01)
     #
-    door03 = DoorComponent(r0, r3)
+    door03 = DoorComponent(r0, r3, 0.2)
     ecs.add_door_component(door03)
     #
-    door23 = DoorComponent(r2, r3, 0.2)
-    ecs.add_door_component(door23)
+    door20 = DoorComponent(r2, r0, 0.3)
+    ecs.add_door_component(door20)
     #
-    door34 = DoorComponent(r3, r4)
-    ecs.add_door_component(door34)
+    door04 = DoorComponent(r0, r4)
+    ecs.add_door_component(door04)
     #
     # door25 = DoorComponent(r2, r5, door_length=0.2)
     # ecs.add_door_component(door25)
 
     # front door
-    e_d = fp.get_by_eid(6)
+    e_d = fp.get_by_eid(5)
     front_door = DoorComponent(None, None)
     front_door.need_optimization = False
     front_door.bind_edge = e_d
     front_door.e_len = e_d.get_length()
-    front_door.ratio = 0.12
+    front_door.ratio = 0.9
     ecs.add_door_component(front_door)
 
     door_system.activate_all()
@@ -128,8 +128,9 @@ def f(fp, sp, batch_size=50):
     st, end = None, []
     for door in door_system.ecs.doors.values():
         pos = door_system._ratio_to_pos(door, door.ratio)
+        # pos = pos + 0.01
         if not door.need_optimization:
-            pos[0] = pos[0] - 0.05
+            pos[1] -= 0.01
             # print(f"Front door pos: {pos}")
             st = Point(pos)
         else:
