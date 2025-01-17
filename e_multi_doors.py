@@ -47,28 +47,49 @@ def create_door_system(fp):
     r2 = fp.get_by_rid(2)
     r3 = fp.get_by_rid(3)
     r4 = fp.get_by_rid(4)
+    r5 = fp.get_by_rid(5)
+
+    e14 = fp.get_by_eid(14)
 
     ecs = ECS()
     door_system = DoorSystem(ecs, fp)
+
+    vis.draw_mesh(fp, show=True, clear=True, draw_text="e")
+    #
+    # door31 = DoorComponent(r3, r1, door_length=0.18)
+    # ecs.add_door_component(door31)
+    # # door_system.activate(door21)
+
+    door02 = DoorComponent(r0, r2)
+    ecs.add_door_component(door02)
+
+    door12 = DoorComponent(r1, r2)
+    ecs.add_door_component(door12)
+
     door23 = DoorComponent(r2, r3)
     ecs.add_door_component(door23)
-    # door_system.activate(door01)
 
-    # vis.draw_mesh(fp, show=True, clear=True, draw_text="e")
+    door24 = DoorComponent(r2, r4)
+    ecs.add_door_component(door24)
 
-    door31 = DoorComponent(r3, r1)
-    ecs.add_door_component(door31)
-    # door_system.activate(door21)
+    door25 = DoorComponent(r2, r5, door_length=0.2)
+    ecs.add_door_component(door25)
 
-    door03 = DoorComponent(r0, r3)
-    ecs.add_door_component(door03)
-
-    door34 = DoorComponent(r3, r4)
-    ecs.add_door_component(door34)
-
-    # ecs.add_door_component(DoorComponent(r1, r2))
+    # front door
+    front_door = DoorComponent(None, None)
+    front_door.need_optimization = False
+    front_door.bind_edge = e14
+    front_door.e_len = e14.get_length()
+    front_door.ratio = 0.8
+    ecs.add_door_component(front_door)
 
     door_system.activate_all()
+
+    vis.draw_mesh(fp, show=False, clear=True, draw_text="")
+    for door in door_system.ecs.doors.values():
+        pos = door_system._ratio_to_pos(door, door.ratio)
+        vis.draw_point(Point(pos), c="r", s=50)
+    vis.show("Door System")
 
     return door_system
 
@@ -86,23 +107,33 @@ def make_sample_points(fp, n=300):
 def f(fp, sp, batch_size=50):
     # indices = np.random.choice(range(0, 500, 2), batch_size, replace=False)
 
-    loss = 0
-    valid_paths = 0
-    # agents = [Agent(fp) for _ in range(batch_size)]
-    # agent.init()
+    traffic_loss = 0
     for i in range(0, len(sp) - 1):
         # for i in range(0, len(sp), 2):
         start = sp[i]
         end = sp[i + 1]
-        # start = agent.prev_pos
-        # end = agent.curr_pos
         tripath = fp.find_tripath(start, end)
         path = fp.simplify(tripath, start, end)
         if path:
-            valid_paths += 1
-            loss += loss_func(path)
-        # agent.next()
-    return loss / valid_paths if valid_paths > 0 else float("inf")
+            traffic_loss += loss_func(path)
+
+    # entrance loss
+    entrance_loss = 0
+    st, end = None, []
+    for door in door_system.ecs.doors.values():
+        pos = door_system._ratio_to_pos(door, door.ratio)
+        if not door.need_optimization:
+            st = Point(pos)
+        else:
+            end.append(Point(pos))
+
+    for e in end:
+        tripath = fp.find_tripath(st, e)
+        path = fp.simplify(tripath, st, e)
+        if path:
+            entrance_loss += 2 * loss_func(path) / len(end)
+
+    return entrance_loss
 
 
 def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
@@ -130,7 +161,7 @@ def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
         else:
             door_system.reject()
 
-        if vis and iteration % 22 == 0:
+        if vis and iteration % 10 == 0:
             vis.draw_mesh(
                 fp,
                 show=True,
@@ -157,10 +188,10 @@ def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
 
 if __name__ == "__main__":
     # Initialize
-    case_id = 1
-    n_sp = 1000
+    case_id = 2
+    n_sp = 100
     iters = 100
-    T = 0.01
+    T = 0.001
 
     fp, vis = init(case_id)
 
@@ -199,6 +230,9 @@ if __name__ == "__main__":
 
     # vis.draw_floor_plan(fp, show=False, draw_connection=True)
     vis.draw_mesh(fp, show=False, draw_text="", clear=True)
+    for door in door_system.ecs.doors.values():
+        pos = door_system._ratio_to_pos(door, door.ratio)
+        vis.draw_point(Point(pos), c="r", s=50)
 
     # start = Point(np.array([0.4, 0.6]))
     # end = Point(np.array([0.3, 0.35]))

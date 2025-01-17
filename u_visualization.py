@@ -109,7 +109,7 @@ class Visualizer:
                 continue
 
             tri = [n.xy for n in f.verts]
-            self.fig.add_patch(patches.Polygon(tri, color="k", alpha=0.2))
+            self.fig.add_patch(patches.Polygon(tri, color="k", alpha=0.1))
 
         for fe in mesh.get_block_edges():
             ori, to = fe.ori, fe.to

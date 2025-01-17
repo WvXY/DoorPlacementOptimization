@@ -3,11 +3,11 @@ import numpy as np
 
 def loss_func(path):
     total_cost = 0
-    total_cost += flow_loss(path)
+    total_cost += traffic_loss(path)
     return total_cost
 
 
-def flow_loss(path):
+def traffic_loss(path):
     return sum(
         np.linalg.norm(path[i].xy - path[i + 1].xy)
         for i in range(len(path) - 1)

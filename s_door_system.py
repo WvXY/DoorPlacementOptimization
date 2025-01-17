@@ -23,6 +23,9 @@ class DoorSystem:
 
     def propose(self, sigma=0.1):
         for entity_id, door_comp in list(self.ecs.doors.items()):
+            if not door_comp.need_optimization:
+                return
+
             if door_comp.is_active:
                 self.step(door_comp, sigma=sigma)
             else:
@@ -35,6 +38,9 @@ class DoorSystem:
 
     def reject(self):
         for entity_id, door_comp in list(self.ecs.doors.items()):
+            if not door_comp.need_optimization:
+                return
+
             if door_comp.is_active:
                 self._restore_last_state(door_comp)
             else:
@@ -64,8 +70,12 @@ class DoorSystem:
         Split the edge and add new geometry to the rooms.
         """
         assert door_comp.is_active is False, "Door is already active"
-        assert door_comp.bind_rooms[0] is not None, "Room 0 is not set"
-        assert door_comp.bind_rooms[1] is not None, "Room 1 is not set"
+        if door_comp.need_optimization:
+            assert door_comp.bind_rooms[0] is not None, "Room 0 is not set"
+            assert door_comp.bind_rooms[1] is not None, "Room 1 is not set"
+        else:
+            door_comp.is_active = True
+            return  # no need to split the edge
 
         def add_two_face_to_rooms(door_comp, faces):
             """A dirty way to add two new faces to the existing rooms"""
@@ -151,7 +161,7 @@ class DoorSystem:
             self.activate(reactivate_list.pop())
 
     def step(self, door_comp, delta=0.0, sigma=0.1):
-        if not door_comp.is_active:
+        if not door_comp.is_active or not door_comp.need_optimization:
             return
 
         # Possibly do random motion or geometry updates
@@ -208,9 +218,15 @@ class DoorSystem:
         self._calc_limits(door_comp)
 
     def _calc_brooms_cache(self, door_comp):
-        door_comp.shared_edges = door_comp.bind_rooms[0].get_shared_edges(
-            door_comp.bind_rooms[1]
-        )
+        if door_comp.need_optimization:
+            door_comp.shared_edges = door_comp.bind_rooms[0].get_shared_edges(
+                door_comp.bind_rooms[1]
+            )
+            door_comp.shared_edges = [
+                e
+                for e in door_comp.shared_edges
+                if e.get_length() > door_comp.d_len
+            ]
 
     # constraints
     def _calc_limits(self, door_comp):
@@ -315,6 +331,9 @@ class DoorSystem:
             self.activate(door_comp)
 
     def manually_load_history(self, door_comp, edge, ratio):
+        if not door_comp.need_optimization:
+            return
+
         door_comp.bind_edge = edge
         door_comp.ratio = ratio
         self.deactivate(door_comp)
