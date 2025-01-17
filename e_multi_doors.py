@@ -33,14 +33,21 @@ def init(case_id, np_seed=0):
 
     # Visualization
     vis = Visualizer()
-    vis.draw_mesh(fp, show=False, draw_text="")
-    # plt.savefig("./case_2doors_mesh.svg")
+    vis.draw_mesh(
+        fp, show=False, draw_text="", axis_show=False, axis_equal=True
+    )
+    plt.savefig("./abl_fp_init.svg")
 
     return fp, vis
 
 
 def create_door_system(fp):
-    vis.draw_floor_plan(fp, show=True, draw_connection=True)
+    vis.draw_floor_plan(fp, show=False, draw_connection=True)
+    plt.axis("equal")
+    plt.axis("off")
+    plt.title("Room Initialization")
+    plt.savefig("./abl_room_init.svg")
+    plt.show()
 
     r0 = fp.get_by_rid(0)
     r1 = fp.get_by_rid(1)
@@ -53,12 +60,6 @@ def create_door_system(fp):
 
     ecs = ECS()
     door_system = DoorSystem(ecs, fp)
-
-    vis.draw_mesh(fp, show=True, clear=True, draw_text="e")
-    #
-    # door31 = DoorComponent(r3, r1, door_length=0.18)
-    # ecs.add_door_component(door31)
-    # # door_system.activate(door21)
 
     door02 = DoorComponent(r0, r2)
     ecs.add_door_component(door02)
@@ -89,6 +90,10 @@ def create_door_system(fp):
     for door in door_system.ecs.doors.values():
         pos = door_system._ratio_to_pos(door, door.ratio)
         vis.draw_point(Point(pos), c="r", s=50)
+    plt.axis("equal")
+    plt.title("Door System")
+    plt.axis("off")
+    plt.savefig("./abl_door_init.svg")
     vis.show("Door System")
 
     return door_system
@@ -116,6 +121,7 @@ def f(fp, sp, batch_size=50):
         path = fp.simplify(tripath, start, end)
         if path:
             traffic_loss += loss_func(path)
+    traffic_loss /= len(sp) / 2
 
     # entrance loss
     entrance_loss = 0
@@ -123,6 +129,8 @@ def f(fp, sp, batch_size=50):
     for door in door_system.ecs.doors.values():
         pos = door_system._ratio_to_pos(door, door.ratio)
         if not door.need_optimization:
+            pos[1] = pos[1] - 0.01
+            # print(f"Front door pos: {pos}")
             st = Point(pos)
         else:
             end.append(Point(pos))
@@ -130,10 +138,13 @@ def f(fp, sp, batch_size=50):
     for e in end:
         tripath = fp.find_tripath(st, e)
         path = fp.simplify(tripath, st, e)
-        if path:
-            entrance_loss += 2 * loss_func(path) / len(end)
+        if path is None:
+            print(f"Entrance path not found: {st.xy} -> {e.xy}")
+            entrance_loss += np.sqrt((st.xy - e.xy) @ (st.xy - e.xy)) / len(end)
+        else:
+            entrance_loss += loss_func(path) / len(end)
 
-    return entrance_loss
+    return traffic_loss + 2 * entrance_loss
 
 
 def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
@@ -155,6 +166,7 @@ def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
         alpha = np.exp(-df / T)
         if df < 0 or np.random.rand() < alpha:
             old_score = new_score
+            losses.append(new_score)
             if new_score < best_score:
                 best_e, best_r = door_system.get_states()
                 best_score = new_score
@@ -189,9 +201,9 @@ def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
 if __name__ == "__main__":
     # Initialize
     case_id = 2
-    n_sp = 100
+    n_sp = 200
     iters = 100
-    T = 0.001
+    T = 0.1
 
     fp, vis = init(case_id)
 
@@ -202,9 +214,16 @@ if __name__ == "__main__":
 
     door_system = create_door_system(fp)
 
-    vis.draw_mesh(fp, show=False, draw_text="", clear=True)
-    # plt.savefig("./case_2doors_init.svg")
-    plt.show()
+    # vis.draw_mesh(
+    #     fp,
+    #     show=False,
+    #     draw_text="",
+    #     clear=True,
+    #     axis_show=False,
+    #     axis_equal=True,
+    # )
+    # plt.savefig("./abl_fp_init.svg")
+    # plt.show()
 
     sp = make_sample_points(fp, n_sp)
     #
@@ -228,36 +247,34 @@ if __name__ == "__main__":
 
     # plt.colorbar()
 
+    plt.plot(losses)
+
     # vis.draw_floor_plan(fp, show=False, draw_connection=True)
     vis.draw_mesh(fp, show=False, draw_text="", clear=True)
     for door in door_system.ecs.doors.values():
         pos = door_system._ratio_to_pos(door, door.ratio)
         vis.draw_point(Point(pos), c="r", s=50)
-
-    # start = Point(np.array([0.4, 0.6]))
-    # end = Point(np.array([0.3, 0.35]))
-    # tripath = fp.find_tripath(start, end)
-    # path = fp.simplify(tripath, start, end)
-    # c = np.random.rand(3)
-    # vis.draw_point(start, c=c, s=50)
-    # vis.draw_point(end, c=c, s=50)
-    # vis.draw_linepath(path, c=c, lw=1, a=1)
-
-    for i in range(0, 50, 2):
-        start = sp[i]
-        end = sp[i + 1]
-        tripath = fp.find_tripath(start, end)
-        path = fp.simplify(tripath, start, end)
-        if path:
-            c = np.random.rand(3)
-            vis.draw_point(start, c=c, s=50)
-            vis.draw_point(end, c=c, s=50)
-            vis.draw_linepath(path, c=c, lw=1, a=1)
-        else:
-            plt.plot([start.x, end.x], [start.y, end.y], "r--", lw=1)
-
-    # vis.show(f"Result {case_id}")
-    #
-    # plt.plot(losses)
-    # plt.savefig("./case_2doors_res.svg")
+    plt.axis("equal")
+    # plt.title("w/o L_traffic")
+    plt.savefig("./abl_all_result.svg")
     plt.show()
+
+    # vis.draw_mesh(fp, show=False, draw_text="", clear=True)
+    # for i in range(0, 100, 2):
+    #     start = sp[i]
+    #     end = sp[i + 1]
+    #     tripath = fp.find_tripath(start, end)
+    #     path = fp.simplify(tripath, start, end)
+    #     if path:
+    #         c = np.random.rand(3)
+    #         vis.draw_point(start, c=c, s=50)
+    #         vis.draw_point(end, c=c, s=50)
+    #         vis.draw_linepath(path, c=c, lw=1, a=1)
+    #     else:
+    #         plt.plot([start.x, end.x], [start.y, end.y], "r--", lw=1)
+    #
+    # # vis.show(f"Result {case_id}")
+    # #
+    # # plt.plot(losses)
+    # plt.savefig("./abl_wo_traffic_test.svg")
+    # plt.show()
