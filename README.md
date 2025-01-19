@@ -43,12 +43,13 @@ pip install PythonCDT/
 - [X] Generate constraint mesh
 - [X] Mesh tweaking functions
 - [X] Door optimizer
-- [ ] Optimize and test
+- [X] Optimize and test
+- [ ] Refactor and improve performance
 
 ## Bugs
 
 - [ ] Logger is not working on windows
-- [ ] Cuts on 2 edges of the same triangle may broke the geometry.
+- [X] Cuts on 2 edges of the same triangle may broke the geometry.
 
 ## Notes
 
