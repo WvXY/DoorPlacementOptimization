@@ -5,7 +5,7 @@ from matplotlib import patches
 
 class Visualizer:
     def __init__(self, dpi=120):
-        self.ax, self.fig = plt.subplots(dpi=dpi)
+        self.fig, self.ax = plt.subplots(dpi=dpi)
 
     def get_fig(self):
         return self.fig
@@ -19,16 +19,16 @@ class Visualizer:
             or isinstance(point, list)
             or isinstance(point, tuple)
         ):
-            self.fig.scatter(point[0], point[1], color=c, s=s, marker=m)
+            self.ax.scatter(point[0], point[1], color=c, s=s, marker=m)
         else:
-            self.fig.scatter(point.x, point.y, color=c, s=s, marker=m)
+            self.ax.scatter(point.x, point.y, color=c, s=s, marker=m)
 
     def draw_linepath(self, path, linetype="-", c="k", s=60, a=1, lw=2):
         if path is None:
             return
 
         if isinstance(path[0], np.ndarray):
-            self.fig.plot(
+            self.ax.plot(
                 [n[0] for n in path],
                 [n[1] for n in path],
                 linetype,
@@ -37,7 +37,7 @@ class Visualizer:
                 alpha=a,
             )
         else:
-            self.fig.plot(
+            self.ax.plot(
                 [n.x for n in path],
                 [n.y for n in path],
                 linetype,
@@ -50,7 +50,7 @@ class Visualizer:
         for e in half_edges:
             x, y = e.ori.x, e.ori.y
             dx, dy = e.to.x - e.ori.x, e.to.y - e.ori.y
-            self.fig.arrow(
+            self.ax.arrow(
                 x, y, dx, dy, width=lw, color=c, length_includes_head=True
             )
 
@@ -74,7 +74,7 @@ class Visualizer:
                 shrunk_verts[(i + 1) % 3][0] - x,
                 shrunk_verts[(i + 1) % 3][1] - y,
             )
-            self.fig.arrow(
+            self.ax.arrow(
                 x, y, dx, dy, width=lw, color=c, length_includes_head=True
             )
 
@@ -84,7 +84,7 @@ class Visualizer:
 
         for f in tripath:
             if f:
-                self.fig.fill(
+                self.ax.fill(
                     [n.x for n in f.verts],
                     [n.y for n in f.verts],
                     "y",
@@ -102,18 +102,19 @@ class Visualizer:
         axis_equal=True,
     ):
         if clear:
-            self.ax, self.fig = plt.subplots()
+            self.ax.clear()
+            self.fig.gca()
 
         for f in mesh.faces:
             if f is None:
                 continue
 
             tri = [n.xy for n in f.verts]
-            self.fig.add_patch(patches.Polygon(tri, color="k", alpha=0.1))
+            self.ax.add_patch(patches.Polygon(tri, color="k", alpha=0.1))
 
         for fe in mesh.get_block_edges():
             ori, to = fe.ori, fe.to
-            self.fig.plot([ori.x, to.x], [ori.y, to.y], "k", lw=2)
+            self.ax.plot([ori.x, to.x], [ori.y, to.y], "k", lw=2)
 
         for v in mesh.vertices:
             if v is None:
@@ -126,7 +127,7 @@ class Visualizer:
             )
 
         if fig_title:
-            self.fig.set_title(fig_title)
+            self.ax.set_title(fig_title)
 
         if not axis_show:
             plt.axis("off")
@@ -193,19 +194,19 @@ class Visualizer:
                 continue
             vxs = [n.x for n in f.verts]
             vys = [n.y for n in f.verts]
-            self.fig.fill(
+            self.ax.fill(
                 vxs,
                 vys,
                 c,
                 alpha=0.2,
             )
-            self.fig.scatter(vxs, vys, c="k", s=16, marker="o")
+            self.ax.scatter(vxs, vys, c="k", s=16, marker="o")
 
         center = room.get_center()
         self.fig.text(center[0], center[1], str(room.rid), fontsize=16, c="b")
         walls = room.get_wall_edges()
         for e in walls:
-            self.fig.plot(
+            self.ax.plot(
                 [e.ori.x, e.to.x],
                 [e.ori.y, e.to.y],
                 c="k",
@@ -215,9 +216,9 @@ class Visualizer:
     def draw_door(self, door, c="k", lw=0.01):
         a = door.new["v"][0].xy
         b = door.new["v"][1].xy
-        self.fig.plot([a[0], b[0]], [a[1], b[1]], c="c", lw=2)
-        self.fig.scatter(a[0], a[1], c="c", s=40, marker="h")
-        self.fig.scatter(b[0], b[1], c="c", s=40, marker="h")
+        self.ax.plot([a[0], b[0]], [a[1], b[1]], c="c", lw=2)
+        self.ax.scatter(a[0], a[1], c="c", s=40, marker="h")
+        self.ax.scatter(b[0], b[1], c="c", s=40, marker="h")
 
     def draw_connection(self, fp, c="g", lw=2):
         if fp.adj_m is None:
@@ -230,20 +231,20 @@ class Visualizer:
                 if fp.adj_m[i, j] == 1:
                     r1 = fp.get_by_rid(j)
                     c1 = r1.get_center()
-                    self.fig.plot(
+                    self.ax.plot(
                         [c0[0], c1[0]],
                         [c0[1], c1[1]],
                         "-.",
                         c=c,
                         lw=lw,
                     )
-                    self.fig.scatter(*c0, c="b", s=40, marker="s")
-                    self.fig.scatter(*c1, c="b", s=40, marker="s")
+                    self.ax.scatter(*c0, c="b", s=40, marker="s")
+                    self.ax.scatter(*c1, c="b", s=40, marker="s")
 
     def draw_floor_plan(
         self, fp, doors=None, draw_connection=False, show=False
     ):
-        self.ax, self.fig = plt.subplots()
+        self.fig, self.ax = plt.subplots()
 
         for room in fp.rooms:
             self.draw_room(room)
@@ -260,7 +261,7 @@ class Visualizer:
             plt.show()
 
     def show(self, title=None, axis="equal", axis_off=False):
-        self.fig.set_title(title)
+        self.ax.set_title(title)
         plt.axis(axis)
         if axis_off:
             plt.axis("off")

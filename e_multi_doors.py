@@ -1,6 +1,10 @@
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from matplotlib.animation import FuncAnimation
 import numpy as np
 from tqdm import tqdm
+from functools import partial
+import imageio
 
 # Basic Primitives
 from f_layout import FLayout
@@ -152,9 +156,11 @@ def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
     # Metropolis-Hastings settings
     old_score = f(fp, sp)
     samples = []
+    frames = []
     losses = []
     best_score = old_score
     best_e, best_r = door_system.get_states()
+    fig = vis.get_fig()
 
     for iteration in tqdm(range(iters)):
 
@@ -174,10 +180,11 @@ def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
         else:
             door_system.reject()
 
-        if vis and iteration % 10 == 0:
+        if vis and iteration % 1 == 0:
+            fig.gca().cla()
             vis.draw_mesh(
                 fp,
-                show=True,
+                show=False,
                 draw_text="",
                 clear=True,
                 fig_title=f"Iteration: {iteration} | Score: {new_score:.3f} | Best Score: {best_score:.3f}",
@@ -191,12 +198,20 @@ def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
             #     fig_title=f"Iteration: {iteration} | Score: {new_score} | Best Score: {best_score}",
             # )
 
+            fig.canvas.draw()
+            image = np.frombuffer(fig.canvas.tostring_argb(), dtype="uint8")
+            image = image.reshape(fig.canvas.get_width_height()[::-1] + (4,))[
+                ..., 1:
+            ]
+            frames.append(image)
+            plt.close(fig)
+
         T *= 0.99  # Annealing
         # losses.append(new_score)
 
     door_system.load_manually(best_e, best_r)
 
-    return best_e, best_r, losses
+    return (best_e, best_r, losses, frames)
 
 
 if __name__ == "__main__":
@@ -204,7 +219,7 @@ if __name__ == "__main__":
     case_id = 1
     n_sp = 200
     iters = 100
-    T = 0.1
+    T = 0.01
 
     fp, vis = init(case_id)
 
@@ -228,9 +243,16 @@ if __name__ == "__main__":
 
     sp = make_sample_points(fp, n_sp)
     #
-    best_e, best_r, losses = metropolis_hasting(
+    best_e, best_r, losses, frames = metropolis_hasting(
         fp, door_system, T=T, iters=iters, vis=vis
     )
+
+    # save gif
+    def create_gif(frames, filename):
+        imageio.mimsave(filename, frames, fps=10)
+
+    create_gif(frames, "abl_entrance.gif")
+
     #
     # # # Visualize results
     # vis.draw_mesh(fp, show=False, draw_text="f")
@@ -248,17 +270,17 @@ if __name__ == "__main__":
 
     # plt.colorbar()
 
-    plt.plot(losses)
-
-    # vis.draw_floor_plan(fp, show=False, draw_connection=True)
-    vis.draw_mesh(fp, show=False, draw_text="", clear=True)
-    for door in door_system.ecs.doors.values():
-        pos = door_system._ratio_to_pos(door, door.ratio)
-        vis.draw_point(Point(pos), c="r", s=50)
-    plt.axis("equal")
-    # plt.title("w/o L_traffic")
-    plt.savefig("./abl_all_result.svg")
-    plt.show()
+    # plt.plot(losses)
+    #
+    # # vis.draw_floor_plan(fp, show=False, draw_connection=True)
+    # vis.draw_mesh(fp, show=False, draw_text="", clear=True)
+    # for door in door_system.ecs.doors.values():
+    #     pos = door_system._ratio_to_pos(door, door.ratio)
+    #     vis.draw_point(Point(pos), c="r", s=50)
+    # plt.axis("equal")
+    # # plt.title("w/o L_traffic")
+    # plt.savefig("./abl_all_result.svg")
+    # plt.show()
 
     # vis.draw_mesh(fp, show=False, draw_text="", clear=True)
     # for i in range(0, 100, 2):
