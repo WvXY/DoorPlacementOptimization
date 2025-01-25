@@ -102,8 +102,9 @@ class Visualizer:
         axis_equal=True,
     ):
         if clear:
-            self.ax.clear()
-            self.fig.gca()
+            # self.ax.clear()
+            # self.fig.gca()
+            self.fig, self.ax = plt.subplots()
 
         for f in mesh.faces:
             if f is None:
@@ -132,9 +133,7 @@ class Visualizer:
         if not axis_show:
             plt.axis("off")
 
-        if axis_equal:
-            plt.axis("equal")
-
+        plt.axis("equal")
         if show:
             plt.show()
 
