@@ -234,86 +234,28 @@ if __name__ == "__main__":
     # Initialize
     case_id = 1
     n_sp = 200
-    iters = 1000
+    iters = 10
     T = 0.1
 
     fp, vis = init(case_id)
 
-    # vis.draw_mesh(
-    #     fp, show=True, draw_text="ve", axis_show=False, axis_equal=True
-    # )
-    # vis.draw_floor_plan(fp, show=True, draw_connection=True)
-
     door_system = create_door_system(fp)
 
-    # vis.draw_mesh(
-    #     fp,
-    #     show=False,
-    #     draw_text="",
-    #     clear=True,
-    #     axis_show=False,
-    #     axis_equal=True,
-    # )
-    # plt.savefig("./abl_fp_init.svg")
-    # plt.show()
-
     sp = make_sample_points(fp, n_sp)
-    #
-    best_e, best_r, losses, frames = metropolis_hasting(
-        fp, door_system, T=T, iters=iters, vis=vis
-    )
+
+    # best_e, best_r, losses, frames = metropolis_hasting(
+    #     fp, door_system, T=T, iters=iters, vis=vis
+    # )
+    from o_optimizer import MHOptimizer
+
+    mh = MHOptimizer(fp, door_system, f, T, sp)
+    mh.init()
+    for i in tqdm(range(iters)):
+        mh.step()
+    mh.end()
 
     # save gif
     def create_gif(frames, filename):
         imageio.mimsave(filename, frames, fps=120)
 
     create_gif(frames, "anim1.gif")
-
-    #
-    # # # Visualize results
-    # vis.draw_mesh(fp, show=False, draw_text="f")
-    # for room in fp.rooms:
-    #     print(f"Room {room.rid}: {[f.fid for f in room.faces]}")
-    #
-    # vis.draw_mesh(fp, show=False, draw_text="", clear=True)
-
-    # vis.draw_mesh(
-    #     fp, show=True, draw_text="", clear=True, fig_title="Final Result"
-    # )
-
-    # for v, s in samples:
-    #     plt.scatter(v[0], v[1], c=s, s=30, alpha=1, marker="s")
-
-    # plt.colorbar()
-
-    # plt.plot(losses)
-    #
-    # # vis.draw_floor_plan(fp, show=False, draw_connection=True)
-    # vis.draw_mesh(fp, show=False, draw_text="", clear=True)
-    # for door in door_system.ecs.doors.values():
-    #     pos = door_system._ratio_to_pos(door, door.ratio)
-    #     vis.draw_point(Point(pos), c="r", s=50)
-    # plt.axis("equal")
-    # # plt.title("w/o L_traffic")
-    # plt.savefig("./abl_all_result.svg")
-    # plt.show()
-
-    # vis.draw_mesh(fp, show=False, draw_text="", clear=True)
-    # for i in range(0, 100, 2):
-    #     start = sp[i]
-    #     end = sp[i + 1]
-    #     tripath = fp.find_tripath(start, end)
-    #     path = fp.simplify(tripath, start, end)
-    #     if path:
-    #         c = np.random.rand(3)
-    #         vis.draw_point(start, c=c, s=50)
-    #         vis.draw_point(end, c=c, s=50)
-    #         vis.draw_linepath(path, c=c, lw=1, a=1)
-    #     else:
-    #         plt.plot([start.x, end.x], [start.y, end.y], "r--", lw=1)
-    #
-    # # vis.show(f"Result {case_id}")
-    # #
-    # # plt.plot(losses)
-    # plt.savefig("./abl_wo_traffic_test.svg")
-    # plt.show()
