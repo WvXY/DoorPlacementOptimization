@@ -28,8 +28,8 @@ def init(case_id, np_seed=0):
     # Load data
     ld = Loader(".")
     # ld.load_closed_rooms_case(7)
-    # ld.load_w_walls_case(7)
-    ld.load_final_case(0)
+    ld.load_w_walls_case(7)
+    # ld.load_final_case(0)
 
     fp = FLayout()
     fp.create_mesh(ld.vertices, ld.edges, 0)
@@ -57,35 +57,35 @@ def create_door_system(fp):
     r0 = fp.get_by_rid(0)
     r1 = fp.get_by_rid(1)
     r2 = fp.get_by_rid(2)
-    r3 = fp.get_by_rid(3)
-    r4 = fp.get_by_rid(4)
+    # r3 = fp.get_by_rid(3)
+    # r4 = fp.get_by_rid(4)
     # r5 = fp.get_by_rid(5)
 
     ecs = ECS()
     door_system = DoorSystem(ecs, fp)
 
-    door01 = DoorComponent(r1, r0)
-    ecs.add_door_component(door01)
+    door02 = DoorComponent(r2, r0)
+    ecs.add_door_component(door02)
     #
-    door03 = DoorComponent(r0, r3, 0.2)
-    ecs.add_door_component(door03)
+    door12 = DoorComponent(r1, r2)
+    ecs.add_door_component(door12)
     #
-    door20 = DoorComponent(r2, r0, 0.3)
-    ecs.add_door_component(door20)
-    #
-    door04 = DoorComponent(r0, r4)
-    ecs.add_door_component(door04)
+    # door20 = DoorComponent(r2, r0, 0.3)
+    # ecs.add_door_component(door20)
+    # #
+    # door04 = DoorComponent(r0, r4)
+    # ecs.add_door_component(door04)
     #
     # door25 = DoorComponent(r2, r5, door_length=0.2)
     # ecs.add_door_component(door25)
 
     # front door
-    e_d = fp.get_by_eid(5)
+    e_d = fp.get_by_eid(21)
     front_door = DoorComponent(None, None)
     front_door.need_optimization = False
     front_door.bind_edge = e_d
     front_door.e_len = e_d.get_length()
-    front_door.ratio = 0.9
+    front_door.ratio = 0.5
     ecs.add_door_component(front_door)
 
     door_system.activate_all()
@@ -164,7 +164,7 @@ def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
 
     for iteration in tqdm(range(iters)):
 
-        door_system.propose()
+        door_system.propose(0.05)
 
         new_score = f(fp, sp)
         df = new_score - old_score
@@ -211,6 +211,22 @@ def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
 
     door_system.load_manually(best_e, best_r)
 
+    # draw result
+    fig.gca().cla()
+    vis.draw_mesh(
+        fp,
+        show=False,
+        draw_text="",
+        clear=True,
+        fig_title=f"Result | Best Score: {best_score:.3f}",
+    )
+
+    fig.canvas.draw()
+    image = np.frombuffer(fig.canvas.tostring_argb(), dtype="uint8")
+    image = image.reshape(fig.canvas.get_width_height()[::-1] + (4,))[..., 1:]
+    frames.append(image)
+    plt.close(fig)
+
     return (best_e, best_r, losses, frames)
 
 
@@ -218,8 +234,8 @@ if __name__ == "__main__":
     # Initialize
     case_id = 1
     n_sp = 200
-    iters = 100
-    T = 0.01
+    iters = 1000
+    T = 0.1
 
     fp, vis = init(case_id)
 
@@ -249,9 +265,9 @@ if __name__ == "__main__":
 
     # save gif
     def create_gif(frames, filename):
-        imageio.mimsave(filename, frames, fps=10)
+        imageio.mimsave(filename, frames, fps=120)
 
-    create_gif(frames, "abl_entrance.gif")
+    create_gif(frames, "anim1.gif")
 
     #
     # # # Visualize results
