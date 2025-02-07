@@ -1,4 +1,4 @@
-from g_primitives import Vertex, Edge, Face, _GeoBase
+from g_primitives import Vertex, Edge, Face
 from u_cdt import CDT
 
 
@@ -40,7 +40,6 @@ class Mesh:
     def vertices(self):
         return self.verts
 
-
     def set_default_types(self, Vertex, Edge, Face):
         self.Vertex = Vertex
         self.Edge = Edge
@@ -51,9 +50,9 @@ class Mesh:
         self.edges.clear()
         self.verts.clear()
 
-    def reset_all_visited(self, rgeos):
+    def reset_all_visit_status(self, rgeos):
         for g in rgeos:
-            g.reset_visited()
+            g.reset_visit_status()
 
     def get_block_edges(self):
         self.inner_fixed_edges = [
@@ -84,7 +83,7 @@ class Mesh:
         self.__init_half_edges(faces)
         self.__post_processing()
 
-        self.__set_to_set()
+        self.__all_to_set()
 
     def __init_nodes(self, nodes):
         for i, xy in enumerate(nodes):
@@ -137,13 +136,6 @@ class Mesh:
                 if ei.ori == ej.to and ei.to == ej.ori:
                     ei.twin, ej.twin = ej, ei
 
-    # def __set_nodes_info(self):
-    #     for e in self.edges:
-    #         if e.twin is None:
-    #             self.verts[e.ori.vid].is_blocked = True
-    #             self.verts[e.to.vid].is_blocked = True
-    #             e.is_blocked = True
-
     def __set_fixed_edges(self):
         for fe in self.fixed_edges:
             v0, v1 = self.verts[fe[0]], self.verts[fe[1]]
@@ -162,16 +154,9 @@ class Mesh:
 
                     break
 
-    def __set_to_set(self):
+    def __all_to_set(self):
         self.verts = set(self.verts)
         self.edges = set(self.edges)
         self.faces = set(self.faces)
         self.border_edges = set(self.border_edges)
         self.inner_fixed_edges = set(self.inner_fixed_edges)
-
-    def __remove_duplicate(self):
-        self.verts = set(self.verts)
-        self.border_edges = set(self.border_edges)
-        self.inner_fixed_edges = set(self.inner_fixed_edges)
-        self.faces = set(self.faces)
-        self.edges = set(self.edges)

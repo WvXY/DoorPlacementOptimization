@@ -28,7 +28,7 @@ class FLayout(NavMesh):
                     continue
                 visit_face(fa, room)
 
-        self.reset_all_visited(self.faces)
+        self.reset_all_visit_status(self.faces)
         self.rooms = set()
         not_visited = self.faces.copy()
         while not_visited:

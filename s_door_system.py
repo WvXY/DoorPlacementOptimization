@@ -12,7 +12,7 @@ class DoorSystem:
     # Metropolis-Hastings
     # ----------------------------------------------------
     def activate_all(self):
-        self.fp.reset_all_visited(self.fp.edges)
+        self.fp.reset_all_visit_status(self.fp.edges)
         # All shared edges need to be calculated first
         for door_comp in self.ecs.doors.values():
             self._calc_brooms_cache(door_comp)

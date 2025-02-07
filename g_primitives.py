@@ -41,7 +41,7 @@ class _GeoBase:
         pass
 
     @staticmethod
-    def clear_all(self):
+    def clear_all():
         _GeoBase.obj_list = []
         _GeoBase.__guid = 0
 
@@ -55,11 +55,11 @@ class _GInfo:
         self._is_blocked = False
 
     # visit actions
-    def reset_all_visited(self):
-        for obj in _GeoBase.obj_list:
+    def reset_all_visit_status(self, objs):
+        for obj in objs:
             obj._is_visited = False
 
-    def reset_visited(self):
+    def reset_visit_status(self):
         self._is_visited = False
 
     @property
