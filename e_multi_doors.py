@@ -1,10 +1,7 @@
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 from matplotlib.animation import FuncAnimation
 import numpy as np
 from tqdm import tqdm
-from functools import partial
-import imageio
 
 # Basic Primitives
 from f_layout import FLayout
@@ -29,7 +26,7 @@ def init(case_id, np_seed=0):
     # Load data
     ld = Loader(".")
     # ld.load_closed_rooms_case(7)
-    ld.load_w_walls_case(7)
+    ld.load_w_walls_case(case_id)
     # ld.load_final_case(0)
 
     fp = FLayout()
@@ -39,28 +36,15 @@ def init(case_id, np_seed=0):
 
     # Visualization
     vis = Visualizer()
-    # vis.draw_mesh(
-    #     fp, show=False, draw_text="e", axis_show=False, axis_equal=True
-    # )
-    # plt.savefig("./case_fp_init.svg")
 
     return fp, vis
 
 
 def create_door_system(fp):
-    # vis.draw_floor_plan(fp, show=False, draw_connection=True)
-    # plt.axis("equal")
-    # plt.axis("off")
-    # plt.title("Room Initialization")
-    # plt.savefig("./case_room_init.svg")
-    # plt.show()
 
     r0 = fp.get_by_rid(0)
     r1 = fp.get_by_rid(1)
     r2 = fp.get_by_rid(2)
-    # r3 = fp.get_by_rid(3)
-    # r4 = fp.get_by_rid(4)
-    # r5 = fp.get_by_rid(5)
 
     ecs = ECS()
     door_system = DoorSystem(ecs, fp)
@@ -70,15 +54,6 @@ def create_door_system(fp):
     #
     door12 = DoorComponent(r1, r2)
     ecs.add_door_component(door12)
-    #
-    # door20 = DoorComponent(r2, r0, 0.3)
-    # ecs.add_door_component(door20)
-    # #
-    # door04 = DoorComponent(r0, r4)
-    # ecs.add_door_component(door04)
-    #
-    # door25 = DoorComponent(r2, r5, door_length=0.2)
-    # ecs.add_door_component(door25)
 
     # front door
     e_d = fp.get_by_eid(21)
@@ -90,16 +65,6 @@ def create_door_system(fp):
     ecs.add_door_component(front_door)
 
     door_system.activate_all()
-
-    # vis.draw_mesh(fp, show=False, clear=True, draw_text="")
-    # for door in door_system.ecs.doors.values():
-    #     pos = door_system._ratio_to_pos(door, door.ratio)
-    #     vis.draw_point(Point(pos), c="r", s=50)
-    # plt.axis("equal")
-    # plt.title("Door System")
-    # plt.axis("off")
-    # plt.savefig("./abl_door_init.svg")
-    # vis.show("Door System")
 
     return door_system
 
@@ -153,89 +118,11 @@ def f(fp, sp, batch_size=50):
     return traffic_loss + 2 * entrance_loss
 
 
-# def metropolis_hasting(fp, door_system, T=0.01, iters=200, vis=None):
-#     # Metropolis-Hastings settings
-#     old_score = f(fp, sp)
-#     samples = []
-#     frames = []
-#     losses = []
-#     best_score = old_score
-#     best_e, best_r = door_system.get_states()
-#     fig = vis.get_fig()
-#
-#     for iteration in tqdm(range(iters)):
-#
-#         door_system.propose(0.05)
-#
-#         new_score = f(fp, sp)
-#         df = new_score - old_score
-#
-#         # Accept or reject proposal
-#         alpha = np.exp(-df / T)
-#         if df < 0 or np.random.rand() < alpha:
-#             old_score = new_score
-#             losses.append(new_score)
-#             if new_score < best_score:
-#                 best_e, best_r = door_system.get_states()
-#                 best_score = new_score
-#         else:
-#             door_system.reject()
-#
-#         if vis and iteration % 1 == 0:
-#             fig.gca().cla()
-#             vis.draw_mesh(
-#                 fp,
-#                 show=False,
-#                 draw_text="",
-#                 clear=True,
-#                 fig_title=f"Iteration: {iteration} | Score: {new_score:.3f} | Best Score: {best_score:.3f}",
-#             )
-#
-#             # vis.draw_mesh(
-#             #     fp,
-#             #     show=True,
-#             #     draw_text="vf",
-#             #     clear=True,
-#             #     fig_title=f"Iteration: {iteration} | Score: {new_score} | Best Score: {best_score}",
-#             # )
-#
-#             fig.canvas.draw()
-#             image = np.frombuffer(fig.canvas.tostring_argb(), dtype="uint8")
-#             image = image.reshape(fig.canvas.get_width_height()[::-1] + (4,))[
-#                 ..., 1:
-#             ]
-#             frames.append(image)
-#             plt.close(fig)
-#
-#         T *= 0.99  # Annealing
-#         # losses.append(new_score)
-#
-#     door_system.load_manually(best_e, best_r)
-#
-#     # draw result
-#     fig.gca().cla()
-#     vis.draw_mesh(
-#         fp,
-#         show=False,
-#         draw_text="",
-#         clear=True,
-#         fig_title=f"Result | Best Score: {best_score:.3f}",
-#     )
-#
-#     fig.canvas.draw()
-#     image = np.frombuffer(fig.canvas.tostring_argb(), dtype="uint8")
-#     image = image.reshape(fig.canvas.get_width_height()[::-1] + (4,))[..., 1:]
-#     frames.append(image)
-#     plt.close(fig)
-#
-#     return (best_e, best_r, losses, frames)
-#
-
 if __name__ == "__main__":
     # Initialize
-    case_id = 1
-    n_sp = 200
-    iters = 12
+    case_id = 7
+    n_sp = 100
+    iters = 20
     T = 0.1
 
     fp, vis = init(case_id)
@@ -248,33 +135,29 @@ if __name__ == "__main__":
     frames = []
     mh = MHOptimizer(fp, door_system, f, T, sp)
     mh.init()
-    for i in tqdm(range(iters)):
+
+    def draw_frame(i):
         mh.step()
+        vis.clear().draw_mesh(fp, debug_text="")
+        if i == -1:
+            vis.show(title=f"Result | Best Score: {mh.best_score:.3f}")
+        else:
+            vis.show(
+                title=f"Iteration: {i} "
+                f"| Score: {mh.prev_score:.3f} "
+                f"| Best Score: {mh.best_score:.3f}"
+            )
 
-        # fig.gca().cla()
-        vis.draw_mesh(
-            mh.layout,
-            show=True,
-            draw_text="",
-            clear=True,
-            fig_title=f"Iteration: {i} ",
-            # f"| Score: {mh.prev_score:.3f} "
-            # f"| Best Score: {mh.best_score:.3f}",
-        )
+    def app(i):
+        global iters
+        if i != iters:
+            mh.step()
+            draw_frame(i)
+        else:
+            mh.end()
+            draw_frame(-1)
 
-        # fig.canvas.draw()
-        # image = np.frombuffer(fig.canvas.tostring_argb(), dtype="uint8")
-        # image = image.reshape(fig.canvas.get_width_height()[::-1] + (4,))[
-        #     ..., 1:
-        # ]
-        # frames.append(image.copy())
-        # plt.close(fig)
+        return (vis.get_fig(),)
 
-    mh.end()
-    # print(frames)
-
-    # save gif
-    # def create_gif(frames, filename):
-    #     imageio.mimsave(filename, frames, fps=60)
-    #
-    # create_gif(frames, "anim2.gif")
+    ani = FuncAnimation(fig, app, frames=iters + 1, interval=600, repeat=False)
+    plt.show()
