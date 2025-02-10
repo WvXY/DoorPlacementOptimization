@@ -66,11 +66,11 @@ class FLayout(NavMesh):
         FEdge.clear()
         FVertex.clear()
 
-    def get_by_eid(self, eid):
-        for e in self.edges:
-            if e.eid == eid:
-                return e
-        return None
+    # def get_by_eid(self, eid):
+    #     for e in self.edges:
+    #         if e.eid == eid:
+    #             return e
+    #     return None
 
     def get_inner_walls(self):
         return [e for e in self.edges if e.is_blocked and e.twin]
@@ -78,8 +78,8 @@ class FLayout(NavMesh):
     def get_outer_walls(self):
         return [e for e in self.edges if e.is_blocked and not e.twin]
 
-    def get_by_rid(self, rid):
-        return next((r for r in self.rooms if r.rid == rid), None)
+    # def get_by_rid(self, rid):
+    #     return next((r for r in self.rooms if r.rid == rid), None)
 
     # unused
     def clean(self):

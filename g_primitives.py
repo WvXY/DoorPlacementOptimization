@@ -10,16 +10,19 @@ class _GeoBase:
         _GeoBase.__guid += 1
         _GeoBase.obj_list.append(self)
 
+    @property
+    def id(self):
+        return self.guid
+
     @staticmethod
     def reset_guid():
         _GeoBase.__guid = 0
 
-    @staticmethod
-    def get_by_guid(guid):
-        for obj in _GeoBase.obj_list:
-            if obj.guid == guid:
-                return obj
-        return None
+    def get_by_(self, xlist, id):
+        return next((x for x in xlist if x.id == id), None)
+
+    def get_by_guid(self, guid):
+        return self.get_by_(self.obj_list, guid)
 
     def get_guid(self):
         return self.__guid
@@ -53,11 +56,6 @@ class _GInfo:
     def __init__(self):
         self._is_visited = False
         self._is_blocked = False
-
-    # visit actions
-    def reset_all_visit_status(self, objs):
-        for obj in objs:
-            obj._is_visited = False
 
     def reset_visit_status(self):
         self._is_visited = False
@@ -215,6 +213,10 @@ class Edge(_GeoBase, _GInfo):
         self.__eid = Edge.__eid
         Edge.__eid += 1
 
+    @property
+    def id(self):
+        return self.__eid
+
     def set_properties(self, face, twin, prev, next, diag_vertex=None):
         self.face = face
         self.twin = twin
@@ -260,7 +262,8 @@ class Edge(_GeoBase, _GInfo):
 
     @staticmethod
     def get_by_eid(eid):
-        return next((e for e in Edge.edge_list if e.eid == eid), None)
+        # return next((e for e in Edge.edge_list if e.eid == eid), None)
+        return Edge.get_by_(Edge.edge_list, eid)
 
     # geometry utils
     def disconnect(self):
@@ -342,6 +345,10 @@ class Face(_GeoBase, _GInfo):
         return self.__fid
 
     @property
+    def id(self):
+        return self.__fid
+
+    @property
     def xy(self):
         return self.center
 
@@ -366,7 +373,7 @@ class Face(_GeoBase, _GInfo):
 
     @staticmethod
     def get_by_fid(fid):
-        return next((f for f in Face.face_list if f.fid == fid), None)
+        return Face.get_by_(Face.face_list, fid)
 
     def __gt__(self, other):
         return self.fid > other.fid

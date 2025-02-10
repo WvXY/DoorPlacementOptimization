@@ -81,11 +81,8 @@ class NavMesh(Mesh):
             left_pt, right_pt = portals[i]
 
             # right funnel side
-            if MathUtils.triarea2(apex, right, right_pt) <= 0:
-                if (
-                    apex == right
-                    or MathUtils.triarea2(apex, left, right_pt) > 0
-                ):
+            if triarea2(apex, right, right_pt) <= 0:
+                if apex == right or triarea2(apex, left, right_pt) > 0:
                     right = right_pt
                     right_index = i
                 else:
@@ -100,8 +97,8 @@ class NavMesh(Mesh):
                     continue
 
             # left funnel side
-            if MathUtils.triarea2(apex, left, left_pt) >= 0:
-                if apex == left or MathUtils.triarea2(apex, right, left_pt) < 0:
+            if triarea2(apex, left, left_pt) >= 0:
+                if apex == left or triarea2(apex, right, left_pt) < 0:
                     left = left_pt
                     left_index = i
                 else:
@@ -123,21 +120,7 @@ class NavMesh(Mesh):
         return path
 
 
-class MathUtils:
-    @staticmethod
-    def triarea2(a, b, c):
-        if isinstance(a, np.ndarray):
-            return (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])
-        return (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)
-
-    @staticmethod
-    def is_clockwise(a, b, c, can_be_collinear=False):
-        if can_be_collinear:
-            return MathUtils.triarea2(a, b, c) >= 0
-        return MathUtils.triarea2(a, b, c) > 0
-
-    @staticmethod
-    def is_counter_clockwise(a, b, c, can_be_collinear=False):
-        if can_be_collinear:
-            return MathUtils.triarea2(a, b, c) <= 0
-        return MathUtils.triarea2(a, b, c) < 0
+def triarea2(a, b, c):
+    if isinstance(a, np.ndarray):
+        return (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])
+    return (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)

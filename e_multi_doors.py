@@ -42,7 +42,7 @@ def init(case_id, np_seed=0):
 
 def create_door_system(fp):
 
-    r0 = fp.get_by_rid(0)
+    r0 = fp.Room.get_by_rid(0)
     r1 = fp.get_by_rid(1)
     r2 = fp.get_by_rid(2)
 

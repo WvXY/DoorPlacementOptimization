@@ -19,7 +19,6 @@ class DoorSystem:
 
         for door_comp in self.ecs.doors.values():
             self.activate(door_comp)
-            # door_comp.bind_edge.visit()
 
     def propose(self, sigma=0.1):
         for entity_id, door_comp in list(self.ecs.doors.items()):
