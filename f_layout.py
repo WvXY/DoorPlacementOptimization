@@ -1,7 +1,7 @@
+import numpy as np
+
 from f_primitives import FVertex, FEdge, FFace, FRoom
 from g_navmesh import NavMesh
-
-import numpy as np
 
 
 class FLayout(NavMesh):
@@ -12,8 +12,6 @@ class FLayout(NavMesh):
         self.clear()
         self.rooms = set()
         self.adj_m = None
-        # self.outer_walls = set()
-        # self.inner_walls = set()
 
     def init_rooms(self):
         """Create rooms from faces blocked by edges"""
@@ -66,20 +64,17 @@ class FLayout(NavMesh):
         FEdge.clear()
         FVertex.clear()
 
-    # def get_by_eid(self, eid):
-    #     for e in self.edges:
-    #         if e.eid == eid:
-    #             return e
-    #     return None
-
     def get_inner_walls(self):
         return [e for e in self.edges if e.is_blocked and e.twin]
 
     def get_outer_walls(self):
         return [e for e in self.edges if e.is_blocked and not e.twin]
 
-    # def get_by_rid(self, rid):
-    #     return next((r for r in self.rooms if r.rid == rid), None)
+    def get_by_rid(self, rid):
+        return next((r for r in self.rooms if r.rid == rid), None)
+
+    def get_by_eid(self, eid):
+        return next((e for e in self.edges if e.eid == eid), None)
 
     # unused
     def clean(self):
