@@ -12,14 +12,13 @@ class DoorSystem:
     # Metropolis-Hastings
     # ----------------------------------------------------
     def activate_all(self):
-        self.fp.reset_all_visited(self.fp.edges)
+        self.fp.reset_all_visit_status(self.fp.edges)
         # All shared edges need to be calculated first
         for door_comp in self.ecs.doors.values():
             self._calc_brooms_cache(door_comp)
 
         for door_comp in self.ecs.doors.values():
             self.activate(door_comp)
-            # door_comp.bind_edge.visit()
 
     def propose(self, sigma=0.1):
         for entity_id, door_comp in list(self.ecs.doors.items()):

@@ -33,7 +33,7 @@ def init_fp_vis(case_id, np_seed=0):
 
     # Visualization
     vis = Visualizer()
-    vis.draw_mesh(fp, show=False, draw_text="e")
+    vis.draw_mesh(fp, debug_text="e")
 
     return fp, vis
 
@@ -115,10 +115,8 @@ if __name__ == "__main__":
 
     fp, vis = init_fp_vis(case_id)
 
-    vis.draw_mesh(
-        fp, show=True, draw_text="ve", axis_show=False, axis_equal=True
-    )
-    vis.draw_floor_plan(fp, show=True, draw_connection=True)
+    vis.draw_mesh(fp, debug_text="ve")
+    vis.draw_floor_plan(fp, draw_connection=True)
 
     door_system = create_door_system(fp)
 
@@ -127,14 +125,7 @@ if __name__ == "__main__":
     best_e, best_r, losses = metropolis_hasting(fp, door_system, iters=iters)
 
     # visualize
-    vis.draw_mesh(
-        fp,
-        show=False,
-        draw_text="",
-        axis_show=False,
-        axis_equal=True,
-        clear=True,
-    )
+    vis.draw_mesh(fp)
     # vis.draw_floor_plan(fp, show=True, draw_connection=True)
 
     xx = [x[0][0] for x in losses]

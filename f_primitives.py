@@ -9,8 +9,6 @@ class _FInfo:
 
 class FVertex(Vertex, _FInfo):
     def __init__(self, xy):
-        # Vertex.__init__(self, xy)
-        # _FInfo.__init__(self)
         super().__init__(xy)
 
     def __hash__(self):
@@ -23,21 +21,7 @@ class FVertex(Vertex, _FInfo):
 
 class FEdge(Edge, _FInfo):
     def __init__(self, origin, to):
-        # Edge.__init__(self, origin, to)
-        # _FInfo.__init__(self)
         super().__init__(origin, to)
-
-    # # not used, delete in the future
-    # def disconnect(self):
-    #     if self.is_visited:
-    #         return False
-    #     if self.is_blocked:
-    #         return False
-    #
-    #     super().disconnect()
-    #     self.is_visited = True
-    #     self.twin.is_visited = True
-    #     return True
 
     def __repr__(self):
         return f"FEdge {self.eid} ({self.ori.vid} -> {self.to.vid})"
@@ -46,20 +30,6 @@ class FEdge(Edge, _FInfo):
 class FFace(Face, _FInfo):
     def __init__(self):
         super().__init__()
-
-    # not used, delete in the future
-    def merge(self, other: "FFace"):
-        e = self.get_shared_edge(other)
-        if e is None or e.is_visited:
-            return False
-        if e.is_blocked:
-            return False
-
-        e.disconnect()
-
-        e.is_visited = True
-        e.twin.is_visited = True
-        return True
 
     def __repr__(self):
         return f"FFace {self.fid} (Verts {[v.vid for v in self.verts]})"
@@ -126,8 +96,12 @@ class FRoom(_FInfo, _GeoBase):
                 shared_edges += [e, e.twin]
         return shared_edges
 
-    def get_by_rid(rid):
-        return next((r for r in FRoom.__room_list if r.rid == rid), None)
+    @property
+    def id(self):
+        return self.rid
+
+    def get_by_rid(self, rid):
+        return self.get_by_(FRoom.__room_list, rid)
 
     def __repr__(self):
         return f"FRoom {self.rid} (Faces {[f.fid for f in self.faces]}, Adjs {[r.rid for r in self.adjs]})"

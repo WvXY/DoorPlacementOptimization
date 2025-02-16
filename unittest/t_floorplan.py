@@ -10,12 +10,9 @@ class FloorPlanTest(unittest.TestCase):
         from f_layout import FLayout
 
         self.ld.load_w_walls_case(3)
-        self.ld.optimize()
 
         fp = FLayout()
         fp.create_mesh(self.ld.vertices, self.ld.edges, 0)
-        fp.reconnect_closed_edges()
-        fp.create_rooms()
 
         self.assertEqual(len(fp.rooms), 5)
 
@@ -33,12 +30,9 @@ class FloorPlanTest(unittest.TestCase):
         from u_geometry import split_half_edge
 
         self.ld.load_w_walls_case(0)
-        self.ld.optimize()
 
         fp = FLayout()
         fp.create_mesh(self.ld.vertices, self.ld.edges, 0)
-        fp.reconnect_closed_edges()
-        fp.create_rooms()
 
         # modify the mesh
         e0 = FEdge.get_by_eid(2)
