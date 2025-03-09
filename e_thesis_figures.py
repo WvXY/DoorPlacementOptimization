@@ -2,7 +2,7 @@ import numpy as np
 
 from g_navmesh import NavMesh
 from g_primitives import Point
-from u_data_loader import Loader
+from u_obj_loader import UObjLoader
 from u_visualization import Visualizer
 
 # from time import time
@@ -11,11 +11,11 @@ from u_visualization import Visualizer
 case_id = "5"
 
 np.random.seed(0)
-ld = Loader(".")
+ld = UObjLoader(".")
 ld.load_w_walls_case(case_id)
 
 nm = NavMesh()
-nm.create_mesh(ld.vertices, ld.edges, 0)
+nm.create(ld.vertices, ld.edges, 0)
 inner_walls = nm.inner_fixed_edges
 outer_walls = nm.border_edges
 

@@ -1,41 +1,45 @@
+import os
+
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
 import numpy as np
-from tqdm import tqdm
+from matplotlib.animation import FuncAnimation
+
+# Load Config and Data
+from u_loader import ULoader
 
 # Basic Primitives
 from f_layout import FLayout
 from g_primitives import Vertex as Point
 
-# DOOR SYSTEM
-from s_ecs import ECS
-from s_door_system import DoorSystem
-from s_door_component import DoorComponent
-
 # Optimization
 from o_loss_func import loss_func, traffic_loss_func
 from o_optimizer import MHOptimizer
-from u_data_loader import Loader
+
+# DOOR SYSTEM
+from s_ecs import ECS
+from s_door_component import DoorComponent
+from s_door_system import DoorSystem
+
+# Visualization
 from u_visualization import Visualizer
 
 
 def init(case_id, np_seed=0):
-    # Settings
-    np.random.seed(np_seed)
+    # Load configs and data
+    ULoader.load_config()
+    config, obj_data = ULoader.get_config_and_obj(case_id)
 
-    # Load data
-    ld = Loader(".")
-    # ld.load_closed_rooms_case(7)
-    ld.load_w_walls_case(case_id)
-    # ld.load_final_case(0)
+    np.random.seed(config.random_seed)
 
+    # Create floor plan
     fp = FLayout()
-    fp.create_mesh(ld.vertices, ld.edges, 0)
+    fp.from_obj_data(obj_data)
     fp.init_rooms()
     fp.set_room_connections()
 
     # Visualization
     vis = Visualizer()
+    vis.draw_mesh(fp).show()
 
     return fp, vis
 
@@ -120,7 +124,7 @@ def f(fp, sp, batch_size=50):
 
 if __name__ == "__main__":
     # Initialize
-    case_id = 7
+    case_id = 0
     n_sp = 100
     iters = 20
     T = 0.1
@@ -159,6 +163,9 @@ if __name__ == "__main__":
 
         return (vis.get_fig(),)
 
-    ani = FuncAnimation(fig, update, frames=iters + 1, interval=10, repeat=False)
-    ani.save("./multi_doors.gif", writer="pillow")
-    # plt.show()
+    ani = FuncAnimation(
+        fig, update, frames=iters + 1, interval=10, repeat=False
+    )
+    os.makedirs("./results", exist_ok=True)
+    # ani.save("./results/multi_doors.gif", writer="pillow")
+    plt.show()

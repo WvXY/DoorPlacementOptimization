@@ -5,7 +5,7 @@ import numpy as np
 from g_navmesh import NavMesh
 from g_primitives import Point
 from g_primitives import _GeoBase
-from u_data_loader import Loader
+from u_obj_loader import UObjLoader
 from u_visualization import Visualizer
 
 should_draw = False
@@ -14,7 +14,7 @@ should_draw = False
 
 
 class NavmeshTest(unittest.TestCase):
-    ld = Loader("..")
+    ld = UObjLoader("..")
 
     def reset(self):
         _GeoBase.reset_guid()
@@ -36,7 +36,7 @@ class NavmeshTest(unittest.TestCase):
         self.ld.optimize()
 
         nm = NavMesh()
-        nm.create_mesh(self.ld.vertices, self.ld.edges)
+        nm.create(self.ld.vertices, self.ld.edges)
 
         start = Point(np.array([0.2, 0.9]))
         end = Point(np.array([0.1, 0.2]))
@@ -60,7 +60,7 @@ class NavmeshTest(unittest.TestCase):
         self.ld.optimize()
 
         nm = NavMesh()
-        nm.create_mesh(self.ld.vertices, self.ld.edges)
+        nm.create(self.ld.vertices, self.ld.edges)
 
         start = Point(np.array([0.8, 0.2]))
         end = Point(np.array([0.6, 0.25]))

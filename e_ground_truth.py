@@ -13,7 +13,7 @@ from s_door_component import DoorComponent
 
 # Optimization
 from o_loss_func import loss_func
-from u_data_loader import Loader
+from u_obj_loader import UObjLoader
 from u_visualization import Visualizer
 
 
@@ -22,12 +22,12 @@ def init_fp_vis(case_id, np_seed=0):
     np.random.seed(np_seed)
 
     # Load data
-    ld = Loader(".")
+    ld = UObjLoader(".")
     # ld.load_closed_rooms_case(case_id)
     ld.load_custom("/assets/2r1d_loss.obj")
 
     fp = FLayout()
-    fp.create_mesh(ld.vertices, ld.edges, 0)
+    fp.create(ld.vertices, ld.edges, 0)
     fp.init_rooms()
     fp.set_room_connections()
 

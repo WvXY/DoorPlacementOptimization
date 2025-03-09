@@ -1,5 +1,6 @@
 from g_primitives import Vertex, Edge, Face
 from u_cdt import CDT
+from u_obj_loader import UObjData
 
 
 class Mesh:
@@ -60,7 +61,10 @@ class Mesh:
         ]
         return self.inner_fixed_edges + list(self.border_edges)
 
-    def create_mesh(self, vertices, edges, min_dist_to_constraint_edge=0.0):
+    def from_obj_data(self, obj_data: UObjData):
+        self.create(obj_data.verts, obj_data.edges)
+
+    def create(self, vertices, edges, min_dist_to_constraint_edge=0.0):
         self.cdt = CDT(min_dist_to_constraint_edge)
         self.cdt.insert_vertices(vertices)
         self.cdt.insert_edges(edges)
@@ -71,10 +75,10 @@ class Mesh:
         triangles = self.cdt.get_triangles(to_numpy=True)
         vertices = self.cdt.get_vertices(to_numpy=True)
 
-        self.from_mesh(vertices, triangles)
+        self.gen_mesh(vertices, triangles)
         del self.cdt
 
-    def from_mesh(self, nodes, faces):
+    def gen_mesh(self, nodes, faces):
         # self.clear()
 
         self.verts, self.edges, self.faces = [], [], []

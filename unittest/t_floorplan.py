@@ -2,9 +2,9 @@ import unittest
 
 
 class FloorPlanTest(unittest.TestCase):
-    from u_data_loader import Loader
+    from u_obj_loader import UObjLoader
 
-    ld = Loader("..")
+    ld = UObjLoader("..")
 
     def test_room_generation(self):
         from f_layout import FLayout
@@ -12,7 +12,7 @@ class FloorPlanTest(unittest.TestCase):
         self.ld.load_w_walls_case(3)
 
         fp = FLayout()
-        fp.create_mesh(self.ld.vertices, self.ld.edges, 0)
+        fp.create(self.ld.vertices, self.ld.edges, 0)
 
         self.assertEqual(len(fp.rooms), 5)
 
@@ -32,7 +32,7 @@ class FloorPlanTest(unittest.TestCase):
         self.ld.load_w_walls_case(0)
 
         fp = FLayout()
-        fp.create_mesh(self.ld.vertices, self.ld.edges, 0)
+        fp.create(self.ld.vertices, self.ld.edges, 0)
 
         # modify the mesh
         e0 = FEdge.get_by_eid(2)
