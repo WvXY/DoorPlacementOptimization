@@ -99,7 +99,7 @@ def metropolis_hasting(fp, door_system, iters=200):
 
         new_score = f(fp, sp)
 
-        center = door_system._ratio_to_pos(door_comp, door_comp.ratio)
+        center = door_system.ratio_to_xy(door_comp, door_comp.ratio)
         losses.append([center, new_score])
 
     door_system.deactivate(door_comp)

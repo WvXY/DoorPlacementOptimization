@@ -3,19 +3,19 @@ import numpy as np
 
 def loss_func(path):
     total_cost = 0
-    total_cost += traffic_loss(path)
+    total_cost += traffic_loss_func(path)
     return total_cost
 
 
-def traffic_loss(path):
+def traffic_loss_func(path):
     return sum(
         np.linalg.norm(path[i].xy - path[i + 1].xy)
         for i in range(len(path) - 1)
     )
 
 
-def door_loss(doors, target_dist=0.1):
-    """Prevent doors are too close to each other"""
+def entrance_loss_func(doors, target_dist=0.1):
+    """Every door to the entrances"""
     loss = 0
     for d in doors:
         for dd in doors:

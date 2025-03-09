@@ -33,7 +33,7 @@ def init_fp_vis(case_id, np_seed=0):
 
     # Visualization
     vis = Visualizer()
-    vis.draw_mesh(fp, show=False, draw_text="e")
+    vis.draw_mesh(fp).show()
 
     return fp, vis
 
@@ -118,20 +118,14 @@ if __name__ == "__main__":
 
     fp, vis = init_fp_vis(case_id)
 
-    vis.draw_mesh(fp, show=True, draw_text="", axis_show=False, axis_equal=True)
+    vis.draw_mesh(fp).show()
 
     # door_system = create_door_system(fp)
 
     sp = make_sample_points(n_sp)
 
-    vis.draw_mesh(
-        fp,
-        show=False,
-        draw_text="",
-        axis_show=False,
-        axis_equal=True,
-        clear=True,
-    )
+    vis.draw_mesh(fp).show()
+
     for i in range(0, len(sp), 10):
         start = sp[i]
         end = sp[i + 1]
@@ -141,14 +135,7 @@ if __name__ == "__main__":
     plt.show()
 
     # visualize
-    vis.draw_mesh(
-        fp,
-        show=False,
-        draw_text="",
-        axis_show=False,
-        axis_equal=True,
-        clear=True,
-    )
+    vis.draw_mesh(fp)
     # vis.draw_floor_plan(fp, show=True, draw_connection=True)
     #
     # xx = [x[0][0] for x in losses]

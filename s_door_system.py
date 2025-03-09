@@ -188,7 +188,7 @@ class DoorSystem:
     def _projection_to_edge(self, door_comp, loc):
         return projection_on_edge(door_comp.bind_edge, loc)
 
-    def _pos_to_ratio(self, door_comp, pos):
+    def xy_to_ratio(self, door_comp, pos):
         edge = door_comp.bind_edge
         frac = np.linalg.norm(edge.ori.xy - pos) / edge.get_length()
         # Dot to check direction
@@ -197,7 +197,7 @@ class DoorSystem:
         else:
             return -frac
 
-    def _ratio_to_pos(self, door_comp, ratio):
+    def ratio_to_xy(self, door_comp, ratio):
         return (
             door_comp.bind_edge.ori.xy
             + door_comp.bind_edge.get_dir() * ratio * door_comp.e_len
@@ -205,7 +205,7 @@ class DoorSystem:
 
     def _cut_at(self, door_comp, ratio):
         offset = door_comp.bind_edge.get_dir() * door_comp.d_len / 2 * 0.95
-        center = self._ratio_to_pos(door_comp, ratio)
+        center = self.ratio_to_xy(door_comp, ratio)
         cut_p0 = center + offset
         cut_p1 = center - offset
         return (cut_p0, cut_p1)

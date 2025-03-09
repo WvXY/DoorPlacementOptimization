@@ -12,7 +12,7 @@ class Visualizer:
     def init_plt(self, dpi=120):
         self.fig, self.ax = plt.subplots(dpi=dpi)
 
-    def show(self, title=None, axis="equal", axis_off=False):
+    def set_axis(self, title=None, axis_off=False):
         plt.axis("equal")
 
         if title:
@@ -20,6 +20,9 @@ class Visualizer:
         if axis_off:
             plt.axis("off")
 
+        return self
+
+    def show(self):
         plt.show()
 
     def clear(self):

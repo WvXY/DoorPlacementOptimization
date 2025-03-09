@@ -13,7 +13,7 @@ from s_door_system import DoorSystem
 from s_door_component import DoorComponent
 
 # Optimization
-from o_loss_func import loss_func
+from o_loss_func import loss_func, traffic_loss_func
 from o_optimizer import MHOptimizer
 from u_data_loader import Loader
 from u_visualization import Visualizer
@@ -90,14 +90,14 @@ def f(fp, sp, batch_size=50):
         tripath = fp.find_tripath(start, end)
         path = fp.simplify(tripath, start, end)
         if path:
-            traffic_loss += loss_func(path)
+            traffic_loss += traffic_loss_func(path)
     traffic_loss /= len(sp) / 2
 
     # entrance loss
     entrance_loss = 0
     st, end = None, []
     for door in door_system.ecs.doors.values():
-        pos = door_system._ratio_to_pos(door, door.ratio)
+        pos = door_system.ratio_to_xy(door, door.ratio)
         # pos = pos + 0.01
         if not door.need_optimization:
             pos[1] -= 0.01
@@ -140,15 +140,15 @@ if __name__ == "__main__":
         mh.step()
         vis.clear().draw_mesh(fp, debug_text="")
         if i == -1:
-            vis.show(title=f"Result | Best Score: {mh.best_score:.3f}")
+            vis.set_axis(title=f"Result | Best Score: {mh.best_score:.3f}")
         else:
-            vis.show(
+            vis.set_axis(
                 title=f"Iteration: {i} "
                 f"| Score: {mh.prev_score:.3f} "
                 f"| Best Score: {mh.best_score:.3f}"
             )
 
-    def app(i):
+    def update(i):
         global iters
         if i != iters:
             mh.step()
@@ -159,5 +159,6 @@ if __name__ == "__main__":
 
         return (vis.get_fig(),)
 
-    ani = FuncAnimation(fig, app, frames=iters + 1, interval=600, repeat=False)
-    plt.show()
+    ani = FuncAnimation(fig, update, frames=iters + 1, interval=10, repeat=False)
+    ani.save("./multi_doors.gif", writer="pillow")
+    # plt.show()
