@@ -1,0 +1,13 @@
+[[cases]]
+obj_path = "/assets/fp_wo_wall_1.obj"
+
+[[cases]]
+param1 = "value2"
+param2 = 99
+
+# Optimizer configuration
+[optimizer]
+random_seed = 0
+iterations = 100
+sample_size = 100
+temperature = 0.1
