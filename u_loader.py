@@ -14,9 +14,13 @@ class UConfig:
         self.sample_size = optimizer_config["sample_size"]
         self.iterations = optimizer_config["iterations"]
         self.temperature = optimizer_config["temperature"]
+        self.sigma = optimizer_config["sigma"]
 
         # Case-specific
-        self.path = case_config["obj_path"]
+        self.file_name = case_config["file_name"]
+        self.path = case_config["obj_path"] + case_config["file_name"] + ".obj"
+        self.doors = case_config["doors"]  # [room_i, room_j, *door_length]
+        self.front_door = case_config["front_door"]  # edge_i, ratio(pos)
 
 
 class ULoader:
@@ -37,7 +41,9 @@ class ULoader:
         case_config = cls.__config["cases"][case_id]
         return (
             UConfig(case_config, cls.__config["optimizer"]),
-            UObjLoader.load(case_config["obj_path"]),
+            UObjLoader.load(
+                case_config["obj_path"] + case_config["file_name"] + ".obj"
+            ),
         )
 
     @classmethod
@@ -46,7 +52,12 @@ class ULoader:
             raise RuntimeError(
                 "Configuration not loaded. Call ULoader.load_config() first."
             )
-        return UObjLoader.load(cls.__config["cases"][case_id]["obj_path"])
+        path = (
+            cls.__config["cases"][case_id]["obj_path"]
+            + cls.__config["cases"][case_id]["file_name"]
+            + ".obj"
+        )
+        return UObjLoader.load(path)
 
     @classmethod
     def get_config(cls, case_id) -> UConfig:

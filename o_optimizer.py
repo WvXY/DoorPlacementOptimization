@@ -33,8 +33,8 @@ class MHOptimizer:
         self.__update_bests(self.prev_score)
         # fig = vis.get_fig()
 
-    def step(self):
-        self.system.propose()
+    def step(self, sigma=0.1):
+        self.system.propose(sigma=sigma)
 
         new_score = self.f(self.layout, self.samples)
         df = new_score - self.prev_score

@@ -24,7 +24,7 @@ from s_door_system import DoorSystem
 from u_visualization import Visualizer
 
 
-def init(case_id, np_seed=0):
+def init(case_id):
     # Load configs and data
     ULoader.load_config()
     config, obj_data = ULoader.get_config_and_obj(case_id)
@@ -39,33 +39,32 @@ def init(case_id, np_seed=0):
 
     # Visualization
     vis = Visualizer()
-    vis.draw_mesh(fp).show()
+    # vis.draw_mesh(fp).set_axis().show()
 
-    return fp, vis
+    return fp, vis, config
 
 
-def create_door_system(fp):
-
-    r0 = fp.get_by_rid(0)
-    r1 = fp.get_by_rid(1)
-    r2 = fp.get_by_rid(2)
-
+def create_door_system(fp, config):
     ecs = ECS()
     door_system = DoorSystem(ecs, fp)
 
-    door02 = DoorComponent(r2, r0)
-    ecs.add_door_component(door02)
-    #
-    door12 = DoorComponent(r1, r2)
-    ecs.add_door_component(door12)
+    for door_config in config.doors:
+        ra = fp.get_by_rid(door_config[0])
+        rb = fp.get_by_rid(door_config[1])
+        door = DoorComponent(ra, rb)
+        if len(door_config) > 2:
+            door.d_len = door_config[2]
+        door.need_optimization = True
+        door.ratio = 0.5
+        ecs.add_door_component(door)
 
     # front door
-    e_d = fp.get_by_eid(21)
+    e_door = fp.get_by_eid(config.front_door[0])
     front_door = DoorComponent(None, None)
     front_door.need_optimization = False
-    front_door.bind_edge = e_d
-    front_door.e_len = e_d.get_length()
-    front_door.ratio = 0.5
+    front_door.bind_edge = e_door
+    front_door.e_len = e_door.get_length()
+    front_door.ratio = config.front_door[1]
     ecs.add_door_component(front_door)
 
     door_system.activate_all()
@@ -74,28 +73,28 @@ def create_door_system(fp):
 
 
 def make_sample_points(fp, n=300):
-    sp = []
+    sample_points = []
     while n > 0:
         p = Point(np.random.rand(2))
         if fp.is_inside(p):
-            sp.append(p)
+            sample_points.append(p)
             n -= 1
-    return sp
+    return sample_points
 
 
-def f(fp, sp, batch_size=50):
+def f(fp, sample_points, batch_size=50):
     # indices = np.random.choice(range(0, 500, 2), batch_size, replace=False)
 
     traffic_loss = 0
-    for i in range(0, len(sp) - 1):
-        # for i in range(0, len(sp), 2):
-        start = sp[i]
-        end = sp[i + 1]
+    for i in range(0, len(sample_points) - 1):
+        # for i in range(0, len(sample_points), 2):
+        start = sample_points[i]
+        end = sample_points[i + 1]
         tripath = fp.find_tripath(start, end)
         path = fp.simplify(tripath, start, end)
         if path:
             traffic_loss += traffic_loss_func(path)
-    traffic_loss /= len(sp) / 2
+    traffic_loss /= len(sample_points) / 2
 
     # entrance loss
     entrance_loss = 0
@@ -125,24 +124,30 @@ def f(fp, sp, batch_size=50):
 if __name__ == "__main__":
     # Initialize
     case_id = 0
-    n_sp = 100
-    iters = 20
-    T = 0.1
 
-    fp, vis = init(case_id)
+    fp, vis, config = init(case_id)
     fig = vis.get_fig()
 
-    door_system = create_door_system(fp)
+    door_system = create_door_system(fp, config)
 
-    sp = make_sample_points(fp, n_sp)
+    sample_points = make_sample_points(fp, config.sample_size)
     # Metropolis-Hastings
     frames = []
-    mh = MHOptimizer(fp, door_system, f, T, sp)
+    mh = MHOptimizer(fp, door_system, f, config.temperature, sample_points)
     mh.init()
 
     def draw_frame(i):
         mh.step()
         vis.clear().draw_mesh(fp, debug_text="")
+
+        for door in door_system.ecs.doors.values():
+            if door.need_optimization:
+                pos = door_system.ratio_to_xy(door, door.ratio)
+                vis.draw_point(pos, c="r")
+            else:
+                pos = door_system.ratio_to_xy(door, door.ratio)
+                vis.draw_point(pos, c="b")
+
         if i == -1:
             vis.set_axis(title=f"Result | Best Score: {mh.best_score:.3f}")
         else:
@@ -153,19 +158,20 @@ if __name__ == "__main__":
             )
 
     def update(i):
-        global iters
-        if i != iters:
-            mh.step()
+        if i != config.iterations:
+            mh.step(sigma=config.sigma)
             draw_frame(i)
         else:
             mh.end()
             draw_frame(-1)
 
+        if i % 10 == 0:
+            print(f"Iteration: {i} | Score: {mh.prev_score:.3f}")
         return (vis.get_fig(),)
 
     ani = FuncAnimation(
-        fig, update, frames=iters + 1, interval=10, repeat=False
+        fig, update, frames=config.iterations + 1, interval=100, repeat=False
     )
     os.makedirs("./results", exist_ok=True)
-    # ani.save("./results/multi_doors.gif", writer="pillow")
-    plt.show()
+    ani.save(f"./results/res-{config.file_name}.gif", writer="pillow")
+    # plt.show()

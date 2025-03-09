@@ -1,12 +1,13 @@
 # Door Placement Optimization
 
 ## Introduction
-Door optimization for floor plan or map generation using Navmesh. 
-Place doors based on human traffic flow and shortest path.
 
+Door optimization for floor plan or map generation using Navmesh.
+Place doors based on human traffic flow and shortest path.
 
 ## Dependencies
 
+- Python3.11 or higher
 - PythonCDT : for generating constrained delaunay triangulation mesh
 
 ## Usage
@@ -37,23 +38,7 @@ conda activate mProj
 pip install PythonCDT/
 ```
 
-## Progress
-
-- [X] Fix navmesh
-- [X] Generate constraint mesh
-- [X] Mesh tweaking functions
-- [X] Door optimizer
-- [X] Optimize and test
-- [ ] Refactor and improve performance
-
-## Bugs
-
-- [ ] Logger is not working on windows
-- [X] Cuts on 2 edges of the same triangle may broke the geometry.
-
-## Notes
-
-### Naming Conventions
+## Structure
 
 - `g_xxx`: Geometry
 - `f_xxx`: Floor plan related
@@ -61,4 +46,30 @@ pip install PythonCDT/
 - `o_xxx`: Optimization
 - `u_xxx`: Utility functions
 - `t_xxx`: Test/unit test
-- `e_xxx`: Experiment
+- `e_xxx`: Experiment/Execution
+
+--------
+## Notes
+
+### Progress & TODOs
+
+- [X] Fix navmesh
+- [X] Generate constraint mesh
+- [X] Mesh tweaking functions
+- [X] Door optimizer
+- [X] Optimize and test
+- [X] Refactor and improve performance
+- [ ] GPU acceleration
+- [ ] Refactor#2 for better structure
+- [ ] UI
+- [ ] 
+
+### Bugs
+
+- [ ] Logger is not working on windows
+- [X] Cuts on 2 edges of the same triangle may broke the geometry.
+- [ ] When point on the edge, path cannot be found.
+
+### Black Formater Setting
+
+```--line-length=80 --preview```

@@ -1,13 +1,30 @@
 [[cases]]
-obj_path = "/assets/fp_wo_wall_1.obj"
+obj_path = "/assets/"
+file_name = "final_1"
+doors = [
+    [1, 3, 0.2],
+    [0, 3],
+    [2, 3, 0.2],
+    [3, 4],
+]   # room_i, room_j, *door_length
+front_door = [6, 0.12]  # edge_i, ratio(pos)
 
 [[cases]]
-param1 = "value2"
-param2 = 99
+obj_path = "/assets/"
+file_name = "final_2"
+doors = [
+    [0, 2],
+    [1, 2],
+    [2, 3],
+    [2, 4],
+    [2, 5, 0.2]
+]   # room_i, room_j, *door_length
+front_door = [14, 0.8]  # edge_i, ratio(pos)
 
 # Optimizer configuration
 [optimizer]
 random_seed = 0
-iterations = 100
-sample_size = 100
+iterations = 300
+sample_size = 200
 temperature = 0.1
+sigma = 0.01
