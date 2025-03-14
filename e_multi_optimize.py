@@ -39,7 +39,7 @@ def init(case_id):
 
     # Visualization
     vis = Visualizer()
-    # vis.draw_mesh(fp).set_axis().show()
+    # vis.draw_mesh(fp, debug_text="vef").set_axis(axis_off=True).show() # for debug
 
     return fp, vis, config
 
@@ -173,5 +173,5 @@ if __name__ == "__main__":
         fig, update, frames=config.iterations + 1, interval=100, repeat=False
     )
     os.makedirs("./results", exist_ok=True)
-    ani.save(f"./results/res-{config.file_name}.gif", writer="pillow")
-    # plt.show()
+    # ani.save(f"./results/res-{config.file_name}.gif", writer="pillow")
+    plt.show()
