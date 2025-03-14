@@ -6,10 +6,10 @@ from matplotlib import patches
 class Visualizer:
     def __init__(self, dpi=None):
         self.fig, self.ax = None, None
-        self.init_plt(dpi if dpi else 120)
+        self.init_plt(dpi if dpi else 200)
 
     # Basic Functions
-    def init_plt(self, dpi=120):
+    def init_plt(self, dpi=200):
         self.fig, self.ax = plt.subplots(dpi=dpi)
 
     def set_axis(self, title=None, axis_off=False):
@@ -84,10 +84,10 @@ class Visualizer:
                 c,
                 alpha=0.2,
             )
-            self.ax.scatter(vxs, vys, c="k", s=16, marker="o")
+            # self.ax.scatter(vxs, vys, c="k", s=16, marker="o")
 
         center = room.get_center()
-        self.fig.text(center[0], center[1], str(room.rid), fontsize=16, c="b")
+        self.ax.text(center[0], center[1], str(room.rid), fontsize=16, c="b")
         walls = room.get_wall_edges()
         for e in walls:
             self.ax.plot(
@@ -147,16 +147,16 @@ class Visualizer:
     # ----------------------------------------------------------------------#
     # Debug Draw Functions
 
-    def draw_infos(self, mesh, f=False, e=False, v=False):
+    def draw_infos(self, mesh, f=False, e=False, v=False, fontsize=8):
         if f:
             for f in mesh.faces:
                 if f is None:
                     continue
-                self.fig.text(
+                self.ax.text(
                     f.x,
                     f.y,
                     str(f.fid),
-                    fontsize=12,
+                    fontsize=fontsize,
                     c="k",
                 )
                 # self.fig.scatter(f.x, f.y, c="k", s=16, marker="o")
@@ -169,11 +169,11 @@ class Visualizer:
                 for e in f.half_edges:
                     if e is None or e.is_visited:
                         continue
-                    self.fig.text(
+                    self.ax.text(
                         e.get_mid()[0],
                         e.get_mid()[1],
                         str(f"{e.eid}/{e.twin.eid}" if e.twin else e.eid),
-                        fontsize=10,
+                        fontsize=fontsize-2,
                         horizontalalignment="center",
                         verticalalignment="center",
                         c="r" if e.is_blocked else "g",
@@ -186,11 +186,11 @@ class Visualizer:
             for v in mesh.vertices:
                 if v is None:
                     continue
-                self.fig.text(
+                self.ax.text(
                     v.x,
                     v.y,
                     str(v.vid),
-                    fontsize=12,
+                    fontsize=fontsize,
                     horizontalalignment="right",
                     verticalalignment="top",
                     c="m",

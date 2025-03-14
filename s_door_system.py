@@ -20,6 +20,13 @@ class DoorSystem:
         for door_comp in self.ecs.doors.values():
             self.activate(door_comp)
 
+    def deactivate_all(self):
+        self.fp.reset_all_visit_status(self.fp.edges)
+        for door_comp in self.ecs.doors.values():
+            if not door_comp.need_optimization:
+                continue
+            self.deactivate(door_comp)
+
     def propose(self, sigma=0.1):
         for entity_id, door_comp in list(self.ecs.doors.items()):
             if not door_comp.need_optimization:
@@ -276,7 +283,6 @@ class DoorSystem:
                 if (
                     e is door_comp.bind_edge
                     or e is door_comp.bind_edge.twin
-                    or e.is_visited
                 ):
                     continue
 
