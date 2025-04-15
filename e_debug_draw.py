@@ -86,10 +86,10 @@ if __name__ == "__main__":
         vis.clear()
 
         if i == -1:
-            vis.draw_mesh(fp, debug_text="vef").set_axis(title=f"End")
+            vis.draw_mesh(fp, debug_text="vef").set_axis(title=f"End", axis_off=True)
         else:
             vis.draw_mesh(fp, debug_text="vef").set_axis(
-                title=f"Iteration: {i} "
+                title=f"Iteration: {i} ", axis_off=True
             )
 
     def update(i):

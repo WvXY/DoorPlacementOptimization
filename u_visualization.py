@@ -25,6 +25,9 @@ class Visualizer:
     def show(self):
         plt.show()
 
+    def save(self, path):
+        plt.savefig(path)
+
     def clear(self):
         self.ax.clear()
         return self
@@ -39,9 +42,9 @@ class Visualizer:
     # Draw Functions
     def draw_point(self, point, c="r", s=60, m="o"):
         if (
-            isinstance(point, np.ndarray)
-            or isinstance(point, list)
-            or isinstance(point, tuple)
+                isinstance(point, np.ndarray)
+                or isinstance(point, list)
+                or isinstance(point, tuple)
         ):
             self.ax.scatter(point[0], point[1], color=c, s=s, marker=m)
         else:
@@ -173,7 +176,7 @@ class Visualizer:
                         e.get_mid()[0],
                         e.get_mid()[1],
                         str(f"{e.eid}/{e.twin.eid}" if e.twin else e.eid),
-                        fontsize=fontsize-2,
+                        fontsize=fontsize - 2,
                         horizontalalignment="center",
                         verticalalignment="center",
                         c="r" if e.is_blocked else "g",
@@ -230,11 +233,12 @@ class Visualizer:
             self.ax.arrow(
                 x, y, dx, dy, width=lw, color=c, length_includes_head=True
             )
+        return self
 
     # for paths
     def draw_linepath(self, path, linetype="-", c="k", s=60, a=1, lw=2):
         if path is None:
-            return
+            return self
 
         if isinstance(path[0], np.ndarray):
             self.ax.plot(
@@ -257,14 +261,14 @@ class Visualizer:
         return self
 
     def draw_tripath(self, tripath):
-        if tripath is None:
-            return
+        if tripath is None: return self
 
         for f in tripath:
-            if f:
-                self.ax.fill(
-                    [n.x for n in f.verts],
-                    [n.y for n in f.verts],
-                    "y",
-                    alpha=0.3,
-                )
+            if not f: continue
+            self.ax.fill(
+                [n.x for n in f.verts],
+                [n.y for n in f.verts],
+                "y",
+                alpha=0.3,
+            )
+        return self

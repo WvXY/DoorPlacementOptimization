@@ -8,35 +8,32 @@ from g_primitives import _GeoBase
 from u_obj_loader import UObjLoader
 from u_visualization import Visualizer
 
-should_draw = False
-
-# logger = DbgLogger()
+should_draw = True
 
 
 class NavmeshTest(unittest.TestCase):
-    ld = UObjLoader("..")
-
     def reset(self):
         _GeoBase.reset_guid()
         np.random.seed(0)
 
-    def draw(self, nm, start, end, tripath, path):
+    def generate_navmesh(self, file_name):
+        data = UObjLoader.load(f"/../assets/{file_name}.obj")
+        nm = NavMesh()
+        nm.from_obj_data(data)
+        return nm
+
+    def draw(self, nm, start, end, tripath, path, title):
         vis = Visualizer()
-        vis.draw_mesh(nm, show=False)
-        vis.draw_point(start, c="g", s=100)
-        vis.draw_point(end, c="r", s=100)
-        vis.draw_linepath(path, "b", 2)
-        vis.draw_tripath(tripath)
-        vis.show("navmesh")
+        vis.draw_mesh(nm).set_axis(title=f"Unittest: navmesh | {title}") \
+            .draw_point(start, c="g", s=100).draw_point(end, c="r", s=100) \
+            .draw_linepath(path, c="b", s=2).draw_tripath(tripath) \
+            .save(f"../results/unittest_navmesh-{title}.png")  # or .show()
 
     def test_simple_path(self):
         self.reset()
         # logger.info("------------test_simple_path------------")
-        self.ld.load_wo_wall_case(2)
-        self.ld.optimize()
-
-        nm = NavMesh()
-        nm.create(self.ld.vertices, self.ld.edges)
+        obj_name = "fp_wo_wall_2"
+        nm = self.generate_navmesh(obj_name)
 
         start = Point(np.array([0.2, 0.9]))
         end = Point(np.array([0.1, 0.2]))
@@ -45,36 +42,29 @@ class NavmeshTest(unittest.TestCase):
         path = nm.simplify(tripath, start, end)
 
         if should_draw:
-            self.draw(nm, start, end, tripath, path)
+            self.draw(nm, start, end, tripath, path, title=obj_name)
 
         expected_res = [52, 11, 53]
         observed_res = [p.guid for p in path]
-        # logger.debug(f"observed_res: {observed_res}")
-        # logger.debug(f"expected_res: {expected_res}")
         self.assertEqual(expected_res, observed_res)
 
     def test_complicated_path(self):
         self.reset()
         # logger.info("------------test_complicated_path--------------")
-        self.ld.load_wo_wall_case(4)
-        self.ld.optimize()
+        obj_name = "fp_wo_wall_4"
+        nm = self.generate_navmesh(obj_name)
 
-        nm = NavMesh()
-        nm.create(self.ld.vertices, self.ld.edges)
-
-        start = Point(np.array([0.8, 0.2]))
-        end = Point(np.array([0.6, 0.25]))
+        start = Point(np.array([0.78, 0.83]))
+        end = Point(np.array([0.67, 0.8]))
 
         tripath = nm.find_tripath(start, end)
         path = nm.simplify(tripath, start, end)
 
         if should_draw:
-            self.draw(nm, start, end, tripath, path)
+            self.draw(nm, start, end, tripath, path, title=obj_name)
 
-        expected_res = [372, 34, 33, 28, 25, 24, 22, 21, 20, 8, 9, 373]
+        expected_res = [372, 34, 33, 28, 25, 24, 22, 21, 20, 8, 9, 13, 373]
         observed_res = [p.guid for p in path]
-        # logger.debug(f"observed_res: {observed_res}")
-        # logger.debug(f"expected_res: {expected_res}")
         self.assertEqual(expected_res, observed_res)
 
 

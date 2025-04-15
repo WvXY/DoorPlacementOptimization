@@ -11,10 +11,6 @@ class FVertex(Vertex, _FInfo):
     def __init__(self, xy):
         super().__init__(xy)
 
-    def __hash__(self):
-        # for not hashable error
-        return hash(self.guid)
-
     def __repr__(self):
         return f"FVertex {self.vid} ({self.xy[0]:.2f}, {self.xy[1]:.2f})"
 

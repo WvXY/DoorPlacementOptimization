@@ -168,6 +168,10 @@ class Vertex(_GeoBase, _GInfo):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __hash__(self):
+        # solve TypeError: unhashable type
+        return hash(self.guid)
+
     def is_same_id(self, other):
         return self.vid == other.vid
 
