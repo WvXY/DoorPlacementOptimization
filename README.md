@@ -3,7 +3,7 @@
 ## Introduction
 
 Door optimization for floor plan or map generation using Navmesh.
-Place doors based on human traffic flow and shortest path.
+Place doors based on better human traffic flow and shortest path.
 
 ## Dependencies
 
@@ -26,16 +26,18 @@ python -m venv .venv
 .venv\Scripts\activate 
 # source .venv/bin/activate # Linux/MacOS
 pip install numpy matplotlib
-pip install PythonCDT/
+pip install -i https://test.pypi.org/simple/ PythonCDT  # recommended
+# pip install PythonCDT/ 
 ```
 
 ### Conda Environment
 
 ```bash
 cd DoorPlacementOptimization
-conda create -n mProj python=3.12 numpy matplotlib
-conda activate mProj 
-pip install PythonCDT/
+conda create -n dpo python=3.12 numpy matplotlib
+conda activate dpo 
+pip install -i https://test.pypi.org/simple/ PythonCDT  # recommended 
+# pip install PythonCDT/ 
 ```
 
 ## Structure
@@ -45,7 +47,7 @@ pip install PythonCDT/
 - `s_xxx`: ECS System and related
 - `o_xxx`: Optimization
 - `u_xxx`: Utility functions
-- `t_xxx`: Test/unit test
+- `t_xxx`: Test/unittest
 - `e_xxx`: Experiment/Execution
 
 --------
@@ -59,15 +61,10 @@ pip install PythonCDT/
 - [X] Door optimizer
 - [X] Optimize and test
 - [X] Refactor and improve performance
-- [ ] GPU acceleration
-- [ ] Refactor#2 for better structure
-- [ ] UI
-- [ ] 
 
-### Bugs
+### Known Issues
 
 - [ ] Logger is not working on windows
-- [X] Cuts on 2 edges of the same triangle may broke the geometry.
 - [ ] When point on the edge, path cannot be found.
 
 ### Black Formater Setting
