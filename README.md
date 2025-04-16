@@ -19,26 +19,16 @@ Door placement optimization based on **human flow efficiency** for floor plan or
 git clone --recurse-submodules https://github.com/WvXY/FlowPortals.git
 ```
 
-### PIP
+### PIP3
 
 ```bash
-cd DoorPlacementOptimization
+cd FlowPortals
 python -m venv .venv
 .venv\Scripts\activate 
 # source .venv/bin/activate # Linux/MacOS
 pip install numpy matplotlib
 pip install -i https://test.pypi.org/simple/ PythonCDT  # recommended
-# pip install PythonCDT/ 
-```
-
-### Conda Environment
-
-```bash
-cd DoorPlacementOptimization
-conda create -n dpo python=3.12 numpy matplotlib
-conda activate dpo 
-pip install -i https://test.pypi.org/simple/ PythonCDT  # recommended 
-# pip install PythonCDT/ 
+# pip install PythonCDT/  # or local build and install 
 ```
 
 ## Structure
@@ -59,11 +49,11 @@ pip install -i https://test.pypi.org/simple/ PythonCDT  # recommended
 #### Debug
 ![Debug](results/dbg-fp_w_walls_2.gif)
 
-### Results
+#### Results
 ![Result1](results/res-final_1.gif)
 
 --------
-## Notes
+## Other
 
 ### Progress & TODOs
 
